@@ -1,3 +1,6 @@
+
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,18 +37,18 @@
   --r-sm:6px;
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.5;overflow-x:hidden}
-
+ 
 /* ── SCREENS ─────────────────────────────────────── */
 .screen{display:none;min-height:100vh}
 .screen.active{display:block}
-
+ 
 /* ── HEADER ─────────────────────────────────────── */
 .app-header{background:var(--ink);color:var(--bone);padding:10px 14px 8px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
 .app-title{font-family:'Lora',serif;font-size:16px;font-weight:600;letter-spacing:.3px}
 .app-subtitle{font-size:10px;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
 .tile-counter{background:rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600;min-width:54px;text-align:center;transition:all .2s}
 .tile-counter.ready{background:var(--gold);color:var(--ink)}
-
+ 
 /* ── SELECTED TILE STRIP ─────────────────────────── */
 .tile-strip-wrap{background:var(--bone2);border-bottom:1px solid #d4c89a;padding:7px 10px 6px;min-height:44px;position:sticky;top:52px;z-index:90}
 .tile-strip{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;align-items:center}
@@ -58,7 +61,9 @@ html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sa
 .tile-chip.wind{background:#e8e4f4;border-color:#c8c0e4;color:#3a2880}
 .tile-chip.dragon,.tile-chip.flower,.tile-chip.joker{background:#f4ecd4;border-color:#d4b870;color:#6a4a10}
 .chip-x{font-size:10px;opacity:.6;margin-left:1px}
-
+.results-hand-strip{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 8px;background:var(--bone2);border-bottom:1px solid #d4c89a;margin-bottom:14px;}
+ 
+ 
 /* ── TILE GRID ───────────────────────────────────── */
 .select-body{padding:8px 8px 90px}
 .suit-section{margin-bottom:10px}
@@ -98,7 +103,7 @@ html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sa
 .flower-btn .tile-num,.joker-btn .tile-num{font-size:19px}
 /* Count badge */
 .count-badge{position:absolute;top:2px;right:2px;background:var(--gold);color:var(--ink);font-size:10px;font-weight:700;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;line-height:1}
-
+ 
 /* ── ANALYZE BUTTON ──────────────────────────────── */
 .analyze-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));background:var(--bone);border-top:1px solid var(--bone2);z-index:50}
 .analyze-btn{
@@ -171,12 +176,12 @@ html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sa
 </style>
 </head>
 <body>
-
+ 
 <!-- ═══════════════════════════════════════════════ -->
 <!-- SELECT SCREEN                                   -->
 <!-- ═══════════════════════════════════════════════ -->
 <div id="selectScreen" class="screen active">
-
+ 
   <div class="app-header">
     <div>
       <div class="app-title">Mahjong Hand Analyzer</div>
@@ -184,58 +189,58 @@ html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sa
     </div>
     <div id="tileCounter" class="tile-counter">0 / 13</div>
   </div>
-
+ 
   <div class="tile-strip-wrap">
     <div id="tileStrip" class="tile-strip">
       <span class="strip-empty">Tap tiles to build your hand</span>
     </div>
   </div>
-
+ 
   <div class="select-body">
-
+ 
     <div class="suit-section">
       <div class="suit-label">Bam</div>
       <div class="tile-grid" id="bamGrid"></div>
     </div>
-
+ 
     <div class="suit-section">
       <div class="suit-label">Crack</div>
       <div class="tile-grid" id="crkGrid"></div>
     </div>
-
+ 
     <div class="suit-section">
       <div class="suit-label">Dot</div>
       <div class="tile-grid" id="dotGrid"></div>
     </div>
-
+ 
     <div class="suit-section">
       <div class="suit-label">Winds</div>
       <div class="tile-grid wind-grid" id="windGrid"></div>
     </div>
-
+ 
     <div class="suit-section">
       <div class="suit-label">Dragons</div>
       <div class="tile-grid dragon-grid" id="dragonGrid"></div>
     </div>
-
+ 
     <div class="suit-section">
       <div class="suit-label">Extras</div>
       <div class="tile-grid extras-grid" id="extrasGrid"></div>
     </div>
-
+ 
   </div>
-
+ 
   <div class="analyze-bar">
     <button id="analyzeBtn" class="analyze-btn" onclick="analyze()">Analyze Hand</button>
   </div>
-
+ 
 </div>
-
+ 
 <!-- ═══════════════════════════════════════════════ -->
 <!-- RESULTS SCREEN                                  -->
 <!-- ═══════════════════════════════════════════════ -->
 <div id="resultsScreen" class="screen">
-
+ 
   <div class="results-header">
     <div class="results-title">Your Hand</div>
     <div style="display:flex;gap:8px">
@@ -243,7 +248,7 @@ html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sa
       <button class="btn-reset" onclick="resetApp()">Reset</button>
     </div>
   </div>
-
+ 
   <div class="results-body">
     <div id="eastBanner"></div>
     <div id="loadingMsg">Analyzing...</div>
@@ -255,15 +260,15 @@ html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sa
       <div id="pivotContainer"></div>
     </div>
   </div>
-
+ 
 </div>
-
+ 
 <script>
 // ============================================================
 // MAHJ ADVISOR — 2026 NMJL CARD
 // Complete logic: tile model, scoring engine, output renderer
 // ============================================================
-
+ 
 const SUITS = ['BAM','CRK','DOT'];
 const MATCHING_DRAGON = { BAM:'GREEN', CRK:'RED', DOT:'WHITE' };
 const OPPOSING_DRAGONS = { BAM:['RED','WHITE'], CRK:['GREEN','WHITE'], DOT:['GREEN','RED'] };
@@ -274,11 +279,11 @@ const COMPETITION_WEIGHT = {
   'NORTH':1.40,'SOUTH':1.40,'EAST':1.33,'WEST':1.33,
   'WHITE':1.47,'GREEN':1.25,'RED':1.25
 };
-
+ 
 // ============================================================
 // TILE UI DEFINITIONS
 // ============================================================
-
+ 
 const TILE_DEFS = {
   bam: [1,2,3,4,5,6,7,8,9].map(n=>({id:`BAM_${n}`,label:`${n}`,sub:'Bam',suit:'BAM',type:'NUMBER',number:n,cls:'bam'})),
   crk: [1,2,3,4,5,6,7,8,9].map(n=>({id:`CRK_${n}`,label:`${n}`,sub:'Crack',suit:'CRK',type:'NUMBER',number:n,cls:'crk'})),
@@ -299,20 +304,20 @@ const TILE_DEFS = {
     {id:'JOKER', label:'★', sub:'Joker', type:'JOKER', cls:'joker-btn'},
   ]
 };
-
+ 
 const ALL_TILES = {};
 [...TILE_DEFS.bam,...TILE_DEFS.crk,...TILE_DEFS.dot,
  ...TILE_DEFS.winds,...TILE_DEFS.dragons,...TILE_DEFS.extras
 ].forEach(t => ALL_TILES[t.id] = t);
-
+ 
 const MAX_COPIES = {FLOWER:8,JOKER:8};
 const getMax = id => MAX_COPIES[id] || 4;
 const selectedTiles = {};
-
+ 
 // ============================================================
 // TILE SELECTION UI
 // ============================================================
-
+ 
 function buildGrid(containerId, tiles) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -326,18 +331,18 @@ function buildGrid(containerId, tiles) {
     container.appendChild(btn);
   });
 }
-
+ 
 buildGrid('bamGrid',    TILE_DEFS.bam);
 buildGrid('crkGrid',    TILE_DEFS.crk);
 buildGrid('dotGrid',    TILE_DEFS.dot);
 buildGrid('windGrid',   TILE_DEFS.winds);
 buildGrid('dragonGrid', TILE_DEFS.dragons);
 buildGrid('extrasGrid', TILE_DEFS.extras);
-
+ 
 function getTotalCount() {
   return Object.values(selectedTiles).reduce((a,b)=>a+b,0);
 }
-
+ 
 function toggleTile(id) {
   const total   = getTotalCount();
   const current = selectedTiles[id] || 0;
@@ -350,7 +355,7 @@ function toggleTile(id) {
   }
   updateUI();
 }
-
+ 
 function removeTile(id) {
   if (selectedTiles[id] > 0) {
     selectedTiles[id]--;
@@ -358,7 +363,7 @@ function removeTile(id) {
     updateUI();
   }
 }
-
+ 
 function updateUI() {
   const total = getTotalCount();
   const counter = document.getElementById('tileCounter');
@@ -398,7 +403,7 @@ function updateUI() {
     btn.textContent = n === 1 ? 'Select 1 more tile' : `Select ${n} more tiles`;
   }
 }
-
+ 
 function updateStrip() {
   const strip = document.getElementById('tileStrip');
   if (!strip) return;
@@ -443,21 +448,21 @@ function updateStrip() {
     strip.appendChild(chip);
   });
 }
-
+ 
 // ============================================================
 // HAND ANALYSIS
 // ============================================================
-
+ 
 function analyzeHand() {
   const tiles    = [];
   Object.entries(selectedTiles).forEach(([id,count]) => {
     const tile = ALL_TILES[id];
     for (let i=0;i<count;i++) tiles.push(tile);
   });
-
+ 
   const jokers   = tiles.filter(t=>t.type==='JOKER');
   const nonJokers= tiles.filter(t=>t.type!=='JOKER');
-
+ 
   const hand = {
     jokers: jokers.length,
     flowers: nonJokers.filter(t=>t.type==='FLOWER'),
@@ -469,7 +474,7 @@ function analyzeHand() {
     dominantSuit: null,
     hasEvenConc: false, hasOddConc: false,
   };
-
+ 
   for (const t of nonJokers) {
     if (t.type==='NUMBER') {
       hand.suitCounts[t.suit]++;
@@ -479,10 +484,10 @@ function analyzeHand() {
     } else if (t.type==='WIND')   hand.winds[t.wind]++;
     else if   (t.type==='DRAGON') hand.dragons[t.dragon]++;
   }
-
+ 
   const maxSuit = Object.entries(hand.suitCounts).sort((a,b)=>b[1]-a[1])[0];
   if (maxSuit[1]>=4) hand.dominantSuit = maxSuit[0];
-
+ 
   // Pairs/pungs/kongs from raw tiles (no joker)
   for (const [num,counts] of Object.entries(hand.numberCounts)) {
     for (const suit of SUITS) {
@@ -502,14 +507,14 @@ function analyzeHand() {
     if (c>=3) hand.pungs.push({type:'DRAGON',dragon});
     if (c>=4) hand.kongs.push({type:'DRAGON',dragon});
   }
-
+ 
   const nums = Object.keys(hand.numberCounts).map(Number);
   hand.hasEvenConc = nums.filter(n=>n%2===0).length>=3;
   hand.hasOddConc  = nums.filter(n=>n%2!==0).length>=3;
-
+ 
   return hand;
 }
-
+ 
 // ============================================================
 // SCORING ENGINE
 // Key principles:
@@ -520,7 +525,7 @@ function analyzeHand() {
 // 3. Each tile type is suit-specific — dragons, winds, numbers
 //    never pooled across different types
 // ============================================================
-
+ 
 function getSuitCombos(n) {
   if (n===0) return [{}];
   if (n===1) return SUITS.map(s=>({A:s}));
@@ -534,20 +539,20 @@ function getSuitCombos(n) {
     if (a!==b && b!==cc && a!==cc) c.push({A:a,B:b,C:cc});
   return c;
 }
-
+ 
 // Score a single group against a tile pool (tiles consumed in place)
 // Returns { matched, needed, penalty, canClaim, dragonNote }
-
+ 
 // ============================================================
 // SCORING ENGINE — mechanics-only difficulty model
 // Difficulty driven by: tiles missing, calling availability, joker eligibility
 // No tile-type bias — winds/dragons/numbers treated identically
 // Jokers remain a flexible hand-level asset, never assigned to a specific group
 // ============================================================
-
+ 
 function scoreGroup(g, suit, pool) {
   let holds = 0;
-
+ 
   if (g.tileType==='NUMBER' && g.number!=null) {
     const key = suit ? `${g.number}_${suit}` : null;
     if (key) {
@@ -578,10 +583,10 @@ function scoreGroup(g, suit, pool) {
       holds = Math.max(0,...['NORTH','EAST','WEST','SOUTH'].map(w=>pool[`WIND_${w}`]||0));
     }
   }
-
+ 
   const effective   = Math.min(holds, g.count);
   const stillNeeded = Math.max(0, g.count - effective);
-
+ 
   // Consume tiles from pool
   if (effective > 0) {
     if (g.tileType==='NUMBER' && g.number!=null) {
@@ -597,9 +602,9 @@ function scoreGroup(g, suit, pool) {
       if (wk) pool[wk] = Math.max(0,(pool[wk]||0) - effective);
     }
   }
-
+ 
   const canClaim = g.groupType!=='single' && g.groupType!=='pair';
-
+ 
   // DIFFICULTY — mechanics-only, no tile-type weighting
   // Claimable groups: discard calling available, jokers can help
   //   1 missing → nearly callable → low difficulty
@@ -621,9 +626,9 @@ function scoreGroup(g, suit, pool) {
     // single — base difficulty; structural context applied in scoreHand loop
     difficultyPerTile = 1.3;
   }
-
+ 
   const penalty = stillNeeded * difficultyPerTile;
-
+ 
   // Dragon notes for UI — unchanged
   let dragonNote = null;
   if (g.tileType==='DRAGON' && g.dragonRequirement==='opposing' && suit && holds===0) {
@@ -636,12 +641,12 @@ function scoreGroup(g, suit, pool) {
     const wrongD = ['GREEN','RED','WHITE'].find(d=>d!==matchD&&(pool[`DRAGON_${d}`]||0)>0);
     if (wrongD) dragonNote=`You hold ${wrongD} Dragon — wrong color for ${suit}s. Need ${matchD}.`;
   }
-
+ 
   return { effective, stillNeeded, penalty, canClaim, dragonNote, holds, groupIsClaimable: canClaim };
 }
-
+ 
 const hand_dragons_list = {GREEN:1,RED:1,WHITE:1};
-
+ 
 function findBestNumKey(number, pool) {
   let best=null, bestVal=-1;
   for (const s of SUITS) {
@@ -650,7 +655,7 @@ function findBestNumKey(number, pool) {
   }
   return best;
 }
-
+ 
 function resolveDragonKey(g, suit, pool) {
   if (g.dragon) return `DRAGON_${g.dragon}`;
   if (g.dragonRequirement==='matching'&&suit) return `DRAGON_${MATCHING_DRAGON[suit]}`;
@@ -662,11 +667,11 @@ function resolveDragonKey(g, suit, pool) {
   }
   return null;
 }
-
+ 
 function findBestWindKey(pool) {
   return `WIND_${['NORTH','EAST','WEST','SOUTH'].reduce((best,w)=>(pool[`WIND_${w}`]||0)>(pool[`WIND_${best}`]||0)?w:best,'NORTH')}`;
 }
-
+ 
 function buildPool(hand) {
   const pool = {};
   for (const [num,counts] of Object.entries(hand.numberCounts)) {
@@ -677,27 +682,27 @@ function buildPool(hand) {
   pool['FLOWER'] = hand.flowers.length;
   return pool;
 }
-
+ 
 function scoreHand(handDef, suitMap, hand) {
   const pool = buildPool(hand);
-
+ 
   // Groups scored: pairs first (consume tiles before pungs), then singles, then claimable
   const groupOrder = {pair:0, single:1, pung:2, kong:3, quint:4};
   const sorted = [...handDef.groups].sort((a,b)=>(groupOrder[a.groupType]||2)-(groupOrder[b.groupType]||2));
-
+ 
   let matched=0, total=0, penalty=0;
   let readyToCallCount=0, buildThenCallCount=0;
   const details = { matched:[], missing:[], dragonNotes:[], jokerPositions:0 };
-
+ 
   for (const g of sorted) {
     total += g.count;
     const suit = g.suit ? suitMap[g.suit] : null;
     const r    = scoreGroup(g, suit, pool);
-
+ 
     matched += r.effective;
     if (r.dragonNote) details.dragonNotes.push(r.dragonNote);
     if (r.groupIsClaimable) details.jokerPositions++;
-
+ 
     if (r.effective >= g.count) {
       details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number});
     } else {
@@ -712,13 +717,13 @@ function scoreHand(handDef, suitMap, hand) {
         else if (readyWithJoker) { claimState = 'readyWithJoker';  readyToCallCount++; }
         else                     { claimState = 'pullMoreThenCall'; buildThenCallCount++; }
       }
-
+ 
       // ── Per-group penalty ────────────────────────────────────────────
       // Use mechanics-based difficulty from scoreGroup
       // For singles: apply structural context multiplier
       // Singles clearly supporting a run/sequence are less penalized than isolated ones
       let groupPenalty = r.penalty;
-
+ 
       if (g.groupType === 'single' && r.stillNeeded > 0 && g.number != null) {
         // Connected single: another group in this hand requires an adjacent number (±1 or ±2)
         // This signals the single is part of a run or near-sequence pattern
@@ -732,7 +737,7 @@ function scoreHand(handDef, suitMap, hand) {
         const singleContextMult = adjacentInHand ? 0.85 : 1.0;
         groupPenalty = r.stillNeeded * 1.3 * singleContextMult;
       }
-
+ 
       // Claim bonus: reduces penalty for groups that are close to callable
       // readyToCall → significant relief (one discard away)
       // readyWithJoker → meaningful relief (joker enables call — joker is flexible but still a cost)
@@ -742,14 +747,14 @@ function scoreHand(handDef, suitMap, hand) {
                        : claimState==='readyWithJoker'   ? 0.35
                        : claimState==='pullMoreThenCall'  ? 0.10
                        : 0;
-
+ 
       groupPenalty = groupPenalty * (1 - claimBonus);
       penalty += groupPenalty;
-
+ 
       const stillToDrawBeforeCall = claimState==='pullMoreThenCall'
         ? Math.max(0, (g.count-1) - r.holds - hand.jokers)
         : 0;
-
+ 
       details.missing.push({
         label:       g.label,
         need:        r.stillNeeded,
@@ -767,20 +772,20 @@ function scoreHand(handDef, suitMap, hand) {
       });
     }
   }
-
+ 
   if (total===0) return null;
   const fitScore = Math.round((matched/total)*100);
-
+ 
   // ── JOKER BONUS — flexible asset, gradient scaling ───────────────
   // Jokers improve overall claimable-group viability — not tied to any one group.
   // Value scales smoothly with hand viability (no cliff effect).
   // Range: 3.0 pts/joker at fit=0 → 7.0 pts/joker at fit=100
   const jokerViabilityScale = 3 + (fitScore / 100) * 4;
   const jokerBonus = hand.jokers * jokerViabilityScale;
-
+ 
   // ── CALL BONUS ────────────────────────────────────────────────────
   const callBonus = readyToCallCount * 4;
-
+ 
   // ── SCATTERED PAIR PENALTY — structural check only ────────────────
   // Only penalizes pairs that are structurally disconnected from the hand.
   // "Disconnected" = pair's number has no adjacent matched group number (±2)
@@ -789,7 +794,7 @@ function scoreHand(handDef, suitMap, hand) {
   const matchedClaimable = details.matched.filter(
     m => m.groupType !== 'pair' && m.groupType !== 'single'
   ).length;
-
+ 
   const disconnectedPairs = details.matched.filter(m => {
     if (m.groupType !== 'pair') return false;
     if (!m.number) return handDef.section !== 'winds_dragons'; // honor pair
@@ -797,11 +802,11 @@ function scoreHand(handDef, suitMap, hand) {
       o => o !== m && o.number != null && Math.abs(o.number - m.number) <= 2
     );
   }).length;
-
+ 
   const scatteredPairPenalty = (disconnectedPairs >= 2 && matchedClaimable === 0)
     ? disconnectedPairs * 2
     : 0;
-
+ 
   // ── CONCEALED PENALTY ─────────────────────────────────────────────
   let concPenalty = 0;
   if (handDef.concealed) {
@@ -809,7 +814,7 @@ function scoreHand(handDef, suitMap, hand) {
     if (hand.jokers >= 2) concPenalty = Math.max(0, concPenalty - 1);
   }
   if (handDef.section === 'singles_and_pairs') concPenalty += 5;
-
+ 
   // ── COMPOUND PENALTY — smooth curve for multiple must-draw tiles ──
   // Captures compounding difficulty of needing multiple natural wall draws.
   // Curve: 0→0, 1→2, 2→6, 3→12, 4→20
@@ -819,7 +824,7 @@ function scoreHand(handDef, suitMap, hand) {
   const compoundPenalty = mustDrawTilesNeeded > 0
     ? Math.round(mustDrawTilesNeeded * 1.5 + (mustDrawTilesNeeded - 1) * mustDrawTilesNeeded * 0.7)
     : 0;
-
+ 
   // ── RIGIDITY PENALTY — isolated missing singles only ──────────────
   // Singles that are structurally connected (adjacent matched number ±2) are
   // already softened by singleContextMult in the loop above — not penalized again.
@@ -831,11 +836,11 @@ function scoreHand(handDef, suitMap, hand) {
       o => o.number != null && Math.abs(o.number - m.number) <= 2
     );
   }).length;
-
+ 
   const rigidityPenalty = isolatedMissingSingles >= 2
     ? (isolatedMissingSingles - 1) * 3
     : 0;
-
+ 
   // ── FINAL SCORE ───────────────────────────────────────────────────
   // Penalty multiplier 1.8 (reduced from 2.2 to compensate for removal of
   // competition weights which previously inflated raw penalty values)
@@ -849,7 +854,7 @@ function scoreHand(handDef, suitMap, hand) {
     + callBonus
     - concPenalty
   );
-
+ 
   return { fitScore, finalScore, penalty: Math.round(penalty * 10) / 10,
            matched, total, details, concPenalty, suitMap, jokerBonus,
            readyToCallCount, buildThenCallCount };
@@ -928,7 +933,7 @@ const HAND_DISPLAY = {
   "SP_L5": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"357","c":"R"},{"t":" ","c":""},{"t":"99","c":"N"},{"t":" ","c":""},{"t":"11","c":"G"},{"t":" ","c":""},{"t":"357","c":"R"},{"t":" ","c":""},{"t":"99","c":"N"}],
   "SP_L6": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"2026","c":"R"},{"t":" ","c":""},{"t":"2026","c":"N"},{"t":" ","c":""},{"t":"2026","c":"G"}],
 };
-
+ 
 function renderHandDisplay(handId) {
   const tokens = HAND_DISPLAY[handId];
   if (!tokens) return '';
@@ -938,12 +943,12 @@ function renderHandDisplay(handId) {
     return `<span style="color:${colorMap[c]||colorMap.N};font-weight:700;letter-spacing:0.5px">${t}</span>`;
   }).join('');
 }
-
+ 
 // ============================================================
 // HAND LIBRARY — All 71 options (68 hands + missing WD + CR)
-// Card reference system: "Section Line N" or "Section Line N — left/right"
+// Card reference system: "Section Line N" or "Section Line N/right"
 // ============================================================
-
+ 
 function makeCardRef(section, line, side) {
   const sectionNames = {
     '2026':'2026','2468':'2468','any_like_numbers':'Any Like Numbers',
@@ -954,7 +959,7 @@ function makeCardRef(section, line, side) {
   const name = sectionNames[section]||section;
   return side ? `${name} Line ${line} — ${side}` : `${name} Line ${line}`;
 }
-
+ 
 const HAND_LIBRARY = [
   // ── 2026 ──────────────────────────────────────────────────
   {id:'2026_L1',section:'2026',cardRef:makeCardRef('2026',1),
@@ -999,7 +1004,7 @@ const HAND_LIBRARY = [
      {label:'West Wind',tileType:'WIND',wind:'WEST',groupType:'single',count:1},
      {label:'South Wind',tileType:'WIND',wind:'SOUTH',groupType:'single',count:1},
    ]},
-
+ 
   // ── 2468 ──────────────────────────────────────────────────
   {id:'2468_L1a',section:'2468',cardRef:makeCardRef('2468',1),
    label:'Pung-2+Pung-4+Kong-6+Kong-8 (2 suits)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
@@ -1088,7 +1093,7 @@ const HAND_LIBRARY = [
      {label:'Single 6 (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'single',count:1},
      {label:'Pung of 8s (Suit B)',tileType:'NUMBER',number:8,suit:'B',groupType:'pung',count:3},
    ]},
-
+ 
   // ── ANY LIKE NUMBERS ──────────────────────────────────────
   {id:'ALN_L1',section:'any_like_numbers',cardRef:makeCardRef('any_like_numbers',1),
    label:'FFFFFF + Kong-N + Kong-N (2 suits)',concealed:false,suitsRequired:2,flexibility:'any_like_number',
@@ -1116,7 +1121,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N (Suit C)',tileType:'NUMBER',numberFlex:'like',suit:'C',groupType:'kong',count:4},
      {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
    ]},
-
+ 
   // ── WINDS & DRAGONS ───────────────────────────────────────
   {id:'WD_L1a',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',1,'left'),
    label:'NNNN EEE WWW SSSS',concealed:false,suitsRequired:0,flexibility:'none',
@@ -1211,7 +1216,7 @@ const HAND_LIBRARY = [
      {label:'Pung of West Winds',tileType:'WIND',wind:'WEST',groupType:'pung',count:3},
      {label:'Pair of South Winds',tileType:'WIND',wind:'SOUTH',groupType:'pair',count:2},
    ]},
-
+ 
   // ── 369 ──────────────────────────────────────────────────
   {id:'369_L1a',section:'369',cardRef:makeCardRef('369',1,'left'),
    label:'Pung-3+Pung-6 (A) + Kong-6+Kong-9 (B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
@@ -1289,7 +1294,7 @@ const HAND_LIBRARY = [
      {label:'Single 6 (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'single',count:1},
      {label:'Single 9 (Suit B)',tileType:'NUMBER',number:9,suit:'B',groupType:'single',count:1},
    ]},
-
+ 
   // ── CONSECUTIVE RUN — all 13 options ─────────────────────
   {id:'CR_L1a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',1,'left'),
    label:'11 222 33 444 5555 (fixed 1-5, 1 suit)',concealed:false,suitsRequired:1,flexibility:'none',
@@ -1406,7 +1411,7 @@ const HAND_LIBRARY = [
      {label:'Pung of N+2 (Suit B)',tileType:'NUMBER',numberFlex:'consec4_pos3',suit:'B',groupType:'pung',count:3},
      {label:'Pair of N+3 (Suit C)',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'C',groupType:'pair',count:2},
    ]},
-
+ 
   // ── 13579 ─────────────────────────────────────────────────
   {id:'13579_L1a',section:'13579',cardRef:makeCardRef('13579',1,'left'),
    label:'11 333 55 777 9999 (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
@@ -1557,7 +1562,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 9s',tileType:'NUMBER',number:9,suit:'A',groupType:'pung',count:3},
      {label:'Pung of Opposing Dragon',tileType:'DRAGON',dragonRequirement:'opposing',suit:'A',groupType:'pung',count:3},
    ]},
-
+ 
   // ── QUINTS ────────────────────────────────────────────────
   {id:'QT_L1',section:'quints',cardRef:makeCardRef('quints',1),
    label:'Quint-N (A) + Kong-N (B) + Quint-N (C)',concealed:false,suitsRequired:3,flexibility:'any_like_number',
@@ -1581,7 +1586,7 @@ const HAND_LIBRARY = [
      {label:'Quint of N+1',tileType:'NUMBER',numberFlex:'consec2_pos2',suit:'A',groupType:'quint',count:5},
      {label:'Kong of Opposing Dragon',tileType:'DRAGON',dragonRequirement:'opposing',suit:'A',groupType:'kong',count:4},
    ]},
-
+ 
   // ── SINGLES & PAIRS ───────────────────────────────────────
   {id:'SP_L1',section:'singles_and_pairs',cardRef:makeCardRef('singles_and_pairs',1),
    label:'4 Wind Pairs + Like N+Dragon Singles (3 suits) — Concealed',concealed:true,suitsRequired:3,flexibility:'any_like_number',
@@ -1671,11 +1676,11 @@ const HAND_LIBRARY = [
      {label:'Single 6 (Suit C)',tileType:'NUMBER',number:6,suit:'C',groupType:'single',count:1},
    ]},
 ];
-
+ 
 // ============================================================
 // FLEXIBLE NUMBER RESOLUTION
 // ============================================================
-
+ 
 function resolveHand(handDef, flexType, values) {
   return {
     ...handDef,
@@ -1700,7 +1705,7 @@ function resolveHand(handDef, flexType, values) {
     })
   };
 }
-
+ 
 function suitComboHasConflict(handDef, suitMap) {
   // Check if any number appears in BOTH a single/pair group AND a pung/kong/quint
   // group with the same suit assignment — singles consume tiles the pung needs
@@ -1725,18 +1730,18 @@ function suitComboHasConflict(handDef, suitMap) {
   }
   return false;
 }
-
+ 
 function findBestScore(handDef, hand) {
   const suitCombos = getSuitCombos(handDef.suitsRequired||0);
   let best = null;
-
+ 
   const tryScore = (def, suitMap) => {
     // Skip combos where different suit slots map to the same suit AND
     // that causes a conflict between singles/pairs and pungs of same number
     if (suitComboHasConflict(def, suitMap)) return;
     const r = scoreHand(def, suitMap, hand);
     if (!r) return;
-
+ 
     // Priority scoring: pairs and singles MUST be filled before considering
     // callable group bonuses. A combo that fills your singles beats one that
     // leaves them empty even if the callable groups score higher.
@@ -1750,18 +1755,18 @@ function findBestScore(handDef, hand) {
       .filter(m => m.isPairSingle && m.holds > 0)
       .reduce((sum, m) => sum + m.holds, 0);
     const priorityScore = priorityTilesFull * 10 + priorityTilesPartial;
-
+ 
     // Only replace best if this combo fills MORE priority tiles,
     // OR equal priority tiles with a higher final score
     const isBetter = !best
       || priorityScore > (best._priorityScore || 0)
       || (priorityScore === (best._priorityScore || 0) && r.finalScore > best.finalScore);
-
+ 
     if (isBetter) {
       best = {...r, handDef, _priorityScore: priorityScore};
     }
   };
-
+ 
   for (const suitMap of suitCombos) {
     const flex = handDef.flexibility;
     if (flex==='any_like_number') {
@@ -1790,11 +1795,11 @@ function findBestScore(handDef, hand) {
   }
   return best;
 }
-
+ 
 // ============================================================
 // SECTION FOCUS — surface sections based on tile signals
 // ============================================================
-
+ 
 const SECTION_SIGNALS = {
   // 2026: need pair of 2s AND a 6 or White Dragon — real foundation
   '2026': h => {
@@ -1864,7 +1869,7 @@ const SECTION_SIGNALS = {
     return windPairs>=2 || dragonPairs>=2 || (windPairs>=1&&numPairs>=3);
   },
 };
-
+ 
 const SECTION_REASON = {
   '2026':           h => `Your 2s${h.dragons.WHITE?' and White Dragon':''} point straight here.`,
   '2468':           h => `You're holding ${[2,4,6,8].filter(n=>(h.numberCounts[n]?.total||0)>=1).join(', ')} — even numbers are your base.`,
@@ -1883,13 +1888,13 @@ const SECTION_REASON = {
   'quints':         h => `Two jokers means quints are in play.`,
   'singles_and_pairs': h => `Multiple pairs in hand — Singles & Pairs is worth considering.`,
 };
-
+ 
 const SECTION_DISPLAY = {
   '2026':'2026','2468':'2468 — Evens','any_like_numbers':'Any Like Numbers',
   'winds_dragons':'Winds & Dragons','369':'369','consecutive_run':'Consecutive Run',
   '13579':'13579 — Odds','quints':'Quints','singles_and_pairs':'Singles & Pairs'
 };
-
+ 
 function getSectionFocus(hand, topSections) {
   // Get all qualifying sections
   const qualifying = Object.entries(SECTION_SIGNALS)
@@ -1901,25 +1906,25 @@ function getSectionFocus(hand, topSections) {
       // Boost sections that appear in top scoring hands
       priority: topSections && topSections.includes(key) ? 1 : 0
     }));
-
+ 
   // Sort: sections matching top hands first, then in original order
   qualifying.sort((a,b) => b.priority - a.priority);
-
+ 
   return qualifying.slice(0,4);
 }
-
+ 
 // ============================================================
 // DISCARD ANALYSIS
 // ============================================================
-
+ 
 function getDiscardRecommendations(tiles, top3, hand) {
   // Score each tile's contribution to top 3 hands
   const tileScores = {};
-
+ 
   Object.entries(selectedTiles).forEach(([id, count]) => {
     const tile = ALL_TILES[id];
     if (!tile || tile.type === 'JOKER') return;
-
+ 
     let usefulIn = 0;
     top3.forEach(rec => {
       const contributes = rec.details.matched.some(m => {
@@ -1932,10 +1937,10 @@ function getDiscardRecommendations(tiles, top3, hand) {
       });
       if (contributes) usefulIn++;
     });
-
+ 
     tileScores[id] = { tile, usefulIn, count };
   });
-
+ 
   // Sort: least useful first
   return Object.entries(tileScores)
     .sort((a,b)=>a[1].usefulIn - b[1].usefulIn)
@@ -1950,13 +1955,13 @@ function getDiscardRecommendations(tiles, top3, hand) {
     })
     .filter(Boolean);
 }
-
+ 
 // ============================================================
 // OUTPUT RENDERING
 // ============================================================
-
+ 
 function formatSectionName(s) { return SECTION_DISPLAY[s]||s; }
-
+ 
 function tileLabel(t, suitMap) {
   // Resolve Suit A/B/C to actual suit name
   const suitName = s => {
@@ -1966,7 +1971,7 @@ function tileLabel(t, suitMap) {
   };
   return t.label;
 }
-
+ 
 function glanceText(hand) {
   const parts = [];
   if (hand.dominantSuit) {
@@ -1987,14 +1992,14 @@ function glanceText(hand) {
   if (hand.jokers>0) parts.push(`${hand.jokers} joker${hand.jokers>1?'s':''}`);
   return parts.join(' · ');
 }
-
+ 
 function rankRationale(rec, i, top3, hand) {
   const r = rec;
   const readyCount = r.readyToCallCount || 0;
   const buildCount = r.buildThenCallCount || 0;
   const mustDrawCount = r.details.missing.filter(m=>m.isPairSingle).length;
   const isConcealed = r.handDef.concealed;
-
+ 
   if (i === 0) {
     // #1 rationale
     if (readyCount >= 2)
@@ -2005,7 +2010,7 @@ function rankRationale(rec, i, top3, hand) {
       return `Ranked first — best tile match overall. Your gaps are claimable once you build a bit more.${isConcealed?' Note this is concealed — no calling during play.':''}`;
     return `Ranked first — best tile match overall, though everything missing must be drawn from the wall.${isConcealed?' Concealed hand adds difficulty.':''}`;
   }
-
+ 
   if (i === 1) {
     const top = top3[0];
     const fewerTiles = rec.matched < top.matched;
@@ -2017,7 +2022,7 @@ function rankRationale(rec, i, top3, hand) {
       return `Ranked second — good tile match but more of your missing tiles are in pair or single positions that must be drawn naturally.${isConcealed?' Concealed adds more difficulty.':''}`;
     return `Ranked second — solid tile match. ${buildCount>0?'Build toward your claimable groups and this hand opens up.':'Most gaps need to come from the wall.'}${isConcealed?' Concealed — no calling during play.':''}`;
   }
-
+ 
   // #3
   const top = top3[0];
   const fewerTiles = rec.matched < top.matched;
@@ -2029,16 +2034,16 @@ function rankRationale(rec, i, top3, hand) {
     return `Ranked third — fewer tiles toward this hand than your top picks, but ${readyCount} group${readyCount>1?'s are':' is'} ready to call. Worth watching.`;
   return `Ranked third — fewer tiles than your top two and gaps need building before you can call into them. Keep it in mind as your hand develops.`;
 }
-
+ 
 function pivotTriggerText(rec) {
   // Describe what kind of tiles to watch for — not specific group names
   const missing = rec.details.missing;
   if (!missing.length) return 'Watch this hand as your tiles develop.';
-
+ 
   // Collect tile hints from missing groups, prefer claimable ones
   const claimable = missing.filter(m=>m.claimState!=='mustDraw');
   const source = claimable.length ? claimable : missing;
-
+ 
   // Get unique tile types mentioned
   const hints = [...new Set(source.slice(0,2).map(m=>{
     const hint = m.tileHint;
@@ -2051,12 +2056,12 @@ function pivotTriggerText(rec) {
     if (['NORTH','SOUTH','EAST','WEST'].includes(hint)) return `${hint[0]}${hint.slice(1).toLowerCase()} Winds`;
     return hint;
   }).filter(Boolean))];
-
+ 
   const jokerNote = rec.handDef.concealed ? '' : ' or jokers';
   if (!hints.length) return 'Watch this hand as your tiles develop.';
   return `If you start pulling ${hints.join(' and/or ')}${jokerNote}, this hand moves into play.`;
 }
-
+ 
 function resolveLabel(label, suit, suitMap) {
   // Replace "Suit A/B/C" and "(A)"/"(B)"/"(C)" with actual suit names
   if (!suitMap) return label;
@@ -2070,12 +2075,12 @@ function resolveLabel(label, suit, suitMap) {
   });
   return out;
 }
-
+ 
 function formatMissingItem(m, hand, suitMap) {
   const label = resolveLabel(m.label, m.suit, suitMap);
   const partial = '';
   const base = label;
-
+ 
   if (m.claimState==='readyToCall') {
     return `${base} <span class="tag tag-call-ready">call from discard — ready</span>`;
   }
@@ -2088,16 +2093,16 @@ function formatMissingItem(m, hand, suitMap) {
   // mustDraw — pair or single
   return `${base} <span class="tag tag-draw">must draw — no calling</span>`;
 }
-
+ 
 function renderResults(hand, top3, pivots, is14) {
   // East banner
   document.getElementById('eastBanner').innerHTML = is14
     ? `<div class="east-banner">You have 14 tiles — you're East. Analyze your paths below, then discard your least useful tile to start play.</div>`
     : '';
-
+ 
   // Remove glance card — no longer used
   document.getElementById('glanceCard').innerHTML = '';
-
+ 
   // Section focus
   // Pass top hand sections so they get priority in display
   const topSections = top3.map(r => r.handDef.section);
@@ -2110,25 +2115,25 @@ function renderResults(hand, top3, pivots, is14) {
         <div class="sf-reason">${s.reason}</div>
       </div>
     </div>`).join('');
-
+ 
   document.getElementById('sectionFocus').innerHTML = `
     <div class="section-focus">
       <div class="sf-title">Your best sections</div>
       ${sfRows||'<div class="sf-reason">Hand is spread across sections — look at all options.</div>'}
     </div>`;
-
+ 
   // Top 3 hands
   const top3Container = document.getElementById('top3Container');
   top3Container.innerHTML = '';
-
+ 
   top3.forEach((rec,i) => {
     const card = document.createElement('div');
     card.className = 'rec-card';
-
+ 
     const jokerPositions = rec.handDef.groups.filter(
       g=>g.groupType!=='single'&&g.groupType!=='pair'
     ).length;
-
+ 
     // Build "You have" — fully matched groups + partial contributions
     const youHaveItems = [];
     rec.details.matched.forEach(m => {
@@ -2146,7 +2151,7 @@ function renderResults(hand, top3, pivots, is14) {
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
     const rationale = rankRationale(rec, i, top3, hand);
     const rankLabel = ['#1','#2','#3'][i];
-
+ 
     const jokerCallable = rec.details.missing.filter(m=>m.claimState==='readyWithJoker');
     const jokerNote = hand.jokers>0 && jokerCallable.length>0
       ? (hand.jokers>1
@@ -2156,7 +2161,7 @@ function renderResults(hand, top3, pivots, is14) {
     const jokerHTML = hand.jokers>0
       ? '<div class="rec-field"><strong>Joker'+(hand.jokers>1?'s':'')+'</strong> '+jokerPositions+' eligible position'+(jokerPositions!==1?'s':'')+' in this hand'+(jokerNote ? '<br><span class="joker-teaching">'+jokerNote+'</span>' : '')+'</div>'
       : '';
-
+ 
     card.innerHTML = `
       <div class="rec-header">
         <div class="rec-rank-row">
@@ -2179,10 +2184,10 @@ function renderResults(hand, top3, pivots, is14) {
         }</div>` : ''}
         ${rec.details.dragonNotes[0] ? `<div class="dragon-warn">${rec.details.dragonNotes[0]}</div>` : ''}
       </div>`;
-
+ 
     top3Container.appendChild(card);
   });
-
+ 
   // Discard first
   const discards = getDiscardRecommendations([], top3, hand);
   document.getElementById('discardCard').innerHTML = discards.length>0 ? `
@@ -2193,7 +2198,7 @@ function renderResults(hand, top3, pivots, is14) {
         These tiles don't support any of your top three paths.${hand.jokers>0?' Hold your joker.':''}
       </div>
     </div>` : '';
-
+ 
   // Pivots
   const pivotContainer = document.getElementById('pivotContainer');
   pivotContainer.innerHTML = '';
@@ -2213,39 +2218,70 @@ function renderResults(hand, top3, pivots, is14) {
         ${pivotHTML}
       </div>`;
   }
-
+ 
   document.getElementById('loadingMsg').style.display='none';
   document.getElementById('resultsContent').style.display='block';
+ 
+  // Selected tiles strip at top of results — read-only, reuses selectedTiles
+  const _stripEl = document.createElement('div');
+  _stripEl.className = 'results-hand-strip';
+  const _chipEntries = [];
+  ['BAM','CRK','DOT'].forEach(suit => {
+    for (let n=1;n<=9;n++) {
+      const id=`${suit}_${n}`, c=selectedTiles[id]||0;
+      for (let i=0;i<c;i++) _chipEntries.push({cls:suit.toLowerCase(),label:`${n}${suit[0]}`});
+    }
+  });
+  ['NORTH','EAST','WEST','SOUTH'].forEach(w=>{
+    const c=selectedTiles[w]||0;
+    for(let i=0;i<c;i++) _chipEntries.push({cls:'wind',label:w[0]});
+  });
+  ['GREEN','RED','WHITE'].forEach(d=>{
+    const c=selectedTiles[d]||0;
+    for(let i=0;i<c;i++) _chipEntries.push({cls:'dragon',label:d==='WHITE'?'Soap':d[0]+'D'});
+  });
+  for(let i=0;i<(selectedTiles['FLOWER']||0);i++) _chipEntries.push({cls:'flower',label:'F'});
+  for(let i=0;i<(selectedTiles['JOKER']||0);i++)  _chipEntries.push({cls:'joker', label:'★'});
+  _chipEntries.forEach(({cls,label})=>{
+    const ch=document.createElement('div');
+    ch.className=`tile-chip ${cls}`;
+    ch.style.cursor='default';
+    ch.textContent=label;
+    _stripEl.appendChild(ch);
+  });
+  const _rc = document.getElementById('resultsContent');
+  if (_rc) _rc.prepend(_stripEl);
+ 
 }
-
+ 
 // ============================================================
 // MAIN ANALYZE FUNCTION
 // ============================================================
-
+ 
 function analyze() {
   const total = getTotalCount();
   if (total<13||total>14) return;
-
+ 
   document.getElementById('selectScreen').classList.remove('active');
   document.getElementById('resultsScreen').classList.add('active');
   document.getElementById('loadingMsg').style.display='block';
   document.getElementById('resultsContent').style.display='none';
-
+ 
   setTimeout(()=>{
     const hand  = analyzeHand();
     const is14  = total===14;
-
+ 
     const allScores = [];
     for (const handDef of HAND_LIBRARY) {
       const best = findBestScore(handDef, hand);
       if (best) allScores.push(best);
     }
     allScores.sort((a,b)=>b.finalScore-a.finalScore);
-
+ 
     const top3     = allScores.slice(0,3);
     const threshold= (top3[2]?.finalScore||0)*0.75;
     const pivots   = allScores.slice(3).filter(h=>h.finalScore>=Math.max(threshold,8)).slice(0,3);
-
+ 
     try {
       renderResults(hand, top3, pivots, is14);
     } catch(e) {
@@ -2255,22 +2291,22 @@ function analyze() {
     }
   },400);
 }
-
+ 
 function resetApp() {
   Object.keys(selectedTiles).forEach(k=>delete selectedTiles[k]);
   updateUI();
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
 }
-
+ 
 function editHand() {
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
 }
-
+ 
 updateUI();
-
+ 
 </script>
-
+ 
 </body>
 </html>
