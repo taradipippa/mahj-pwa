@@ -359,7 +359,7 @@ function updateUI() {
   updateStrip();
   const btn = document.getElementById('analyzeBtn');
   if (total === 13 || total === 14) {
-    btn.className = 'analyze-btn ready';
+    btn.className = 'analyze-btn enabled';
     btn.textContent = total === 14 ? 'Analyze (East — 14 tiles)' : 'Analyze My Hand';
   } else {
     btn.className = 'analyze-btn disabled';
