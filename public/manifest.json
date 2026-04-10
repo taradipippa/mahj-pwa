@@ -1,6 +1,6 @@
 {
   "name": "Mahjong Hand Analyzer",
-  "short_name": "Mahj",
+  "short_name": "Hand Analyzer",
   "description": "2026 American Mahjong hand advisor",
   "start_url": "/",
   "display": "standalone",
