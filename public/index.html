@@ -150,6 +150,7 @@ body{padding-top:env(safe-area-inset-top)}
 .tag-ready{background:rgba(26,96,32,.12);color:var(--green)}
 .tag-joker{background:rgba(26,48,96,.12);color:var(--blue)}
 .tag-build{background:rgba(196,160,64,.15);color:#8a6010}
+.tag-draw{background:rgba(80,60,40,.1);color:#6a5030}
 .rationale{font-style:italic;color:var(--ink3);font-size:12px;border-top:1px solid var(--bone2);padding-top:9px;margin-top:2px}
 .joker-teaching{display:block;font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic;line-height:1.5}
 .concealed-note{font-size:12px;color:var(--ink2);background:rgba(26,20,16,.05);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5}
@@ -1012,7 +1013,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'kong',count:4},
      {label:'Kong of 8s (Suit B)',tileType:'NUMBER',number:8,suit:'B',groupType:'kong',count:4},
    ]},
-  {id:'2468_L1b',section:'2468',cardRef:makeCardRef('2468',1,'right'),
+  {id:'2468_L1b',section:'2468',cardRef:makeCardRef('2468',1,''),
    label:'Pung-2+Pung-4+Kong-6+Kong-8 (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'Pung of 2s',tileType:'NUMBER',number:2,suit:'A',groupType:'pung',count:3},
@@ -1121,7 +1122,7 @@ const HAND_LIBRARY = [
    ]},
 
   // ── WINDS & DRAGONS ───────────────────────────────────────
-  {id:'WD_L1a',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',1,'left'),
+  {id:'WD_L1a',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',1,''),
    label:'NNNN EEE WWW SSSS',concealed:false,suitsRequired:0,flexibility:'none',
    groups:[
      {label:'Kong of North',tileType:'WIND',wind:'NORTH',groupType:'kong',count:4},
@@ -1129,7 +1130,7 @@ const HAND_LIBRARY = [
      {label:'Pung of West',tileType:'WIND',wind:'WEST',groupType:'pung',count:3},
      {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
    ]},
-  {id:'WD_L1b',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',1,'right'),
+  {id:'WD_L1b',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',1,''),
    label:'NNN EEEE WWWW SSS',concealed:false,suitsRequired:0,flexibility:'none',
    groups:[
      {label:'Pung of North',tileType:'WIND',wind:'NORTH',groupType:'pung',count:3},
@@ -1184,7 +1185,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N+3',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'A',groupType:'kong',count:4},
      {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
    ]},
-  {id:'WD_L7a',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,'left'),
+  {id:'WD_L7a',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
    label:'FF + NNNN + SSSS + Dragon Pair + Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
@@ -1193,7 +1194,7 @@ const HAND_LIBRARY = [
      {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
      {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
    ]},
-  {id:'WD_L7b',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,'right'),
+  {id:'WD_L7b',section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
    label:'FF + EEEE + WWWW + Dragon Pair + Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
@@ -1216,7 +1217,7 @@ const HAND_LIBRARY = [
    ]},
 
   // ── 369 ──────────────────────────────────────────────────
-  {id:'369_L1a',section:'369',cardRef:makeCardRef('369',1,'left'),
+  {id:'369_L1a',section:'369',cardRef:makeCardRef('369',1,''),
    label:'Pung-3+Pung-6 (A) + Kong-6+Kong-9 (B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'Pung of 3s (Suit A)',tileType:'NUMBER',number:3,suit:'A',groupType:'pung',count:3},
@@ -1224,7 +1225,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'kong',count:4},
      {label:'Kong of 9s (Suit B)',tileType:'NUMBER',number:9,suit:'B',groupType:'kong',count:4},
    ]},
-  {id:'369_L1b',section:'369',cardRef:makeCardRef('369',1,'right'),
+  {id:'369_L1b',section:'369',cardRef:makeCardRef('369',1,''),
    label:'Pung-3+Pung-6 (A) + Kong-6 (B) + Kong-9 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'Pung of 3s (Suit A)',tileType:'NUMBER',number:3,suit:'A',groupType:'pung',count:3},
@@ -1241,7 +1242,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'pung',count:3},
      {label:'Kong of 9s (Suit C)',tileType:'NUMBER',number:9,suit:'C',groupType:'kong',count:4},
    ]},
-  {id:'369_L3a',section:'369',cardRef:makeCardRef('369',3,'left'),
+  {id:'369_L3a',section:'369',cardRef:makeCardRef('369',3,''),
    label:'FFF + Pair-3+Pung-6+Pair-9 + Matching Dragon Kong',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1250,7 +1251,7 @@ const HAND_LIBRARY = [
      {label:'Pair of 9s',tileType:'NUMBER',number:9,suit:'A',groupType:'pair',count:2},
      {label:'Kong of Matching Dragon',tileType:'DRAGON',dragonRequirement:'matching',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'369_L3b',section:'369',cardRef:makeCardRef('369',3,'right'),
+  {id:'369_L3b',section:'369',cardRef:makeCardRef('369',3,''),
    label:'FFF + Pair-3+Pung-6+Pair-9 + Opposing Dragon Kong',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1294,7 +1295,7 @@ const HAND_LIBRARY = [
    ]},
 
   // ── CONSECUTIVE RUN — all 13 options ─────────────────────
-  {id:'CR_L1a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',1,'left'),
+  {id:'CR_L1a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',1,''),
    label:'11 222 33 444 5555 (fixed 1-5, 1 suit)',concealed:false,suitsRequired:1,flexibility:'none',
    groups:[
      {label:'Pair of 1s',tileType:'NUMBER',number:1,suit:'A',groupType:'pair',count:2},
@@ -1303,7 +1304,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 4s',tileType:'NUMBER',number:4,suit:'A',groupType:'pung',count:3},
      {label:'Kong of 5s',tileType:'NUMBER',number:5,suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L1b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',1,'right'),
+  {id:'CR_L1b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',1,''),
    label:'55 666 77 888 9999 (fixed 5-9, 1 suit)',concealed:false,suitsRequired:1,flexibility:'none',
    groups:[
      {label:'Pair of 5s',tileType:'NUMBER',number:5,suit:'A',groupType:'pair',count:2},
@@ -1312,7 +1313,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 8s',tileType:'NUMBER',number:8,suit:'A',groupType:'pung',count:3},
      {label:'Kong of 9s',tileType:'NUMBER',number:9,suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L2a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',2,'left'),
+  {id:'CR_L2a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',2,''),
    label:'FFF + outer Kongs + inner Singles (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:5,
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1322,7 +1323,7 @@ const HAND_LIBRARY = [
      {label:'Single N+3 (Suit A)',tileType:'NUMBER',numberFlex:'consec5_inner3',suit:'A',groupType:'single',count:1},
      {label:'Kong of N+4 (Suit A)',tileType:'NUMBER',numberFlex:'consec5_outer2',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L2b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',2,'right'),
+  {id:'CR_L2b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',2,''),
    label:'FFF + outer Kongs (Suit A) + inner Singles (Suit B)',concealed:false,suitsRequired:2,flexibility:'any_consecutive',runLength:5,
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1341,7 +1342,7 @@ const HAND_LIBRARY = [
      {label:'Pung of N+1 (Suit B)',tileType:'NUMBER',numberFlex:'consec3_pos2',suit:'B',groupType:'pung',count:3},
      {label:'Kong of N+2 (Suit C)',tileType:'NUMBER',numberFlex:'consec3_pos3',suit:'C',groupType:'kong',count:4},
    ]},
-  {id:'CR_L4a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',4,'left'),
+  {id:'CR_L4a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',4,''),
    label:'Pung+Pung+Kong+Kong (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
    groups:[
      {label:'Pung of N',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'pung',count:3},
@@ -1349,7 +1350,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N+2',tileType:'NUMBER',numberFlex:'consec4_pos3',suit:'A',groupType:'kong',count:4},
      {label:'Kong of N+3',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L4b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',4,'right'),
+  {id:'CR_L4b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',4,''),
    label:'Pungs (Suit A) + Kongs (Suit B)',concealed:false,suitsRequired:2,flexibility:'any_consecutive',runLength:4,
    groups:[
      {label:'Pung of N (Suit A)',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'pung',count:3},
@@ -1357,7 +1358,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N+2 (Suit B)',tileType:'NUMBER',numberFlex:'consec4_pos3',suit:'B',groupType:'kong',count:4},
      {label:'Kong of N+3 (Suit B)',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'B',groupType:'kong',count:4},
    ]},
-  {id:'CR_L5a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',5,'left'),
+  {id:'CR_L5a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',5,''),
    label:'FFF + Pair-N + Pair-N+1 + Pung-N+2 + Dragon Kong (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:3,
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1366,7 +1367,7 @@ const HAND_LIBRARY = [
      {label:'Pung of N+2 (Suit A)',tileType:'NUMBER',numberFlex:'consec3_pos3',suit:'A',groupType:'pung',count:3},
      {label:'Kong of Matching Dragon (Suit A)',tileType:'DRAGON',dragonRequirement:'matching',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L5b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',5,'right'),
+  {id:'CR_L5b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',5,''),
    label:'FFF + Pair-N+Pung-N+2 (Suit A) + Pair-N+1+Dragon Kong (Suit B)',concealed:false,suitsRequired:2,flexibility:'any_consecutive',runLength:3,
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1382,7 +1383,7 @@ const HAND_LIBRARY = [
      {label:'6 Flowers',tileType:'FLOWER',groupType:'kong',count:6},
      {label:'Kong of N+1',tileType:'NUMBER',numberFlex:'consec2_pos2',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L7a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',7,'left'),
+  {id:'CR_L7a',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',7,''),
    label:'FF + Kong-N + Kong-N+1 + Kong-N+2 (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:3,
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
@@ -1390,7 +1391,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N+1 (Suit A)',tileType:'NUMBER',numberFlex:'consec3_pos2',suit:'A',groupType:'kong',count:4},
      {label:'Kong of N+2 (Suit A)',tileType:'NUMBER',numberFlex:'consec3_pos3',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'CR_L7b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',7,'right'),
+  {id:'CR_L7b',section:'consecutive_run',cardRef:makeCardRef('consecutive_run',7,''),
    label:'FF + Kong-N (A) + Kong-N+1 (B) + Kong-N+2 (C)',concealed:false,suitsRequired:3,flexibility:'any_consecutive',runLength:3,
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
@@ -1411,7 +1412,7 @@ const HAND_LIBRARY = [
    ]},
 
   // ── 13579 ─────────────────────────────────────────────────
-  {id:'13579_L1a',section:'13579',cardRef:makeCardRef('13579',1,'left'),
+  {id:'13579_L1a',section:'13579',cardRef:makeCardRef('13579',1,''),
    label:'11 333 55 777 9999 (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'Pair of 1s',tileType:'NUMBER',number:1,suit:'A',groupType:'pair',count:2},
@@ -1420,7 +1421,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 7s',tileType:'NUMBER',number:7,suit:'A',groupType:'pung',count:3},
      {label:'Kong of 9s',tileType:'NUMBER',number:9,suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'13579_L1b',section:'13579',cardRef:makeCardRef('13579',1,'right'),
+  {id:'13579_L1b',section:'13579',cardRef:makeCardRef('13579',1,''),
    label:'11 333 55 777 9999 (3 suits)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'Pair of 1s (Suit A)',tileType:'NUMBER',number:1,suit:'A',groupType:'pair',count:2},
@@ -1429,7 +1430,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 7s (Suit B)',tileType:'NUMBER',number:7,suit:'B',groupType:'pung',count:3},
      {label:'Kong of 9s (Suit C)',tileType:'NUMBER',number:9,suit:'C',groupType:'kong',count:4},
    ]},
-  {id:'13579_L2a',section:'13579',cardRef:makeCardRef('13579',2,'left'),
+  {id:'13579_L2a',section:'13579',cardRef:makeCardRef('13579',2,''),
    label:'Pung-1+Pung-3 (A) + Kong-3+Kong-5 (B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'Pung of 1s (Suit A)',tileType:'NUMBER',number:1,suit:'A',groupType:'pung',count:3},
@@ -1437,7 +1438,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 3s (Suit B)',tileType:'NUMBER',number:3,suit:'B',groupType:'kong',count:4},
      {label:'Kong of 5s (Suit B)',tileType:'NUMBER',number:5,suit:'B',groupType:'kong',count:4},
    ]},
-  {id:'13579_L2b',section:'13579',cardRef:makeCardRef('13579',2,'right'),
+  {id:'13579_L2b',section:'13579',cardRef:makeCardRef('13579',2,''),
    label:'Pung-5+Pung-7 (A) + Kong-7+Kong-9 (B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'Pung of 5s (Suit A)',tileType:'NUMBER',number:5,suit:'A',groupType:'pung',count:3},
@@ -1445,7 +1446,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 7s (Suit B)',tileType:'NUMBER',number:7,suit:'B',groupType:'kong',count:4},
      {label:'Kong of 9s (Suit B)',tileType:'NUMBER',number:9,suit:'B',groupType:'kong',count:4},
    ]},
-  {id:'13579_L3a',section:'13579',cardRef:makeCardRef('13579',3,'left'),
+  {id:'13579_L3a',section:'13579',cardRef:makeCardRef('13579',3,''),
    label:'NN + Kong-1+Pair-3+Kong-5 + SS (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'Pair of North Winds',tileType:'WIND',wind:'NORTH',groupType:'pair',count:2},
@@ -1454,7 +1455,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 5s',tileType:'NUMBER',number:5,suit:'A',groupType:'kong',count:4},
      {label:'Pair of South Winds',tileType:'WIND',wind:'SOUTH',groupType:'pair',count:2},
    ]},
-  {id:'13579_L3b',section:'13579',cardRef:makeCardRef('13579',3,'right'),
+  {id:'13579_L3b',section:'13579',cardRef:makeCardRef('13579',3,''),
    label:'NN + Kong-5+Pair-7+Kong-9 + SS (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'Pair of North Winds',tileType:'WIND',wind:'NORTH',groupType:'pair',count:2},
@@ -1475,7 +1476,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N (Suit B)',tileType:'NUMBER',numberFlex:'odd_float_kong',suit:'B',groupType:'kong',count:4},
      {label:'Kong of N (Suit C)',tileType:'NUMBER',numberFlex:'odd_float_kong',suit:'C',groupType:'kong',count:4},
    ]},
-  {id:'13579_L5a',section:'13579',cardRef:makeCardRef('13579',5,'left'),
+  {id:'13579_L5a',section:'13579',cardRef:makeCardRef('13579',5,''),
    label:'FFF + Pair-1+Pair-3+Pung-5 + Matching Dragon Kong (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1484,7 +1485,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 5s',tileType:'NUMBER',number:5,suit:'A',groupType:'pung',count:3},
      {label:'Kong of Matching Dragon',tileType:'DRAGON',dragonRequirement:'matching',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'13579_L5b',section:'13579',cardRef:makeCardRef('13579',5,'right'),
+  {id:'13579_L5b',section:'13579',cardRef:makeCardRef('13579',5,''),
    label:'FFF + Pair-5+Pair-7+Pung-9 + Matching Dragon Kong (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
@@ -1493,7 +1494,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 9s',tileType:'NUMBER',number:9,suit:'A',groupType:'pung',count:3},
      {label:'Kong of Matching Dragon',tileType:'DRAGON',dragonRequirement:'matching',suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'13579_L6a',section:'13579',cardRef:makeCardRef('13579',6,'left'),
+  {id:'13579_L6a',section:'13579',cardRef:makeCardRef('13579',6,''),
    label:'Pair-1+Pair-3 (A) + Pung-1+Pung-3 (B) + Kong-5 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'Pair of 1s (Suit A)',tileType:'NUMBER',number:1,suit:'A',groupType:'pair',count:2},
@@ -1502,7 +1503,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 3s (Suit B)',tileType:'NUMBER',number:3,suit:'B',groupType:'pung',count:3},
      {label:'Kong of 5s (Suit C)',tileType:'NUMBER',number:5,suit:'C',groupType:'kong',count:4},
    ]},
-  {id:'13579_L6b',section:'13579',cardRef:makeCardRef('13579',6,'right'),
+  {id:'13579_L6b',section:'13579',cardRef:makeCardRef('13579',6,''),
    label:'Pair-5+Pair-7 (A) + Pung-5+Pung-7 (B) + Kong-9 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'Pair of 5s (Suit A)',tileType:'NUMBER',number:5,suit:'A',groupType:'pair',count:2},
@@ -1511,7 +1512,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 7s (Suit B)',tileType:'NUMBER',number:7,suit:'B',groupType:'pung',count:3},
      {label:'Kong of 9s (Suit C)',tileType:'NUMBER',number:9,suit:'C',groupType:'kong',count:4},
    ]},
-  {id:'13579_L7a',section:'13579',cardRef:makeCardRef('13579',7,'left'),
+  {id:'13579_L7a',section:'13579',cardRef:makeCardRef('13579',7,''),
    label:'Kong-1+Pair-3+Pair-5+Pair-7+Kong-9 (1 suit)',concealed:false,suitsRequired:1,flexibility:'suit_assignment',
    groups:[
      {label:'Kong of 1s',tileType:'NUMBER',number:1,suit:'A',groupType:'kong',count:4},
@@ -1520,7 +1521,7 @@ const HAND_LIBRARY = [
      {label:'Pair of 7s',tileType:'NUMBER',number:7,suit:'A',groupType:'pair',count:2},
      {label:'Kong of 9s',tileType:'NUMBER',number:9,suit:'A',groupType:'kong',count:4},
    ]},
-  {id:'13579_L7b',section:'13579',cardRef:makeCardRef('13579',7,'right'),
+  {id:'13579_L7b',section:'13579',cardRef:makeCardRef('13579',7,''),
    label:'Kong-1+Kong-9 (A) + Pair-3+Pair-5+Pair-7 (B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'Kong of 1s (Suit A)',tileType:'NUMBER',number:1,suit:'A',groupType:'kong',count:4},
@@ -1529,7 +1530,7 @@ const HAND_LIBRARY = [
      {label:'Pair of 5s (Suit B)',tileType:'NUMBER',number:5,suit:'B',groupType:'pair',count:2},
      {label:'Pair of 7s (Suit B)',tileType:'NUMBER',number:7,suit:'B',groupType:'pair',count:2},
    ]},
-  {id:'13579_L8a',section:'13579',cardRef:makeCardRef('13579',8,'left'),
+  {id:'13579_L8a',section:'13579',cardRef:makeCardRef('13579',8,''),
    label:'FF + Pair-1+Pair-3+Pair-5 (A) + Pung-1 (B) + Pung-1 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
@@ -1539,7 +1540,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 1s (Suit B)',tileType:'NUMBER',number:1,suit:'B',groupType:'pung',count:3},
      {label:'Pung of 1s (Suit C)',tileType:'NUMBER',number:1,suit:'C',groupType:'pung',count:3},
    ]},
-  {id:'13579_L8b',section:'13579',cardRef:makeCardRef('13579',8,'right'),
+  {id:'13579_L8b',section:'13579',cardRef:makeCardRef('13579',8,''),
    label:'FF + Pair-5+Pair-7+Pair-9 (A) + Pung-5 (B) + Pung-5 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
@@ -1895,7 +1896,7 @@ const SECTION_REASON = {
   '369':            h => `You're holding ${[3,6,9].filter(n=>(h.numberCounts[n]?.total||0)>=1).join(', ')} — the building blocks of this section.`,
   'consecutive_run':h => `Your tiles run in sequence — Consecutive Run rewards that.`,
   '13579':          h => `You've got ${[1,3,5,7,9].filter(n=>(h.numberCounts[n]?.total||0)>=1).join(', ')} — odd numbers are your strength here.`,
-  'quints':         h => `Two jokers means quints are in play.`,
+  'quints':         h => `${h.jokers} joker${h.jokers!==1?'s':''} in hand — quints are in play.`,
   'singles_and_pairs': h => `Multiple pairs in hand — Singles & Pairs is worth considering.`,
 };
 
@@ -2073,35 +2074,70 @@ function pivotTriggerText(rec) {
 }
 
 function resolveLabel(label, suit, suitMap) {
-  // Replace "Suit A/B/C" and "(A)"/"(B)"/"(C)" with actual suit names
-  if (!suitMap) return label;
+  if (!suitMap && !suit) return label;
   let out = label;
-  Object.entries(suitMap).forEach(([key, val]) => {
-    const suitName = val==='BAM'?'Bam':val==='CRK'?'Crack':val==='DOT'?'Dot':val;
-    // Simple string replacement — no regex needed, "Suit A" is a literal string
-    out = out.split('Suit ' + key).join(suitName);
-    // Replace "(A)" "(B)" "(C)" standalone
-    out = out.split('(' + key + ')').join('(' + suitName + ')');
-  });
+  const suitDisplay = v => v==='BAM'?'Bam':v==='CRK'?'Crack':v==='DOT'?'Dot':v;
+  if (suitMap) {
+    Object.entries(suitMap).forEach(([key, val]) => {
+      const name = suitDisplay(val);
+      out = out.split('Suit ' + key).join(name);
+      out = out.split('(' + key + ')').join('(' + name + ')');
+      out = out.split('Rank ' + key).join(name);
+      // Replace standalone key letter when it appears as suit reference
+      out = out.replace(new RegExp('\\bSuit\\s+' + key + '\\b', 'g'), name);
+    });
+  }
+  if (suit) {
+    const name = suitDisplay(suit);
+    out = out.replace(/\bSuit [ABC]\b/g, name);
+    out = out.replace(/\bRank [ABC]\b/g, name);
+  }
+  // Clean up N+1, N+2 style labels — these should already be resolved numbers
+  // but strip any remaining flex notation
+  out = out.replace(/\bN\+\d\b/g, '');
+  // Remove left/right
+  out = out.replace(/\s*—\s*(left|right)\b/gi, '');
   return out;
 }
 
 function formatMissingItem(m, hand, suitMap) {
   const label = resolveLabel(m.label, m.suit, suitMap);
-  const partial = '';
-  const base = label;
+  const need = m.need;
+  const holds = m.holds;
+  const total = m.groupType==='quint'?5:m.groupType==='kong'?4:m.groupType==='pung'?3:m.groupType==='pair'?2:1;
 
+  // Build hold description
+  let holdStr = '';
+  if (holds > 0 && need > 0) {
+    holdStr = ` — you have ${holds} of ${total}`;
+  } else if (holds === 0) {
+    holdStr = ` — you have none`;
+  }
+
+  // Build acquisition description
+  let howStr = '';
   if (m.claimState==='readyToCall') {
-    return `${base} <span class="tag tag-call-ready">call from discard — ready</span>`;
+    howStr = hand.jokers > 0
+      ? 'call from discard, draw, or use a joker'
+      : 'call from discard or draw';
+  } else if (m.claimState==='readyWithJoker') {
+    howStr = 'call from discard if you place your joker here';
+  } else if (m.claimState==='pullMoreThenCall') {
+    howStr = hand.jokers > 0
+      ? 'draw more tiles first, then call or use a joker'
+      : 'draw more tiles first, then call';
+  } else {
+    // mustDraw — pair or single
+    howStr = 'must draw from wall';
   }
-  if (m.claimState==='readyWithJoker') {
-    return `${base} <span class="tag tag-call-joker">call from discard — ready if you place your joker here</span>`;
-  }
-  if (m.claimState==='pullMoreThenCall') {
-    return `${base} <span class="tag tag-call-build">pull more tiles first, then call</span>`;
-  }
-  // mustDraw — pair or single
-  return `${base} <span class="tag tag-draw">must draw — no calling</span>`;
+
+  // Color the tag by urgency
+  const tagCls = m.claimState==='readyToCall' ? 'tag-ready'
+               : m.claimState==='readyWithJoker' ? 'tag-joker'
+               : m.claimState==='pullMoreThenCall' ? 'tag-build'
+               : 'tag-draw';
+
+  return `${label}${holdStr} <span class="tag ${tagCls}">${howStr}</span>`;
 }
 
 function renderResults(hand, top3, pivots, is14) {
@@ -2159,6 +2195,12 @@ function renderResults(hand, top3, pivots, is14) {
     });
     const youHave = youHaveItems.join(', ');
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
+
+    // Compute joker-adjusted matched count
+    // Jokers count toward claimable groups only (not pairs/singles)
+    const claimableInHand = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+    const jokerContribution = claimableInHand > 0 ? hand.jokers : 0;
+    const adjustedMatched = Math.min(rec.matched + jokerContribution, rec.total);
     const rationale = rankRationale(rec, i, top3, hand);
     const rankLabel = ['#1','#2','#3'][i];
 
@@ -2181,7 +2223,7 @@ function renderResults(hand, top3, pivots, is14) {
         </div>
         <div class="card-ref">${rec.handDef.cardRef}</div>
         <div class="hand-display">${renderHandDisplay(rec.handDef.id)}</div>
-        <div class="tiles-matched">${rec.matched} of ${rec.total} tiles</div>
+        <div class="tiles-matched">${adjustedMatched} of ${rec.total} tiles</div>
       </div>
       <div class="rec-body">
         ${youHave ? `<div class="rec-field"><strong>You have</strong> ${youHave}</div>` : ''}
