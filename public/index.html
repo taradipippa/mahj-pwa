@@ -2250,27 +2250,61 @@ function renderResults(hand, top3, pivots, is14) {
       }).join('');
     }
 
+    // Build "You Have" — individual tile chips, no group language
+    // Each chip = one tile. Show matched tiles + partial holds as actual tiles.
+    function getTileChipLabel(m, suitMap) {
+      const suit = m.suit ? suitMap[m.suit] : null;
+      const suitShort = suit==='BAM'?'B':suit==='CRK'?'C':suit==='DOT'?'D':null;
+      if (m.tileType==='NUMBER' && m.number && suitShort) return `${m.number}${suitShort}`;
+      if (m.tileType==='FLOWER') return 'F';
+      if (m.tileType==='JOKER') return '★';
+      if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
+      if (m.tileType==='DRAGON') {
+        if (m.dragon==='GREEN') return 'GD';
+        if (m.dragon==='RED')   return 'RD';
+        if (m.dragon==='WHITE') return 'Soap';
+        // Resolved from suit
+        if (suit==='BAM') return 'GD';
+        if (suit==='CRK') return 'RD';
+        if (suit==='DOT') return 'Soap';
+        return 'D';
+      }
+      return '?';
+    }
+
+    function getTileCls(m) {
+      if (m.suit==='BAM') return 'bam';
+      if (m.suit==='CRK') return 'crk';
+      if (m.suit==='DOT') return 'dot';
+      if (m.tileType==='WIND') return 'wind';
+      if (m.tileType==='DRAGON') return 'dragon';
+      if (m.tileType==='FLOWER') return 'flower';
+      if (m.tileType==='JOKER') return 'joker';
+      return 'neutral';
+    }
+
     const youHaveChipData = [];
-    // Fully matched groups
+    // Fully matched groups — one chip per tile
     rec.details.matched.forEach(m => {
-      const label = resolveLabel(m.label, m.suit, rec.suitMap);
-      const cls = m.suit==='BAM'?'bam':m.suit==='CRK'?'crk':m.suit==='DOT'?'dot':
-                  m.tileType==='WIND'?'wind':m.tileType==='DRAGON'?'dragon':
-                  m.tileType==='FLOWER'?'flower':'neutral';
       const count = m.groupType==='quint'?5:m.groupType==='kong'?4:
                     m.groupType==='pung'?3:m.groupType==='pair'?2:1;
+      const label = getTileChipLabel(m, rec.suitMap);
+      const cls   = getTileCls(m);
       youHaveChipData.push({label, cls, count});
     });
-    // Partial holds from missing groups
+    // Partial holds — one chip per tile held
     rec.details.missing.forEach(m => {
       if (m.holds > 0) {
-        const label = resolveLabel(m.label, m.suit, rec.suitMap);
-        const cls = m.suit==='BAM'?'bam':m.suit==='CRK'?'crk':m.suit==='DOT'?'dot':
-                    m.tileType==='WIND'?'wind':m.tileType==='DRAGON'?'dragon':
-                    m.tileType==='FLOWER'?'flower':'neutral';
+        const label = getTileChipLabel(m, rec.suitMap);
+        const cls   = getTileCls(m);
         youHaveChipData.push({label, cls, count: m.holds});
       }
     });
+    // Jokers — show if hand has claimable groups
+    const claimableGroupCount = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+    if (hand.jokers > 0 && claimableGroupCount > 0) {
+      for (let j=0; j<hand.jokers; j++) youHaveChipData.push({label:'★', cls:'joker', count:1});
+    }
     const youHave = makeTileChips(youHaveChipData);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
