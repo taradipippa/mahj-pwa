@@ -172,6 +172,19 @@ body{padding-top:env(safe-area-inset-top)}
 #loadingMsg{padding:40px 20px;text-align:center;color:var(--ink3);font-size:14px}
 /* ── MISC ────────────────────────────────────────── */
 .section-divider{height:1px;background:var(--bone2);margin:4px 0 14px}
+/* You Have chips */
+.yhave-row{display:flex;flex-direction:column;gap:6px}
+.yhave-chips{display:flex;flex-wrap:wrap;gap:3px}
+.yhave-chip{display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888}
+.yhave-chip.bam{background:#d4eecc;border-color:#a8d4a0;color:#1e6018}
+.yhave-chip.crk{background:#fde0dc;border-color:#f4b8b0;color:#b01808}
+.yhave-chip.dot{background:#d8e8f8;border-color:#a8c8e8;color:#1430a0}
+.yhave-chip.wind,.yhave-chip.dragon,.yhave-chip.flower{background:#e8e4f4;border-color:#c8c0e4;color:#3a2880}
+.yhave-chip.neutral{background:#f0e8d8;border-color:#d4c8a8;color:var(--ink2)}
+/* Alt suit note */
+.alt-suit-note{font-size:11px;color:var(--ink3);font-style:italic;margin-bottom:6px}
+/* Scatter message */
+.sf-scatter{font-style:italic;color:var(--ink3)}
 </style>
 </head>
 <body>
@@ -859,87 +872,108 @@ function scoreHand(handDef, suitMap, hand) {
            readyToCallCount, buildThenCallCount };
 }
 const HAND_DISPLAY = {
-  "2026_L1": [{"t":"222","c":"G"},{"t":" ","c":""},{"t":"DDD","c":"R"},{"t":" ","c":""},{"t":"2222","c":"N"},{"t":" ","c":""},{"t":"6666","c":"G"}],
-  "2026_L2": [{"t":"2","c":"G"},{"t":" ","c":""},{"t":"0","c":"R"},{"t":"2","c":"G"},{"t":"6","c":"R"},{"t":" ","c":""},{"t":"DDD","c":"N"},{"t":" ","c":""},{"t":"2222","c":"G"},{"t":" ","c":""},{"t":"DDD","c":"R"}],
-  "2026_L3": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"2","c":"R"},{"t":"0","c":"N"},{"t":"2","c":"R"},{"t":"6","c":"N"},{"t":" ","c":""},{"t":"222","c":"R"},{"t":" ","c":""},{"t":"6666","c":"N"}],
-  "2026_L4": [{"t":"22","c":"G"},{"t":" ","c":""},{"t":"00","c":"R"},{"t":" ","c":""},{"t":"222","c":"N"},{"t":" ","c":""},{"t":"666","c":"G"},{"t":" ","c":""},{"t":"NEWS","c":"R"}],
-  "2468_L1a": [{"t":"222","c":"G"},{"t":" ","c":""},{"t":"444","c":"R"},{"t":" ","c":""},{"t":"6666","c":"N"},{"t":" ","c":""},{"t":"8888","c":"G"}],
-  "2468_L1b": [{"t":"222","c":"G"},{"t":" ","c":""},{"t":"444","c":"R"},{"t":" ","c":""},{"t":"6666","c":"N"},{"t":" ","c":""},{"t":"8888","c":"G"}],
-  "2468_L2": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"2222","c":"R"},{"t":" ","c":""},{"t":"8888","c":"N"},{"t":" ","c":""},{"t":"44","c":"G"},{"t":" ","c":""},{"t":"66","c":"R"}],
-  "2468_L3": [{"t":"EE","c":"G"},{"t":" ","c":""},{"t":"22","c":"R"},{"t":" ","c":""},{"t":"444","c":"N"},{"t":" ","c":""},{"t":"666","c":"G"},{"t":" ","c":""},{"t":"88","c":"R"},{"t":" ","c":""},{"t":"WW","c":"N"}],
-  "2468_L4": [{"t":"2222","c":"G"},{"t":" ","c":""},{"t":"DDD","c":"R"},{"t":" ","c":""},{"t":"8888","c":"N"},{"t":" ","c":""},{"t":"DDD","c":"G"}],
-  "2468_L5": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"22","c":"R"},{"t":" ","c":""},{"t":"44","c":"N"},{"t":" ","c":""},{"t":"666","c":"G"},{"t":" ","c":""},{"t":"8888","c":"R"}],
-  "2468_L6": [{"t":"2468","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"D","c":"N"},{"t":" ","c":""},{"t":"NNNN","c":"G"},{"t":" ","c":""},{"t":"D","c":"R"}],
-  "2468_L7": [{"t":"FFFFFF","c":"G"},{"t":" ","c":""},{"t":"2468","c":"R"},{"t":" ","c":""},{"t":"NNNN","c":"N"}],
-  "2468_L8": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"2468","c":"R"},{"t":" ","c":""},{"t":"2468","c":"N"}],
-  "ALN_L1": [{"t":"FFFFFF","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"NNNN","c":"N"}],
-  "ALN_L2": [{"t":"NNNN","c":"G"},{"t":" ","c":""},{"t":"D","c":"R"},{"t":" ","c":""},{"t":"NNN","c":"N"},{"t":" ","c":""},{"t":"D","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"D","c":"N"}],
-  "ALN_L3": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"NN","c":"N"},{"t":" ","c":""},{"t":"NNNN","c":"G"},{"t":" ","c":""},{"t":"DD","c":"R"}],
+  "2026_L1": [{"t": "222", "c": "G"}, {"t": " ", "c": ""}, {"t": "000", "c": ""}, {"t": " ", "c": ""}, {"t": "2222", "c": "R"}, {"t": " ", "c": ""}, {"t": "6666", "c": "R"}],
+  "2026_L2": [{"t": "2", "c": "G"}, {"t": "0", "c": "G"}, {"t": "2", "c": "G"}, {"t": "6", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDD", "c": "G"}, {"t": " ", "c": ""}, {"t": "2222", "c": "R"}, {"t": " ", "c": ""}, {"t": "DDD", "c": "R"}],
+  "2026_L3": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "2", "c": "G"}, {"t": "0", "c": "G"}, {"t": "2", "c": "G"}, {"t": "6", "c": "G"}, {"t": " ", "c": ""}, {"t": "222", "c": "R"}, {"t": " ", "c": ""}, {"t": "6666", "c": ""}],
+  "2026_L4": [{"t": "22", "c": "G"}, {"t": " ", "c": ""}, {"t": "00", "c": ""}, {"t": " ", "c": ""}, {"t": "222", "c": "R"}, {"t": " ", "c": ""}, {"t": "666", "c": "R"}, {"t": " ", "c": ""}, {"t": "NEWS", "c": ""}],
+  "2468_L1a": [{"t": "222", "c": "G"}, {"t": " ", "c": ""}, {"t": "444", "c": "G"}, {"t": " ", "c": ""}, {"t": "6666", "c": "R"}, {"t": " ", "c": ""}, {"t": "8888", "c": "R"}],
+  "2468_L1b": [{"t": "222", "c": ""}, {"t": " ", "c": ""}, {"t": "444", "c": ""}, {"t": " ", "c": ""}, {"t": "6666", "c": ""}, {"t": " ", "c": ""}, {"t": "8888", "c": ""}],
+  "2468_L2": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "2222", "c": "G"}, {"t": " ", "c": ""}, {"t": "44", "c": "R"}, {"t": " ", "c": ""}, {"t": "66", "c": "R"}, {"t": " ", "c": ""}, {"t": "8888", "c": "G"}],
+  "2468_L3": [{"t": "EE", "c": ""}, {"t": " ", "c": ""}, {"t": "22", "c": ""}, {"t": " ", "c": ""}, {"t": "444", "c": ""}, {"t": " ", "c": ""}, {"t": "666", "c": ""}, {"t": " ", "c": ""}, {"t": "88", "c": ""}, {"t": " ", "c": ""}, {"t": "WW", "c": ""}],
+  "2468_L4": [{"t": "2222", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDD", "c": "G"}, {"t": " ", "c": ""}, {"t": "8888", "c": "R"}, {"t": " ", "c": ""}, {"t": "DDD", "c": "R"}],
+  "2468_L5": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "22", "c": ""}, {"t": " ", "c": ""}, {"t": "44", "c": ""}, {"t": " ", "c": ""}, {"t": "666", "c": ""}, {"t": " ", "c": ""}, {"t": "8888", "c": ""}],
+  "2468_L6": [{"t": "2468", "c": "G"}, {"t": " ", "c": ""}, {"t": "2222", "c": "R"}, {"t": " ", "c": ""}, {"t": "D", "c": "R"}, {"t": " ", "c": ""}, {"t": "2222", "c": ""}, {"t": " ", "c": ""}, {"t": "D", "c": ""}],
+  "2468_L7": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "2468", "c": "G"}, {"t": " ", "c": ""}, {"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "2222", "c": "R"}],
+  "2468_L8": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "246", "c": "G"}, {"t": " ", "c": ""}, {"t": "888", "c": "G"}, {"t": " ", "c": ""}, {"t": "246", "c": "R"}, {"t": " ", "c": ""}, {"t": "888", "c": "R"}],
+  "ALN_L1": [{"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "FFFFFF", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": "R"}],
+  "ALN_L2": [{"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "D", "c": ""}, {"t": " ", "c": ""}, {"t": "111", "c": "R"}, {"t": " ", "c": ""}, {"t": "D", "c": "R"}, {"t": " ", "c": ""}, {"t": "1111", "c": "N"}, {"t": " ", "c": ""}, {"t": "D", "c": ""}],
+  "ALN_L3": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "11", "c": "R"}, {"t": " ", "c": ""}, {"t": "1111", "c": ""}, {"t": " ", "c": ""}, {"t": "DD", "c": "G"}],
   "WD_L1a": [{"t":"NNNN","c":"G"},{"t":" ","c":""},{"t":"EEE","c":"R"},{"t":" ","c":""},{"t":"WWW","c":"N"},{"t":" ","c":""},{"t":"SSSS","c":"G"}],
   "WD_L1b": [{"t":"NNN","c":"G"},{"t":" ","c":""},{"t":"EEEE","c":"R"},{"t":" ","c":""},{"t":"WWWW","c":"N"},{"t":" ","c":""},{"t":"SSS","c":"G"}],
-  "WD_L2": [{"t":"1234","c":"G"},{"t":" ","c":""},{"t":"DDD","c":"R"},{"t":" ","c":""},{"t":"DDD","c":"N"},{"t":" ","c":""},{"t":"DDDD","c":"G"}],
-  "WD_L3": [{"t":"NNN","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"1111","c":"N"},{"t":" ","c":""},{"t":"SSS","c":"G"}],
-  "WD_L4": [{"t":"EEE","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"1111","c":"N"},{"t":" ","c":""},{"t":"WWWW","c":"G"}],
+  "WD_L2": [{"t": "1234", "c": ""}, {"t": " ", "c": ""}, {"t": "DDD", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDD", "c": "R"}, {"t": " ", "c": ""}, {"t": "DDD", "c": ""}],
+  "WD_L3": [{"t": "NNN", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "1111", "c": "R"}, {"t": " ", "c": ""}, {"t": "SSS", "c": ""}],
+  "WD_L4": [{"t": "EEE", "c": ""}, {"t": " ", "c": ""}, {"t": "2222", "c": "G"}, {"t": " ", "c": ""}, {"t": "2222", "c": "R"}, {"t": " ", "c": ""}, {"t": "WWW", "c": ""}],
   "WD_L5": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"FFF","c":"N"},{"t":" ","c":""},{"t":"DDDD","c":"G"}],
-  "WD_L6": [{"t":"1","c":"G"},{"t":" ","c":""},{"t":"N","c":"R"},{"t":" ","c":""},{"t":"22","c":"N"},{"t":" ","c":""},{"t":"EE","c":"G"},{"t":" ","c":""},{"t":"333","c":"R"},{"t":" ","c":""},{"t":"WWW","c":"N"},{"t":" ","c":""},{"t":"4444","c":"G"},{"t":" ","c":""},{"t":"SSSS","c":"R"}],
-  "WD_L7a": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"SSSS","c":"N"},{"t":" ","c":""},{"t":"DD","c":"G"},{"t":" ","c":""},{"t":"DD","c":"R"}],
-  "WD_L7b": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"EEEE","c":"R"},{"t":" ","c":""},{"t":"WWWW","c":"N"},{"t":" ","c":""},{"t":"DD","c":"G"},{"t":" ","c":""},{"t":"DD","c":"R"}],
-  "WD_L8": [{"t":"NN","c":"G"},{"t":" ","c":""},{"t":"EEE","c":"R"},{"t":" ","c":""},{"t":"2","c":"N"},{"t":"0","c":"G"},{"t":"2","c":"N"},{"t":"6","c":"G"},{"t":" ","c":""},{"t":"WWW","c":"R"},{"t":" ","c":""},{"t":"SS","c":"N"}],
-  "369_L1a": [{"t":"333","c":"G"},{"t":" ","c":""},{"t":"666","c":"R"},{"t":" ","c":""},{"t":"6666","c":"N"},{"t":" ","c":""},{"t":"9999","c":"G"}],
-  "369_L1b": [{"t":"333","c":"G"},{"t":" ","c":""},{"t":"666","c":"R"},{"t":" ","c":""},{"t":"6666","c":"N"},{"t":" ","c":""},{"t":"9999","c":"G"}],
-  "369_L2": [{"t":"33","c":"G"},{"t":" ","c":""},{"t":"66","c":"R"},{"t":" ","c":""},{"t":"333","c":"N"},{"t":" ","c":""},{"t":"666","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"}],
-  "369_L3a": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"33","c":"R"},{"t":" ","c":""},{"t":"666","c":"N"},{"t":" ","c":""},{"t":"99","c":"G"},{"t":" ","c":""},{"t":"DDDD","c":"R"}],
-  "369_L3b": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"33","c":"R"},{"t":" ","c":""},{"t":"666","c":"N"},{"t":" ","c":""},{"t":"99","c":"G"},{"t":" ","c":""},{"t":"DDDD","c":"R"}],
-  "369_L4": [{"t":"33","c":"G"},{"t":" ","c":""},{"t":"66","c":"R"},{"t":" ","c":""},{"t":"666","c":"N"},{"t":" ","c":""},{"t":"999","c":"G"},{"t":" ","c":""},{"t":"NEWS","c":"R"}],
-  "369_L5": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"369","c":"R"},{"t":" ","c":""},{"t":"9999","c":"N"},{"t":" ","c":""},{"t":"9999","c":"G"}],
-  "369_L6": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"333","c":"R"},{"t":" ","c":""},{"t":"666","c":"N"},{"t":" ","c":""},{"t":"999","c":"G"},{"t":" ","c":""},{"t":"3","c":"R"},{"t":" ","c":""},{"t":"6","c":"N"},{"t":" ","c":""},{"t":"9","c":"G"}],
-  "CR_L1a": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"222","c":"R"},{"t":" ","c":""},{"t":"33","c":"N"},{"t":" ","c":""},{"t":"444","c":"G"},{"t":" ","c":""},{"t":"5555","c":"R"}],
-  "CR_L1b": [{"t":"55","c":"G"},{"t":" ","c":""},{"t":"666","c":"R"},{"t":" ","c":""},{"t":"77","c":"N"},{"t":" ","c":""},{"t":"888","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"}],
-  "CR_L2a": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"234","c":"N"},{"t":" ","c":""},{"t":"5555","c":"G"}],
-  "CR_L2b": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"234","c":"N"},{"t":" ","c":""},{"t":"5555","c":"R"}],
-  "CR_L3": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"22","c":"R"},{"t":" ","c":""},{"t":"111","c":"N"},{"t":" ","c":""},{"t":"222","c":"G"},{"t":" ","c":""},{"t":"3333","c":"R"}],
-  "CR_L4a": [{"t":"111","c":"G"},{"t":" ","c":""},{"t":"222","c":"R"},{"t":" ","c":""},{"t":"3333","c":"N"},{"t":" ","c":""},{"t":"4444","c":"G"}],
-  "CR_L4b": [{"t":"111","c":"G"},{"t":" ","c":""},{"t":"222","c":"R"},{"t":" ","c":""},{"t":"3333","c":"N"},{"t":" ","c":""},{"t":"4444","c":"G"}],
-  "CR_L5a": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"11","c":"R"},{"t":" ","c":""},{"t":"22","c":"N"},{"t":" ","c":""},{"t":"333","c":"G"},{"t":" ","c":""},{"t":"DDDD","c":"R"}],
-  "CR_L5b": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"11","c":"R"},{"t":" ","c":""},{"t":"22","c":"N"},{"t":" ","c":""},{"t":"333","c":"G"},{"t":" ","c":""},{"t":"DDDD","c":"R"}],
-  "CR_L6": [{"t":"1111","c":"G"},{"t":" ","c":""},{"t":"FFFFFF","c":"R"},{"t":" ","c":""},{"t":"2222","c":"N"}],
-  "CR_L7a": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"2222","c":"N"},{"t":" ","c":""},{"t":"3333","c":"G"}],
-  "CR_L7b": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"2222","c":"N"},{"t":" ","c":""},{"t":"3333","c":"G"}],
-  "CR_L8": [{"t":"1","c":"G"},{"t":" ","c":""},{"t":"22","c":"R"},{"t":" ","c":""},{"t":"333","c":"N"},{"t":" ","c":""},{"t":"1","c":"G"},{"t":" ","c":""},{"t":"22","c":"R"},{"t":" ","c":""},{"t":"333","c":"N"},{"t":" ","c":""},{"t":"44","c":"G"}],
-  "13579_L1a": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"333","c":"R"},{"t":" ","c":""},{"t":"55","c":"N"},{"t":" ","c":""},{"t":"777","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"}],
-  "13579_L1b": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"333","c":"R"},{"t":" ","c":""},{"t":"55","c":"N"},{"t":" ","c":""},{"t":"777","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"}],
-  "13579_L2a": [{"t":"111","c":"G"},{"t":" ","c":""},{"t":"333","c":"R"},{"t":" ","c":""},{"t":"3333","c":"N"},{"t":" ","c":""},{"t":"5555","c":"G"}],
-  "13579_L2b": [{"t":"555","c":"G"},{"t":" ","c":""},{"t":"777","c":"R"},{"t":" ","c":""},{"t":"7777","c":"N"},{"t":" ","c":""},{"t":"9999","c":"G"}],
-  "13579_L3a": [{"t":"NN","c":"G"},{"t":" ","c":""},{"t":"1111","c":"R"},{"t":" ","c":""},{"t":"33","c":"N"},{"t":" ","c":""},{"t":"5555","c":"G"},{"t":" ","c":""},{"t":"SS","c":"R"}],
-  "13579_L3b": [{"t":"NN","c":"G"},{"t":" ","c":""},{"t":"5555","c":"R"},{"t":" ","c":""},{"t":"77","c":"N"},{"t":" ","c":""},{"t":"9999","c":"G"},{"t":" ","c":""},{"t":"SS","c":"R"}],
-  "13579_L4": [{"t":"1","c":"G"},{"t":" ","c":""},{"t":"NN","c":"R"},{"t":" ","c":""},{"t":"3","c":"N"},{"t":" ","c":""},{"t":"5","c":"G"},{"t":" ","c":""},{"t":"7","c":"R"},{"t":" ","c":""},{"t":"9","c":"N"},{"t":" ","c":""},{"t":"NNNN","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"}],
-  "13579_L5a": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"11","c":"R"},{"t":" ","c":""},{"t":"33","c":"N"},{"t":" ","c":""},{"t":"555","c":"G"},{"t":" ","c":""},{"t":"DDDD","c":"R"}],
-  "13579_L5b": [{"t":"FFF","c":"G"},{"t":" ","c":""},{"t":"55","c":"R"},{"t":" ","c":""},{"t":"77","c":"N"},{"t":" ","c":""},{"t":"999","c":"G"},{"t":" ","c":""},{"t":"DDDD","c":"R"}],
-  "13579_L6a": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"33","c":"R"},{"t":" ","c":""},{"t":"111","c":"N"},{"t":" ","c":""},{"t":"333","c":"G"},{"t":" ","c":""},{"t":"5555","c":"R"}],
-  "13579_L6b": [{"t":"55","c":"G"},{"t":" ","c":""},{"t":"77","c":"R"},{"t":" ","c":""},{"t":"555","c":"N"},{"t":" ","c":""},{"t":"777","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"}],
-  "13579_L7a": [{"t":"1111","c":"G"},{"t":" ","c":""},{"t":"33","c":"R"},{"t":" ","c":""},{"t":"55","c":"N"},{"t":" ","c":""},{"t":"77","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"}],
-  "13579_L7b": [{"t":"1111","c":"G"},{"t":" ","c":""},{"t":"9999","c":"R"},{"t":" ","c":""},{"t":"33","c":"N"},{"t":" ","c":""},{"t":"55","c":"G"},{"t":" ","c":""},{"t":"77","c":"R"}],
-  "13579_L8a": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"11","c":"R"},{"t":" ","c":""},{"t":"33","c":"N"},{"t":" ","c":""},{"t":"55","c":"G"},{"t":" ","c":""},{"t":"111","c":"R"},{"t":" ","c":""},{"t":"111","c":"N"}],
-  "13579_L8b": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"55","c":"R"},{"t":" ","c":""},{"t":"77","c":"N"},{"t":" ","c":""},{"t":"99","c":"G"},{"t":" ","c":""},{"t":"555","c":"R"},{"t":" ","c":""},{"t":"555","c":"N"}],
-  "13579_L9": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"1","c":"R"},{"t":" ","c":""},{"t":"3","c":"N"},{"t":" ","c":""},{"t":"5","c":"G"},{"t":" ","c":""},{"t":"777","c":"R"},{"t":" ","c":""},{"t":"999","c":"N"},{"t":" ","c":""},{"t":"DDD","c":"G"}],
-  "QT_L1": [{"t":"NNNNN","c":"G"},{"t":" ","c":""},{"t":"NNNN","c":"R"},{"t":" ","c":""},{"t":"NNNNN","c":"N"}],
-  "QT_L2": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"NNNNN","c":"R"},{"t":" ","c":""},{"t":"NN","c":"N"},{"t":" ","c":""},{"t":"NNNNN","c":"G"}],
-  "QT_L3": [{"t":"NNNNN","c":"G"},{"t":" ","c":""},{"t":"NNNNN","c":"R"},{"t":" ","c":""},{"t":"DDDD","c":"N"}],
-  "SP_L1": [{"t":"NN","c":"G"},{"t":" ","c":""},{"t":"EE","c":"R"},{"t":" ","c":""},{"t":"WW","c":"N"},{"t":" ","c":""},{"t":"SS","c":"G"},{"t":" ","c":""},{"t":"N","c":"R"},{"t":" ","c":""},{"t":"D","c":"N"},{"t":" ","c":""},{"t":"N","c":"G"},{"t":" ","c":""},{"t":"D","c":"R"},{"t":" ","c":""},{"t":"N","c":"N"},{"t":" ","c":""},{"t":"D","c":"G"}],
-  "SP_L2": [{"t":"246688","c":"G"},{"t":" ","c":""},{"t":"246688","c":"R"},{"t":" ","c":""},{"t":"88","c":"N"}],
-  "SP_L3": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"3369","c":"R"},{"t":" ","c":""},{"t":"3669","c":"N"},{"t":" ","c":""},{"t":"3699","c":"G"}],
-  "SP_L4": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"22","c":"R"},{"t":" ","c":""},{"t":"33","c":"N"},{"t":" ","c":""},{"t":"44","c":"G"},{"t":" ","c":""},{"t":"55","c":"R"},{"t":" ","c":""},{"t":"66","c":"N"},{"t":" ","c":""},{"t":"77","c":"G"}],
-  "SP_L5": [{"t":"11","c":"G"},{"t":" ","c":""},{"t":"357","c":"R"},{"t":" ","c":""},{"t":"99","c":"N"},{"t":" ","c":""},{"t":"11","c":"G"},{"t":" ","c":""},{"t":"357","c":"R"},{"t":" ","c":""},{"t":"99","c":"N"}],
-  "SP_L6": [{"t":"FF","c":"G"},{"t":" ","c":""},{"t":"2026","c":"R"},{"t":" ","c":""},{"t":"2026","c":"N"},{"t":" ","c":""},{"t":"2026","c":"G"}],
+  "WD_L6": [{"t": "1", "c": ""}, {"t": " ", "c": ""}, {"t": "N", "c": ""}, {"t": " ", "c": ""}, {"t": "2", "c": ""}, {"t": " ", "c": ""}, {"t": "EE", "c": ""}, {"t": " ", "c": ""}, {"t": "3", "c": ""}, {"t": " ", "c": ""}, {"t": "WWW", "c": ""}, {"t": " ", "c": ""}, {"t": "4", "c": ""}, {"t": " ", "c": ""}, {"t": "SSSS", "c": ""}],
+  "WD_L7a": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "NNNN", "c": ""}, {"t": " ", "c": ""}, {"t": "SSSS", "c": ""}, {"t": " ", "c": ""}, {"t": "DD", "c": "G"}, {"t": " ", "c": ""}, {"t": "DD", "c": "R"}],
+  "WD_L7b": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "EEEE", "c": ""}, {"t": " ", "c": ""}, {"t": "WWWW", "c": ""}, {"t": " ", "c": ""}, {"t": "DD", "c": "G"}, {"t": " ", "c": ""}, {"t": "DD", "c": "R"}],
+  "WD_L8": [{"t": "NN", "c": ""}, {"t": " ", "c": ""}, {"t": "EEE", "c": ""}, {"t": " ", "c": ""}, {"t": "2026", "c": ""}, {"t": " ", "c": ""}, {"t": "WWW", "c": ""}, {"t": " ", "c": ""}, {"t": "SS", "c": ""}],
+  "369_L1a": [{"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "666", "c": "G"}, {"t": " ", "c": ""}, {"t": "6666", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "R"}],
+  "369_L1b": [{"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "666", "c": "G"}, {"t": " ", "c": ""}, {"t": "6666", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "N"}],
+  "369_L2": [{"t": "33", "c": "G"}, {"t": " ", "c": ""}, {"t": "66", "c": "G"}, {"t": " ", "c": ""}, {"t": "333", "c": "R"}, {"t": " ", "c": ""}, {"t": "666", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "N"}],
+  "369_L3a": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": ""}, {"t": " ", "c": ""}, {"t": "666", "c": ""}, {"t": " ", "c": ""}, {"t": "99", "c": ""}, {"t": " ", "c": ""}, {"t": "DDDD", "c": ""}],
+  "369_L3b": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": "G"}, {"t": " ", "c": ""}, {"t": "666", "c": "G"}, {"t": " ", "c": ""}, {"t": "99", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDDD", "c": "R"}],
+  "369_L4": [{"t": "33", "c": "G"}, {"t": " ", "c": ""}, {"t": "66", "c": "G"}, {"t": " ", "c": ""}, {"t": "666", "c": "R"}, {"t": " ", "c": ""}, {"t": "999", "c": "R"}, {"t": " ", "c": ""}, {"t": "NEWS", "c": ""}],
+  "369_L5": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "3369", "c": "G"}, {"t": " ", "c": ""}, {"t": "3333", "c": "R"}, {"t": " ", "c": ""}, {"t": "3333", "c": ""}],
+  "369_L6": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "666", "c": "G"}, {"t": " ", "c": ""}, {"t": "999", "c": "G"}, {"t": " ", "c": ""}, {"t": "3", "c": "R"}, {"t": " ", "c": ""}, {"t": "6", "c": "R"}, {"t": " ", "c": ""}, {"t": "9", "c": "R"}],
+  "CR_L1a": [{"t": "11", "c": ""}, {"t": " ", "c": ""}, {"t": "222", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": ""}, {"t": " ", "c": ""}, {"t": "444", "c": ""}, {"t": " ", "c": ""}, {"t": "5555", "c": ""}],
+  "CR_L1b": [{"t": "55", "c": ""}, {"t": " ", "c": ""}, {"t": "666", "c": ""}, {"t": " ", "c": ""}, {"t": "77", "c": ""}, {"t": " ", "c": ""}, {"t": "888", "c": ""}, {"t": " ", "c": ""}, {"t": "9999", "c": ""}],
+  "CR_L2a": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": ""}, {"t": " ", "c": ""}, {"t": "234", "c": ""}, {"t": " ", "c": ""}, {"t": "5555", "c": ""}],
+  "CR_L2b": [{"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "234", "c": "R"}, {"t": " ", "c": ""}, {"t": "5555", "c": "G"}],
+  "CR_L3": [{"t": "11", "c": "G"}, {"t": " ", "c": ""}, {"t": "22", "c": "G"}, {"t": " ", "c": ""}, {"t": "111", "c": "R"}, {"t": " ", "c": ""}, {"t": "222", "c": "R"}, {"t": " ", "c": ""}, {"t": "3333", "c": ""}],
+  "CR_L4a": [{"t": "111", "c": ""}, {"t": " ", "c": ""}, {"t": "222", "c": ""}, {"t": " ", "c": ""}, {"t": "3333", "c": ""}, {"t": " ", "c": ""}, {"t": "4444", "c": ""}],
+  "CR_L4b": [{"t": "111", "c": "G"}, {"t": " ", "c": ""}, {"t": "222", "c": "G"}, {"t": " ", "c": ""}, {"t": "3333", "c": "R"}, {"t": " ", "c": ""}, {"t": "4444", "c": "R"}],
+  "CR_L5a": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "11", "c": ""}, {"t": " ", "c": ""}, {"t": "22", "c": ""}, {"t": " ", "c": ""}, {"t": "333", "c": ""}, {"t": " ", "c": ""}, {"t": "DDDD", "c": ""}],
+  "CR_L5b": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "11", "c": "G"}, {"t": " ", "c": ""}, {"t": "22", "c": "R"}, {"t": " ", "c": ""}, {"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDDD", "c": "R"}],
+  "CR_L6": [{"t": "1111", "c": ""}, {"t": " ", "c": ""}, {"t": "FFFFFF", "c": ""}, {"t": " ", "c": ""}, {"t": "2222", "c": ""}],
+  "CR_L7a": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": ""}, {"t": " ", "c": ""}, {"t": "2222", "c": ""}, {"t": " ", "c": ""}, {"t": "3333", "c": ""}],
+  "CR_L7b": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "2222", "c": "R"}, {"t": " ", "c": ""}, {"t": "3333", "c": ""}],
+  "CR_L8": [{"t": "1", "c": "G"}, {"t": " ", "c": ""}, {"t": "22", "c": "G"}, {"t": " ", "c": ""}, {"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "1", "c": "R"}, {"t": " ", "c": ""}, {"t": "22", "c": "R"}, {"t": " ", "c": ""}, {"t": "333", "c": "R"}, {"t": " ", "c": ""}, {"t": "44", "c": ""}],
+  "13579_L1a": [{"t": "11", "c": ""}, {"t": " ", "c": ""}, {"t": "333", "c": ""}, {"t": " ", "c": ""}, {"t": "55", "c": ""}, {"t": " ", "c": ""}, {"t": "777", "c": ""}, {"t": " ", "c": ""}, {"t": "9999", "c": ""}],
+  "13579_L1b": [{"t": "11", "c": "G"}, {"t": " ", "c": ""}, {"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "55", "c": "R"}, {"t": " ", "c": ""}, {"t": "777", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "N"}],
+  "13579_L2a": [{"t": "111", "c": "G"}, {"t": " ", "c": ""}, {"t": "333", "c": "G"}, {"t": " ", "c": ""}, {"t": "3333", "c": "R"}, {"t": " ", "c": ""}, {"t": "5555", "c": "R"}],
+  "13579_L2b": [{"t": "555", "c": "G"}, {"t": " ", "c": ""}, {"t": "777", "c": "G"}, {"t": " ", "c": ""}, {"t": "7777", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "R"}],
+  "13579_L3a": [{"t": "NN", "c": ""}, {"t": " ", "c": ""}, {"t": "1111", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": ""}, {"t": " ", "c": ""}, {"t": "5555", "c": ""}, {"t": " ", "c": ""}, {"t": "SS", "c": ""}],
+  "13579_L3b": [{"t": "NN", "c": ""}, {"t": " ", "c": ""}, {"t": "5555", "c": ""}, {"t": " ", "c": ""}, {"t": "77", "c": ""}, {"t": " ", "c": ""}, {"t": "9999", "c": ""}, {"t": " ", "c": ""}, {"t": "SS", "c": ""}],
+  "13579_L4": [{"t": "113579", "c": "G"}, {"t": " ", "c": ""}, {"t": "1111", "c": "R"}, {"t": " ", "c": ""}, {"t": "1111", "c": ""}],
+  "13579_L5a": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "11", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": ""}, {"t": " ", "c": ""}, {"t": "555", "c": ""}, {"t": " ", "c": ""}, {"t": "DDDD", "c": ""}],
+  "13579_L5b": [{"t": "FFF", "c": ""}, {"t": " ", "c": ""}, {"t": "55", "c": ""}, {"t": " ", "c": ""}, {"t": "77", "c": ""}, {"t": " ", "c": ""}, {"t": "999", "c": ""}, {"t": " ", "c": ""}, {"t": "DDDD", "c": ""}],
+  "13579_L6a": [{"t": "11", "c": "G"}, {"t": " ", "c": ""}, {"t": "33", "c": "G"}, {"t": " ", "c": ""}, {"t": "111", "c": "R"}, {"t": " ", "c": ""}, {"t": "333", "c": "R"}, {"t": " ", "c": ""}, {"t": "5555", "c": ""}],
+  "13579_L6b": [{"t": "55", "c": "G"}, {"t": " ", "c": ""}, {"t": "77", "c": "G"}, {"t": " ", "c": ""}, {"t": "555", "c": "R"}, {"t": " ", "c": ""}, {"t": "777", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "N"}],
+  "13579_L7a": [{"t": "1111", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": ""}, {"t": " ", "c": ""}, {"t": "55", "c": ""}, {"t": " ", "c": ""}, {"t": "77", "c": ""}, {"t": " ", "c": ""}, {"t": "9999", "c": ""}],
+  "13579_L7b": [{"t": "1111", "c": "G"}, {"t": " ", "c": ""}, {"t": "33", "c": "R"}, {"t": " ", "c": ""}, {"t": "55", "c": "R"}, {"t": " ", "c": ""}, {"t": "77", "c": "R"}, {"t": " ", "c": ""}, {"t": "9999", "c": "G"}],
+  "13579_L8a": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "11", "c": "G"}, {"t": " ", "c": ""}, {"t": "33", "c": "G"}, {"t": " ", "c": ""}, {"t": "55", "c": "G"}, {"t": " ", "c": ""}, {"t": "111", "c": "R"}, {"t": " ", "c": ""}, {"t": "111", "c": ""}],
+  "13579_L8b": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "55", "c": "G"}, {"t": " ", "c": ""}, {"t": "77", "c": "G"}, {"t": " ", "c": ""}, {"t": "99", "c": "G"}, {"t": " ", "c": ""}, {"t": "555", "c": "R"}, {"t": " ", "c": ""}, {"t": "555", "c": ""}],
+  "13579_L9": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "135", "c": "G"}, {"t": " ", "c": ""}, {"t": "777", "c": "G"}, {"t": " ", "c": ""}, {"t": "999", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDD", "c": "R"}],
+  "QT_L1": [{"t": "11111", "c": "G"}, {"t": " ", "c": ""}, {"t": "1111", "c": "R"}, {"t": " ", "c": ""}, {"t": "11111", "c": "N"}],
+  "QT_L2": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "11111", "c": ""}, {"t": " ", "c": ""}, {"t": "22", "c": ""}, {"t": " ", "c": ""}, {"t": "33333", "c": ""}],
+  "QT_L3": [{"t": "11111", "c": "G"}, {"t": " ", "c": ""}, {"t": "44444", "c": "G"}, {"t": " ", "c": ""}, {"t": "DDDD", "c": "R"}],
+  "SP_L1": [{"t": "NN", "c": ""}, {"t": " ", "c": ""}, {"t": "EE", "c": ""}, {"t": " ", "c": ""}, {"t": "WW", "c": ""}, {"t": " ", "c": ""}, {"t": "SS", "c": ""}, {"t": " ", "c": ""}, {"t": "1", "c": "G"}, {"t": "D", "c": "G"}, {"t": " ", "c": ""}, {"t": "1", "c": "R"}, {"t": "D", "c": "R"}, {"t": " ", "c": ""}, {"t": "1", "c": ""}, {"t": "D", "c": ""}],
+  "SP_L2": [{"t": "2", "c": "G"}, {"t": " ", "c": ""}, {"t": "4", "c": "G"}, {"t": " ", "c": ""}, {"t": "66", "c": "G"}, {"t": " ", "c": ""}, {"t": "88", "c": "G"}, {"t": " ", "c": ""}, {"t": "2", "c": "R"}, {"t": " ", "c": ""}, {"t": "4", "c": "R"}, {"t": " ", "c": ""}, {"t": "66", "c": "R"}, {"t": " ", "c": ""}, {"t": "88", "c": "R"}, {"t": " ", "c": ""}, {"t": "88", "c": ""}],
+  "SP_L3": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "3369", "c": "G"}, {"t": " ", "c": ""}, {"t": "3669", "c": "R"}, {"t": " ", "c": ""}, {"t": "3699", "c": ""}],
+  "SP_L4": [{"t": "11", "c": ""}, {"t": " ", "c": ""}, {"t": "22", "c": ""}, {"t": " ", "c": ""}, {"t": "33", "c": ""}, {"t": " ", "c": ""}, {"t": "44", "c": ""}, {"t": " ", "c": ""}, {"t": "55", "c": ""}, {"t": " ", "c": ""}, {"t": "66", "c": ""}, {"t": " ", "c": ""}, {"t": "77", "c": ""}],
+  "SP_L5": [{"t": "11", "c": "G"}, {"t": " ", "c": ""}, {"t": "357", "c": "G"}, {"t": " ", "c": ""}, {"t": "99", "c": "G"}, {"t": " ", "c": ""}, {"t": "11", "c": "R"}, {"t": " ", "c": ""}, {"t": "357", "c": "R"}, {"t": " ", "c": ""}, {"t": "99", "c": "R"}],
+  "SP_L6": [{"t": "FF", "c": ""}, {"t": " ", "c": ""}, {"t": "2026", "c": "G"}, {"t": " ", "c": ""}, {"t": "2026", "c": "R"}, {"t": " ", "c": ""}, {"t": "2026", "c": ""}],
 };
 
-function renderHandDisplay(handId) {
+function renderHandDisplay(handId, rec) {
   const tokens = HAND_DISPLAY[handId];
   if (!tokens) return '';
-  const colorMap = {G:'#2d6a3f', R:'#c0392b', N:'#1a1410', '':''};
+
+  // Determine how many suits this hand uses
+  const suitsReq = rec ? (rec.handDef.suitsRequired || 0) : 0;
+
+  // Color palette based on suit count
+  // 1 suit: all green
+  // 2 suits: green + red
+  // 3 suits: green + red + navy
+  // Honors (winds, dragons, flowers) always blue
+  const suitColors = suitsReq >= 3
+    ? {G:'#2d6a3f', R:'#c0392b', N:'#1a1410'}
+    : suitsReq === 2
+    ? {G:'#2d6a3f', R:'#c0392b', N:'#2d6a3f'}
+    : {G:'#2d6a3f', R:'#2d6a3f', N:'#2d6a3f'};
+
+  // Honor tokens (winds, dragons, flowers, soap) always blue
+  const honorPattern = /^[NESWDGRF]$|^(NEWS|DDD|DD|GG|RR|WW|EE|SS|NN|FF|FFF|FFFF|FFFFFF|Soap)$/;
+  const blueColor = '#1a3060';
+
   return tokens.map(({t,c}) => {
     if (!t.trim()) return ' ';
-    return `<span style="color:${colorMap[c]||colorMap.N};font-weight:700;letter-spacing:0.5px">${t}</span>`;
+    // Detect honor tokens — single letters that are winds/dragons or known honor strings
+    const isHonor = /^[NEWSF]+$/.test(t) || t==='D' || t==='DD' || t==='DDD' || t==='DDDD';
+    const color = isHonor ? blueColor : (suitColors[c] || suitColors.N);
+    return `<span style="color:${color};font-weight:700;letter-spacing:0.5px">${t}</span>`;
   }).join('');
 }
 
@@ -1763,7 +1797,17 @@ function findBestScore(handDef, hand) {
       || (priorityScore === (best._priorityScore || 0) && r.finalScore > best.finalScore);
 
     if (isBetter) {
-      best = {...r, handDef, _priorityScore: priorityScore};
+      // Save previous best as secondBest before replacing
+      if (best && best.suitMap && JSON.stringify(best.suitMap) !== JSON.stringify(suitMap)) {
+        best._secondBest = {matched: best.matched, suitMap: best.suitMap};
+      }
+      best = {...r, handDef, _priorityScore: priorityScore, _secondBest: best?._secondBest||null};
+    } else if (best && !best._secondBest && r.finalScore > 0 &&
+               JSON.stringify(suitMap) !== JSON.stringify(best.suitMap)) {
+      // Track second best different suit assignment
+      if (r.matched >= best.matched - 2) {
+        best._secondBest = {matched: r.matched, suitMap: {...suitMap}};
+      }
     }
   };
 
@@ -1906,22 +1950,36 @@ const SECTION_DISPLAY = {
   '13579':'13579','quints':'Quints','singles_and_pairs':'Singles & Pairs'
 };
 
+function countTilesForSection(sectionKey, hand) {
+  // Count how many tiles in hand contribute toward any hand in this section
+  const handsInSection = HAND_LIBRARY.filter(h => h.section === sectionKey);
+  let maxTiles = 0;
+  for (const handDef of handsInSection) {
+    const result = findBestScore(handDef, hand);
+    if (result && result.matched > maxTiles) maxTiles = result.matched;
+  }
+  return maxTiles;
+}
+
 function getSectionFocus(hand, topSections) {
-  // Get all qualifying sections
+  const SECTION_TILE_THRESHOLD = 5;
+
   const qualifying = Object.entries(SECTION_SIGNALS)
-    .filter(([,fn])=>fn(hand))
-    .map(([key])=>({
-      key,
-      name: SECTION_DISPLAY[key],
-      reason: SECTION_REASON[key](hand),
-      // Boost sections that appear in top scoring hands
-      priority: topSections && topSections.includes(key) ? 1 : 0
-    }));
+    .filter(([,fn]) => fn(hand))
+    .map(([key]) => {
+      const tileCount = countTilesForSection(key, hand);
+      return {
+        key,
+        name: SECTION_DISPLAY[key],
+        reason: SECTION_REASON[key](hand),
+        priority: topSections && topSections.includes(key) ? 1 : 0,
+        tileCount
+      };
+    })
+    .filter(s => s.tileCount >= SECTION_TILE_THRESHOLD);
 
-  // Sort: sections matching top hands first, then in original order
-  qualifying.sort((a,b) => b.priority - a.priority);
-
-  return qualifying.slice(0,4);
+  qualifying.sort((a,b) => b.priority - a.priority || b.tileCount - a.tileCount);
+  return qualifying.slice(0, 4);
 }
 
 // ============================================================
@@ -2165,7 +2223,7 @@ function renderResults(hand, top3, pivots, is14) {
   document.getElementById('sectionFocus').innerHTML = `
     <div class="section-focus">
       <div class="sf-title">Your best sections</div>
-      ${sfRows||'<div class="sf-reason">Hand is spread across sections — look at all options.</div>'}
+      ${sfRows||'<div class="sf-reason sf-scatter">Your tiles are fairly scattered and are not clearly pointing to any particular section of the card at this point.</div>'}
     </div>`;
 
   // Top 3 hands
@@ -2181,19 +2239,39 @@ function renderResults(hand, top3, pivots, is14) {
     ).length;
 
     // Build "You have" — fully matched groups + partial contributions
-    const youHaveItems = [];
+    // Build "You have" tile chips — tiles the engine assigned to this hand
+    // Show matched groups + partial holds as small chips
+    function makeTileChips(items) {
+      return items.map(({label, cls, count}) => {
+        const chips = Array.from({length: count}, () =>
+          `<span class="yhave-chip ${cls}">${label}</span>`
+        ).join('');
+        return chips;
+      }).join('');
+    }
+
+    const youHaveChipData = [];
+    // Fully matched groups
     rec.details.matched.forEach(m => {
-      youHaveItems.push(resolveLabel(m.label, m.suit, rec.suitMap));
+      const label = resolveLabel(m.label, m.suit, rec.suitMap);
+      const cls = m.suit==='BAM'?'bam':m.suit==='CRK'?'crk':m.suit==='DOT'?'dot':
+                  m.tileType==='WIND'?'wind':m.tileType==='DRAGON'?'dragon':
+                  m.tileType==='FLOWER'?'flower':'neutral';
+      const count = m.groupType==='quint'?5:m.groupType==='kong'?4:
+                    m.groupType==='pung'?3:m.groupType==='pair'?2:1;
+      youHaveChipData.push({label, cls, count});
     });
-    // Also include partial holds from missing groups (but not 0-holds)
+    // Partial holds from missing groups
     rec.details.missing.forEach(m => {
       if (m.holds > 0) {
-        const base = resolveLabel(m.label, m.suit, rec.suitMap);
-        const total = m.holds + m.need;
-        youHaveItems.push(`${base} (${m.holds} of ${total})`);
+        const label = resolveLabel(m.label, m.suit, rec.suitMap);
+        const cls = m.suit==='BAM'?'bam':m.suit==='CRK'?'crk':m.suit==='DOT'?'dot':
+                    m.tileType==='WIND'?'wind':m.tileType==='DRAGON'?'dragon':
+                    m.tileType==='FLOWER'?'flower':'neutral';
+        youHaveChipData.push({label, cls, count: m.holds});
       }
     });
-    const youHave = youHaveItems.join(', ');
+    const youHave = makeTileChips(youHaveChipData);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
     // Compute joker-adjusted matched count
@@ -2222,13 +2300,21 @@ function renderResults(hand, top3, pivots, is14) {
           ${rec.handDef.concealed?'<span class="conc-badge">Concealed</span>':''}
         </div>
         <div class="card-ref">${rec.handDef.cardRef}</div>
-        <div class="hand-display">${renderHandDisplay(rec.handDef.id)}</div>
+        <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
         <div class="tiles-matched">${adjustedMatched} of ${rec.total} tiles</div>
       </div>
       <div class="rec-body">
-        ${youHave ? `<div class="rec-field"><strong>You have</strong> ${youHave}</div>` : ''}
+        ${youHave ? `<div class="rec-field yhave-row"><strong>You have</strong><div class="yhave-chips">${youHave}</div></div>` : ''}
         ${youNeed ? `<div class="rec-field need-list"><strong>You need</strong><br>${youNeed}</div>` : ''}
         ${jokerHTML}
+        ${(()=>{
+          const sb = rec._secondBest;
+          if (!sb || !sb.suitMap || sb.matched < rec.matched - 2) return '';
+          const diff = rec.matched - sb.matched;
+          const suitNames = Object.values(sb.suitMap).map(s=>s==='BAM'?'Bam':s==='CRK'?'Crack':'Dot');
+          const diffStr = diff===0?'same number of tiles':`${diff} fewer tile${diff!==1?'s':''}`;
+          return `<div class="alt-suit-note">Also works in ${suitNames.join('/')} — ${diffStr}</div>`;
+        })()}
         <div class="rec-field rationale">${rationale}</div>
         ${rec.handDef.concealed ? `<div class="concealed-note">${rec.handDef.section==='singles_and_pairs'
           ? 'Singles & Pairs — no jokers allowed. Every tile must come from the wall. You can only call the final tile to win.'
