@@ -716,7 +716,7 @@ function scoreHand(handDef, suitMap, hand) {
     if (r.groupIsClaimable) details.jokerPositions++;
 
     if (r.effective >= g.count) {
-      details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number});
+      details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number, tileType:g.tileType, wind:g.wind||null, dragon:g.dragon||null});
     } else {
       // ── Claiming state ──────────────────────────────────────────────
       let claimState = 'mustDraw';
@@ -2260,13 +2260,10 @@ function renderResults(hand, top3, pivots, is14) {
       if (m.tileType==='JOKER') return '★';
       if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
       if (m.tileType==='DRAGON') {
-        if (m.dragon==='GREEN') return 'GD';
-        if (m.dragon==='RED')   return 'RD';
-        if (m.dragon==='WHITE') return 'Soap';
-        // Resolved from suit
-        if (suit==='BAM') return 'GD';
-        if (suit==='CRK') return 'RD';
-        if (suit==='DOT') return 'Soap';
+        const d = m.dragon || (suit==='BAM'?'GREEN':suit==='CRK'?'RED':suit==='DOT'?'WHITE':null);
+        if (d==='GREEN') return 'GD';
+        if (d==='RED')   return 'RD';
+        if (d==='WHITE') return 'Soap';
         return 'D';
       }
       return '?';
