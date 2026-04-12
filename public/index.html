@@ -2282,7 +2282,7 @@ function renderResults(hand, top3, pivots, is14) {
       if (m.tileType==='JOKER') return '★';
       if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
       if (m.tileType==='DRAGON') {
-        const d = m.dragon || (suit==='BAM'?'GREEN':suit==='CRK'?'RED':suit==='DOT'?'WHITE':null);
+        const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
         if (d==='GREEN') return 'GD';
         if (d==='RED')   return 'RD';
         if (d==='WHITE') return 'Soap';
