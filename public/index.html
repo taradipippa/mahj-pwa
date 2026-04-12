@@ -63,10 +63,10 @@ body{padding-top:env(safe-area-inset-top)}
 
 
 /* ── TILE GRID ───────────────────────────────────── */
-.select-body{padding:8px 8px 90px}
-.suit-section{margin-bottom:10px}
+.select-body{padding:6px 8px 80px}
+.suit-section{margin-bottom:7px}
 .suit-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;padding:1px}
-.tile-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.tile-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px}
 .tile-grid.wind-grid{grid-template-columns:repeat(4,1fr)}
 .tile-grid.dragon-grid{grid-template-columns:repeat(3,1fr)}
 .tile-grid.extras-grid{grid-template-columns:repeat(2,1fr)}
@@ -77,7 +77,7 @@ body{padding-top:env(safe-area-inset-top)}
   border-radius:5px;
   text-align:center;
   cursor:pointer;
-  min-height:46px;
+  min-height:42px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   user-select:none;
   -webkit-tap-highlight-color:transparent;
@@ -103,7 +103,7 @@ body{padding-top:env(safe-area-inset-top)}
 .count-badge{position:absolute;top:2px;right:2px;background:var(--gold);color:var(--ink);font-size:10px;font-weight:700;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;line-height:1}
 
 /* ── ANALYZE BUTTON ──────────────────────────────── */
-.analyze-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));background:var(--bone);border-top:1px solid var(--bone2);z-index:50}
+.analyze-bar{position:fixed;bottom:0;left:0;right:0;padding:7px 14px;padding-bottom:calc(7px + env(safe-area-inset-bottom));background:var(--bone);border-top:1px solid var(--bone2);z-index:50}
 .analyze-btn{
   width:100%;background:#888;color:#ddd;border:none;border-radius:var(--r);
   padding:14px;font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;
@@ -338,7 +338,12 @@ function buildGrid(containerId, tiles) {
     btn.className = `tile-btn ${tile.cls}`;
     btn.id = `btn_${tile.id}`;
     btn.innerHTML = `<span class="tile-num">${tile.label}</span><span class="tile-sub">${tile.sub}</span>`;
-    btn.addEventListener('touchend', (e) => { e.preventDefault(); toggleTile(tile.id); });
+    let _touchStartY = 0;
+    btn.addEventListener('touchstart', (e) => { _touchStartY = e.touches[0].clientY; }, {passive:true});
+    btn.addEventListener('touchend', (e) => {
+      const moved = Math.abs(e.changedTouches[0].clientY - _touchStartY);
+      if (moved < 8) { e.preventDefault(); toggleTile(tile.id); }
+    });
     btn.addEventListener('click', () => toggleTile(tile.id));
     container.appendChild(btn);
   });
@@ -2019,7 +2024,7 @@ function getDiscardRecommendations(tiles, top3, hand) {
         if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
         if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
             m.number===tile.number && m.suit===tile.suit) return true;
-        if (tile.type==='WIND' && m.tileType==='WIND' && m.wind===tile.wind) return true;
+        if (tile.type==='WIND' && m.tileType==='WIND' && (m.wind===tile.wind || !m.wind)) return true;
         if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
           // Direct match on stored dragon
           if (m.dragon && m.dragon===tile.dragon) return true;
@@ -2036,8 +2041,8 @@ function getDiscardRecommendations(tiles, top3, hand) {
           if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
           if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
           if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
-          // Any dragon (dragonRequirement='any')
-          if (!recSuit) return true;
+          // Any dragon (dragonRequirement='any') — no suit, no specific dragon
+          if (!recSuit && !m.dragon) return true;
         }
         return false;
       };
@@ -2376,10 +2381,13 @@ function renderResults(hand, top3, pivots, is14) {
     if (hand.jokers > 0 && claimableGroupCount > 0) {
       for (let j=0; j<hand.jokers; j++) youHaveChipData.push({label:'★', cls:'joker', count:1});
     }
-    // Sort: flowers first, then by suit (bam, crk, dot), then honors
-    const flowerOrder = cls => cls==='flower'?0:cls==='bam'?1:cls==='crk'?2:cls==='dot'?3:cls==='joker'?5:4;
-    youHaveChipData.sort((a,b) => flowerOrder(a.cls) - flowerOrder(b.cls));
-    const youHave = makeTileChips(youHaveChipData);
+    // Order follows hand definition group order — jokers always last
+    // youHaveChipData is already built in group order (matched then partial holds)
+    // Just move jokers to end
+    const jokerChips = youHaveChipData.filter(c=>c.cls==='joker');
+    const nonJokerChips = youHaveChipData.filter(c=>c.cls!=='joker');
+    const orderedChips = [...nonJokerChips, ...jokerChips];
+    const youHave = makeTileChips(orderedChips);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
     // Compute joker-adjusted matched count
