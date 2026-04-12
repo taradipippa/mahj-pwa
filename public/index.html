@@ -974,9 +974,16 @@ function renderHandDisplay(handId, rec) {
   return tokens.map(({t,c}) => {
     if (!t.trim()) return ' ';
     // Detect honor tokens — single letters that are winds/dragons or known honor strings
-    const isHonor = /^[NEWSF]+$/.test(t) || t==='D' || t==='DD' || t==='DDD' || t==='DDDD';
-    // c==='' means explicitly blue (honor/flexible token); only use suitColors when c is G/R/N
-    const color = (isHonor || c==='') ? blueColor : (suitColors[c] || suitColors.N);
+    // Winds and flowers always blue
+    const isAlwaysBlue = /^[NEWSF]+$/.test(t);
+    // Dragons show their LITERAL color — not suit-mapped
+    const isDragon = /^D+$/.test(t) || t==='Soap';
+    // Literal color map (for dragons)
+    const literalColors = {'G':'#2d6a3f','R':'#c0392b','N':'#1a1410','':'#1a3060'};
+    const color = isAlwaysBlue ? blueColor
+                : isDragon     ? (c==='' ? blueColor : (literalColors[c] || blueColor))
+                : c===''       ? blueColor
+                : (suitColors[c] || suitColors.N);
     return `<span style="color:${color};font-weight:700;letter-spacing:0.5px">${t}</span>`;
   }).join('');
 }
@@ -2524,7 +2531,10 @@ function analyze() {
 
     const top3     = allScores.slice(0,3);
     const threshold= (top3[2]?.finalScore||0)*0.75;
-    const pivots   = allScores.slice(3).filter(h=>h.finalScore>=Math.max(threshold,8)).slice(0,3);
+    const pivots   = allScores.slice(3)
+      .filter(h=>h.finalScore>=Math.max(threshold,8))
+      .sort((a,b)=>b.matched-a.matched||b.finalScore-a.finalScore)
+      .slice(0,3);
 
     try {
       renderResults(hand, top3, pivots, is14);
