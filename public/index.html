@@ -824,10 +824,10 @@ function scoreHand(handDef, suitMap, hand) {
   // ── CONCEALED PENALTY ─────────────────────────────────────────────
   let concPenalty = 0;
   if (handDef.concealed) {
-    concPenalty = fitScore >= 70 ? 2 : 5;
-    if (hand.jokers >= 2) concPenalty = Math.max(0, concPenalty - 1);
+    concPenalty = fitScore >= 70 ? 10 : 13;
+    if (hand.jokers >= 2) concPenalty = Math.max(0, concPenalty - 2);
   }
-  if (handDef.section === 'singles_and_pairs') concPenalty += 5;
+  if (handDef.section === 'singles_and_pairs') concPenalty += 7;
 
   // ── COMPOUND PENALTY — smooth curve for multiple must-draw tiles ──
   // Captures compounding difficulty of needing multiple natural wall draws.
@@ -835,9 +835,10 @@ function scoreHand(handDef, suitMap, hand) {
   const mustDrawTilesNeeded = details.missing
     .filter(m => m.isPairSingle)
     .reduce((sum, m) => sum + m.need, 0);
-  const compoundPenalty = mustDrawTilesNeeded > 0
-    ? Math.round(mustDrawTilesNeeded * 1.5 + (mustDrawTilesNeeded - 1) * mustDrawTilesNeeded * 0.7)
-    : 0;
+  // Compound penalty: 0→0, 1→3, 2→8, 3→16, 4→28, 5→44
+  // Each additional must-draw tile compounds difficulty significantly
+  const compoundPenalty = mustDrawTilesNeeded <= 0 ? 0
+    : Math.round(mustDrawTilesNeeded * 2 + (mustDrawTilesNeeded - 1) * mustDrawTilesNeeded * 1.5);
 
   // ── RIGIDITY PENALTY — isolated missing singles only ──────────────
   // Singles that are structurally connected (adjacent matched number ±2) are
@@ -974,7 +975,8 @@ function renderHandDisplay(handId, rec) {
     if (!t.trim()) return ' ';
     // Detect honor tokens — single letters that are winds/dragons or known honor strings
     const isHonor = /^[NEWSF]+$/.test(t) || t==='D' || t==='DD' || t==='DDD' || t==='DDDD';
-    const color = isHonor ? blueColor : (suitColors[c] || suitColors.N);
+    // c==='' means explicitly blue (honor/flexible token); only use suitColors when c is G/R/N
+    const color = (isHonor || c==='') ? blueColor : (suitColors[c] || suitColors.N);
     return `<span style="color:${color};font-weight:700;letter-spacing:0.5px">${t}</span>`;
   }).join('');
 }
@@ -2012,17 +2014,23 @@ function getDiscardRecommendations(tiles, top3, hand) {
             m.number===tile.number && m.suit===tile.suit) return true;
         if (tile.type==='WIND' && m.tileType==='WIND' && m.wind===tile.wind) return true;
         if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-          // Direct match
+          // Direct match on stored dragon
           if (m.dragon && m.dragon===tile.dragon) return true;
-          // Resolved via suit (opposing/matching dragon)
-          const recSuit = m.suit && rec.suitMap ? rec.suitMap[m.suit] : m.suit;
+          // Resolve suit — m.suit may be a slot key ('A','B') or resolved ('BAM','CRK','DOT')
+          const rawSuit = m.suit;
+          const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
+            ? rawSuit
+            : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
+          // Matching dragon for suit
           if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
           if (recSuit==='CRK' && tile.dragon==='RED') return true;
           if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-          // Opposing dragon
+          // Opposing dragon for suit
           if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
           if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
           if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
+          // Any dragon (dragonRequirement='any')
+          if (!recSuit) return true;
         }
         return false;
       };
@@ -2361,6 +2369,9 @@ function renderResults(hand, top3, pivots, is14) {
     if (hand.jokers > 0 && claimableGroupCount > 0) {
       for (let j=0; j<hand.jokers; j++) youHaveChipData.push({label:'★', cls:'joker', count:1});
     }
+    // Sort: flowers first, then by suit (bam, crk, dot), then honors
+    const flowerOrder = cls => cls==='flower'?0:cls==='bam'?1:cls==='crk'?2:cls==='dot'?3:cls==='joker'?5:4;
+    youHaveChipData.sort((a,b) => flowerOrder(a.cls) - flowerOrder(b.cls));
     const youHave = makeTileChips(youHaveChipData);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
