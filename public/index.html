@@ -33,7 +33,7 @@
   --r:10px;
   --r-sm:6px;
 }
-html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.5;overflow-x:hidden}
+html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
 body{padding-top:env(safe-area-inset-top)}
 
 /* ── SCREENS ─────────────────────────────────────── */
@@ -42,16 +42,16 @@ body{padding-top:env(safe-area-inset-top)}
 
 /* ── HEADER ─────────────────────────────────────── */
 .app-header{background:var(--ink);color:var(--bone);padding:10px 14px 8px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
-.app-title{font-family:'Lora',serif;font-size:16px;font-weight:600;letter-spacing:.3px}
-.app-subtitle{font-size:10px;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
-.tile-counter{background:rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600;min-width:54px;text-align:center;transition:all .2s}
+.app-title{font-family:'Lora',serif;font-size:18px;font-weight:600;letter-spacing:.3px}
+.app-subtitle{font-size:12px;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.tile-counter{background:rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:15px;font-weight:600;min-width:54px;text-align:center;transition:all .2s}
 .tile-counter.ready{background:var(--gold);color:var(--ink)}
 
 /* ── SELECTED TILE STRIP ─────────────────────────── */
 .tile-strip-wrap{background:var(--bone2);border-bottom:1px solid #d4c89a;padding:7px 10px 6px;min-height:44px;position:sticky;top:52px;z-index:90}
 .tile-strip{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;align-items:center}
-.strip-empty{font-size:12px;color:var(--ink3);font-style:italic}
-.tile-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px 3px 8px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888;user-select:none;-webkit-tap-highlight-color:transparent}
+.strip-empty{font-size:14px;color:var(--ink3);font-style:italic}
+.tile-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px 3px 8px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888;user-select:none;-webkit-tap-highlight-color:transparent}
 .tile-chip:active{opacity:.7}
 .tile-chip.bam{background:#d4eecc;border-color:#a8d4a0;color:var(--bam)}
 .tile-chip.crk{background:#fde0dc;border-color:#f4b8b0;color:var(--crk)}
@@ -65,7 +65,7 @@ body{padding-top:env(safe-area-inset-top)}
 /* ── TILE GRID ───────────────────────────────────── */
 .select-body{padding:8px 8px 90px}
 .suit-section{margin-bottom:10px}
-.suit-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;padding:1px}
+.suit-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;padding:1px}
 .tile-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
 .tile-grid.wind-grid{grid-template-columns:repeat(4,1fr)}
 .tile-grid.dragon-grid{grid-template-columns:repeat(3,1fr)}
@@ -88,8 +88,8 @@ body{padding-top:env(safe-area-inset-top)}
 .tile-btn.selected .tile-num{color:#f0d878}
 .tile-btn.selected .tile-sub{color:rgba(240,216,120,.55)}
 /* Suit number colors — unselected */
-.tile-num{font-family:'Lora',serif;font-size:16px;font-weight:600;line-height:1;color:var(--ink)}
-.tile-sub{font-size:8px;color:var(--ink3);margin-top:1px;letter-spacing:.2px}
+.tile-num{font-family:'Lora',serif;font-size:18px;font-weight:600;line-height:1;color:var(--ink)}
+.tile-sub{font-size:10px;color:var(--ink3);margin-top:1px;letter-spacing:.2px}
 .bam .tile-num{color:#1e6018}
 .crk .tile-num{color:#b01808}
 .dot .tile-num{color:#1430a0}
@@ -106,7 +106,7 @@ body{padding-top:env(safe-area-inset-top)}
 .analyze-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));background:var(--bone);border-top:1px solid var(--bone2);z-index:50}
 .analyze-btn{
   width:100%;background:#888;color:#ddd;border:none;border-radius:var(--r);
-  padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  padding:14px;font-family:'DM Sans',sans-serif;font-size:17px;font-weight:600;
   letter-spacing:.3px;cursor:default;transition:background .2s,color .2s;
   pointer-events:none;
 }
@@ -116,73 +116,73 @@ body{padding-top:env(safe-area-inset-top)}
 .analyze-btn.enabled:active{opacity:.88}
 /* ── RESULTS SCREEN ──────────────────────────────── */
 .results-header{background:var(--ink);color:var(--bone);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.results-title{font-family:'Lora',serif;font-size:17px;font-weight:600}
-.btn-edit,.btn-reset{background:rgba(255,255,255,.12);border:none;color:var(--bone);padding:7px 13px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer}
+.results-title{font-family:'Lora',serif;font-size:19px;font-weight:600}
+.btn-edit,.btn-reset{background:rgba(255,255,255,.12);border:none;color:var(--bone);padding:7px 13px;border-radius:20px;font-size:15px;font-weight:500;cursor:pointer}
 .btn-edit:active,.btn-reset:active{background:rgba(255,255,255,.22)}
 .results-body{padding:14px 12px 40px}
 /* ── EAST BANNER ─────────────────────────────────── */
-.east-banner{background:var(--gold2);color:var(--ink);border-radius:var(--r);padding:11px 14px;font-size:13px;line-height:1.5;margin-bottom:14px}
+.east-banner{background:var(--gold2);color:var(--ink);border-radius:var(--r);padding:11px 14px;font-size:15px;line-height:1.5;margin-bottom:14px}
 /* ── SECTION FOCUS ───────────────────────────────── */
 .section-focus{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);padding:14px;margin-bottom:14px;box-shadow:var(--shadow)}
-.sf-title{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.sf-title{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
 .sf-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px}
 .sf-row:last-child{margin-bottom:0}
 .sf-rank{font-size:12px;font-weight:700;color:var(--ink3);min-width:16px;padding-top:1px}
-.sf-name{font-weight:600;font-size:14px;color:var(--ink);line-height:1.2}
-.sf-reason{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.sf-name{font-weight:600;font-size:16px;color:var(--ink);line-height:1.2}
+.sf-reason{font-size:14px;color:var(--ink2);margin-top:2px;line-height:1.4}
 /* ── REC CARDS ───────────────────────────────────── */
 .rec-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
 .rec-header{background:var(--bone);border-bottom:1px solid var(--bone2);padding:12px 14px 10px}
 .rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.rec-rank-label{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
-.rec-sec-tag{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);background:rgba(196,160,64,.12);border-radius:20px;padding:2px 8px}
+.rec-rank-label{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
+.rec-sec-tag{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(26,48,96,.10);border-radius:20px;padding:2px 8px}
 .conc-badge{font-size:10px;font-weight:600;color:var(--red);background:rgba(184,32,16,.1);border-radius:20px;padding:2px 7px;margin:auto}
-.card-ref{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--ink);line-height:1.2;margin-bottom:3px}
-.hand-display{font-family:'Courier New',monospace;font-size:13px;letter-spacing:.5px;margin:4px 0 3px;line-height:1.4}
-.tiles-matched{font-size:11px;color:var(--ink3)}
+.card-ref{font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--ink);line-height:1.2;margin-bottom:3px}
+.hand-display{font-family:'Courier New',monospace;font-size:15px;letter-spacing:.5px;margin:4px 0 3px;line-height:1.4}
+.tiles-matched{font-size:13px;color:var(--ink3)}
 .rec-body{padding:12px 14px}
-.rec-field{font-size:13px;color:var(--ink2);margin-bottom:10px;line-height:1.5}
+.rec-field{font-size:15px;color:var(--ink2);margin-bottom:10px;line-height:1.5}
 .rec-field:last-child{margin-bottom:0}
 .rec-field strong{color:var(--ink);font-weight:600}
 .need-list{line-height:1.8}
 /* Need tags */
-.tag{display:inline-block;font-size:10px;font-weight:600;border-radius:20px;padding:1px 7px;margin:5px;vertical-align:middle;letter-spacing:.2px}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:20px;padding:1px 7px;margin:5px;vertical-align:middle;letter-spacing:.2px}
 .tag-ready{background:rgba(26,96,32,.12);color:var(--green)}
 .tag-joker{background:rgba(26,48,96,.12);color:var(--blue)}
 .tag-build{background:rgba(196,160,64,.15);color:#8a6010}
 .tag-draw{background:rgba(80,60,40,.1);color:#6a5030}
-.rationale{font-style:italic;color:var(--ink3);font-size:12px;border-top:1px solid var(--bone2);padding-top:9px;margin-top:2px}
-.joker-teaching{display:block;font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic;line-height:1.5}
-.concealed-note{font-size:12px;color:var(--ink2);background:rgba(26,20,16,.05);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5}
-.dragon-warn{font-size:12px;color:var(--red);margin-top:6px;line-height:1.4}
+.rationale{font-style:italic;color:var(--ink3);font-size:14px;border-top:1px solid var(--bone2);padding-top:9px;margin-top:2px}
+.joker-teaching{display:block;font-size:13px;color:var(--ink3);margin-top:4px;font-style:italic;line-height:1.5}
+.concealed-note{font-size:14px;color:var(--ink2);background:rgba(26,20,16,.05);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5}
+.dragon-warn{font-size:14px;color:var(--red);margin-top:6px;line-height:1.4}
 /* ── DISCARD CARD ────────────────────────────────── */
 .discard-card{background:var(--ink);color:var(--bone);border-radius:var(--r);padding:13px 14px;margin-bottom:14px}
-.discard-title{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
-.discard-text{font-size:13px;line-height:1.5;color:rgba(255,255,255,.9)}
+.discard-title{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
+.discard-text{font-size:15px;line-height:1.5;color:rgba(255,255,255,.9)}
 .discard-text strong{color:var(--gold2)}
 /* ── PIVOT CARDS ─────────────────────────────────── */
-.section-label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
+.section-label{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
 .pivot-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
 .pivot-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-.pivot-ref{font-family:'Lora',serif;font-size:14px;font-weight:600;color:var(--ink)}
-.pivot-score{font-size:11px;color:var(--ink3)}
-.pivot-sec{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
-.pivot-trig{font-size:13px;color:var(--ink2);line-height:1.4}
+.pivot-ref{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--ink)}
+.pivot-score{font-size:13px;color:var(--ink3)}
+.pivot-sec{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:5px}
+.pivot-trig{font-size:15px;color:var(--ink2);line-height:1.4}
 /* ── LOADING ─────────────────────────────────────── */
-#loadingMsg{padding:40px 20px;text-align:center;color:var(--ink3);font-size:14px}
+#loadingMsg{padding:40px 20px;text-align:center;color:var(--ink3);font-size:16px}
 /* ── MISC ────────────────────────────────────────── */
 .section-divider{height:1px;background:var(--bone2);margin:4px 0 14px}
 /* You Have chips */
 .yhave-row{display:flex;flex-direction:column;gap:6px}
 .yhave-chips{display:flex;flex-wrap:wrap;gap:3px}
-.yhave-chip{display:inline-flex;align-items:center;justify-content:center;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888}
+.yhave-chip{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:4px;font-size:13px;font-weight:600;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888}
 .yhave-chip.bam{background:#d4eecc;border-color:#a8d4a0;color:#1e6018}
 .yhave-chip.crk{background:#fde0dc;border-color:#f4b8b0;color:#b01808}
 .yhave-chip.dot{background:#d8e8f8;border-color:#a8c8e8;color:#1430a0}
 .yhave-chip.wind,.yhave-chip.dragon,.yhave-chip.flower{background:#e8e4f4;border-color:#c8c0e4;color:#3a2880}
 .yhave-chip.neutral{background:#f0e8d8;border-color:#d4c8a8;color:var(--ink2)}
 /* Alt suit note */
-.alt-suit-note{font-size:11px;color:var(--ink3);font-style:italic;margin-bottom:6px}
+.alt-suit-note{font-size:13px;color:var(--ink3);font-style:italic;margin-bottom:6px}
 /* Scatter message */
 .sf-scatter{font-style:italic;color:var(--ink3)}
 </style>
@@ -778,6 +778,8 @@ function scoreHand(handDef, suitMap, hand) {
         suit,
         number:      g.number,
         tileType:    g.tileType,
+        wind:        g.wind||null,
+        dragon:      g.dragon||null,
         tileHint:    g.tileType==='DRAGON' ? (g.dragon||'dragon')
                    : g.tileType==='WIND'   ? (g.wind||'wind')
                    : g.number ? String(g.number) : 'tile'
@@ -1996,15 +1998,24 @@ function getDiscardRecommendations(tiles, top3, hand) {
 
     let usefulIn = 0;
     top3.forEach(rec => {
-      const contributes = rec.details.matched.some(m => {
-        // Check if this tile type appears in matched groups
-        if (tile.type==='FLOWER' && m.label.toLowerCase().includes('flower')) return true;
-        if (tile.type==='NUMBER' && m.label.includes(String(tile.number)) && m.label.toUpperCase().includes(tile.suit[0])) return true;
-        if (tile.type==='WIND' && m.label.toUpperCase().includes(tile.wind)) return true;
-        if (tile.type==='DRAGON' && m.label.toUpperCase().includes(tile.dragon)) return true;
+      // Check matched groups
+      const inMatched = rec.details.matched.some(m => {
+        if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+        if (tile.type==='NUMBER' && m.tileType==='NUMBER' && m.number===tile.number && m.suit===tile.suit) return true;
+        if (tile.type==='WIND' && m.tileType==='WIND' && m.wind===tile.wind) return true;
+        if (tile.type==='DRAGON' && m.tileType==='DRAGON' && m.dragon===tile.dragon) return true;
         return false;
       });
-      if (contributes) usefulIn++;
+      // Check partial holds in missing groups
+      const inMissing = rec.details.missing.some(m => {
+        if (m.holds === 0) return false;
+        if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+        if (tile.type==='NUMBER' && m.tileType==='NUMBER' && m.number===tile.number && m.suit===tile.suit) return true;
+        if (tile.type==='WIND' && m.tileType==='WIND' && m.wind===tile.wind) return true;
+        if (tile.type==='DRAGON' && m.tileType==='DRAGON' && m.dragon===tile.dragon) return true;
+        return false;
+      });
+      if (inMatched || inMissing) usefulIn++;
     });
 
     tileScores[id] = { tile, usefulIn, count };
@@ -2159,7 +2170,14 @@ function resolveLabel(label, suit, suitMap) {
 }
 
 function formatMissingItem(m, hand, suitMap) {
-  const label = resolveLabel(m.label, m.suit, suitMap);
+  let label = resolveLabel(m.label, m.suit, suitMap);
+  // Replace flex number placeholders with actual resolved number
+  if (m.number != null) {
+    label = label.replace(/\bN(?:\+\d)?\b/g, String(m.number));
+    label = label.replace(/\bRank(?:\s+of)?\b/gi, String(m.number));
+  }
+  // Clean up any leftover flex notation
+  label = label.replace(/\s*\(Bam\)/, ' (Bam)').replace(/\s*\(Crack\)/, ' (Crack)').replace(/\s*\(Dot\)/, ' (Dot)');
   const need = m.need;
   const holds = m.holds;
   const total = m.groupType==='quint'?5:m.groupType==='kong'?4:m.groupType==='pung'?3:m.groupType==='pair'?2:1;
@@ -2176,10 +2194,10 @@ function formatMissingItem(m, hand, suitMap) {
   let howStr = '';
   if (m.claimState==='readyToCall') {
     howStr = hand.jokers > 0
-      ? 'call from discard, draw, or use a joker'
-      : 'call from discard or draw';
+      ? 'you can call from discard, draw, or use a joker'
+      : 'you can call from discard or draw';
   } else if (m.claimState==='readyWithJoker') {
-    howStr = 'call from discard if you place your joker here';
+    howStr = 'you can call from discard if you place your joker here';
   } else if (m.claimState==='pullMoreThenCall') {
     howStr = hand.jokers > 0
       ? 'draw more tiles first, then call or use a joker'
@@ -2253,8 +2271,12 @@ function renderResults(hand, top3, pivots, is14) {
     // Build "You Have" — individual tile chips, no group language
     // Each chip = one tile. Show matched tiles + partial holds as actual tiles.
     function getTileChipLabel(m, suitMap) {
-      const suit = m.suit ? suitMap[m.suit] : null;
-      const suitShort = suit==='BAM'?'B':suit==='CRK'?'C':suit==='DOT'?'D':null;
+      // m.suit is the RESOLVED suit string ('BAM','CRK','DOT') not a slot key
+      // For matched groups it's stored directly; for missing groups it may be a slot
+      const resolvedSuit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT')
+        ? m.suit
+        : (m.suit && suitMap ? suitMap[m.suit] : null);
+      const suitShort = resolvedSuit==='BAM'?'B':resolvedSuit==='CRK'?'C':resolvedSuit==='DOT'?'D':null;
       if (m.tileType==='NUMBER' && m.number && suitShort) return `${m.number}${suitShort}`;
       if (m.tileType==='FLOWER') return 'F';
       if (m.tileType==='JOKER') return '★';
