@@ -1873,8 +1873,9 @@ const SECTION_SIGNALS = {
   },
   // Any Like Numbers: need 3+ of same number in one suit
   'any_like_numbers': h => {
+    // Need 3+ of the same number in the same suit — not just 3 total across suits
     return Object.values(h.numberCounts).some(nc=>
-      Math.max(nc.BAM||0,nc.CRK||0,nc.DOT||0)>=3
+      (nc.BAM||0)>=3 || (nc.CRK||0)>=3 || (nc.DOT||0)>=3
     );
   },
   // Winds & Dragons: need real wind/dragon concentration
@@ -1882,8 +1883,9 @@ const SECTION_SIGNALS = {
     const windTotal = Object.values(h.winds).reduce((a,b)=>a+b,0);
     const windPairs = Object.values(h.winds).filter(c=>c>=2).length;
     const dragonTotal = Object.values(h.dragons).reduce((a,b)=>a+b,0);
-    // Need either multiple winds, a wind pair, or 2+ dragons
-    return windPairs>=1 || windTotal>=4 || dragonTotal>=2;
+    const dragonPairs = Object.values(h.dragons).filter(c=>c>=2).length;
+    // Need meaningful wind/dragon concentration — not just 2 stray dragons
+    return windPairs>=2 || windTotal>=4 || dragonPairs>=2 || (windPairs>=1 && dragonTotal>=2);
   },
   // 369: need at least 2 of the 3 key numbers with real tiles (not just singles)
   '369': h => {
@@ -2252,8 +2254,10 @@ function renderResults(hand, top3, pivots, is14) {
     const card = document.createElement('div');
     card.className = 'rec-card';
 
+    // Only count claimable groups that are NOT already fully matched
+    const matchedLabels = new Set(rec.details.matched.map(m=>m.label));
     const jokerPositions = rec.handDef.groups.filter(
-      g=>g.groupType!=='single'&&g.groupType!=='pair'
+      g=>g.groupType!=='single'&&g.groupType!=='pair'&&!matchedLabels.has(g.label)
     ).length;
 
     // Build "You have" — fully matched groups + partial contributions
