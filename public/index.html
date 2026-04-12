@@ -1885,7 +1885,9 @@ const SECTION_SIGNALS = {
     const dragonTotal = Object.values(h.dragons).reduce((a,b)=>a+b,0);
     const dragonPairs = Object.values(h.dragons).filter(c=>c>=2).length;
     // Need meaningful wind/dragon concentration — not just 2 stray dragons
-    return windPairs>=2 || windTotal>=4 || dragonPairs>=2 || (windPairs>=1 && dragonTotal>=2);
+    // dragonPairs = number of dragon TYPES with a pair (max 3)
+    // Require: 2+ wind pairs, OR 4+ winds, OR 2+ dragon-type pairs, OR wind pair + dragon pair
+    return windPairs>=2 || windTotal>=4 || dragonPairs>=2 || (windPairs>=1 && dragonPairs>=1);
   },
   // 369: need at least 2 of the 3 key numbers with real tiles (not just singles)
   '369': h => {
@@ -1955,18 +1957,19 @@ const SECTION_DISPLAY = {
 };
 
 function countTilesForSection(sectionKey, hand) {
-  // Count how many tiles in hand contribute toward any hand in this section
+  // Count actual tiles matched (not joker-adjusted) toward any hand in this section
   const handsInSection = HAND_LIBRARY.filter(h => h.section === sectionKey);
   let maxTiles = 0;
   for (const handDef of handsInSection) {
     const result = findBestScore(handDef, hand);
+    // Use raw matched count only — not joker-inflated
     if (result && result.matched > maxTiles) maxTiles = result.matched;
   }
   return maxTiles;
 }
 
 function getSectionFocus(hand, topSections) {
-  const SECTION_TILE_THRESHOLD = 5;
+  const SECTION_TILE_THRESHOLD = 6;
 
   const qualifying = Object.entries(SECTION_SIGNALS)
     .filter(([,fn]) => fn(hand))
@@ -2001,33 +2004,47 @@ function getDiscardRecommendations(tiles, top3, hand) {
     let usefulIn = 0;
     top3.forEach(rec => {
       // Check matched groups
-      const inMatched = rec.details.matched.some(m => {
+      // Helper: does this tile match a group (matched or missing)?
+      const tileMatchesGroup = (m, requireHolds) => {
+        if (requireHolds && m.holds === 0) return false;
         if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-        if (tile.type==='NUMBER' && m.tileType==='NUMBER' && m.number===tile.number && m.suit===tile.suit) return true;
+        if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
+            m.number===tile.number && m.suit===tile.suit) return true;
         if (tile.type==='WIND' && m.tileType==='WIND' && m.wind===tile.wind) return true;
-        if (tile.type==='DRAGON' && m.tileType==='DRAGON' && m.dragon===tile.dragon) return true;
+        if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
+          // Direct match
+          if (m.dragon && m.dragon===tile.dragon) return true;
+          // Resolved via suit (opposing/matching dragon)
+          const recSuit = m.suit && rec.suitMap ? rec.suitMap[m.suit] : m.suit;
+          if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
+          if (recSuit==='CRK' && tile.dragon==='RED') return true;
+          if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
+          // Opposing dragon
+          if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
+          if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
+          if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
+        }
         return false;
-      });
-      // Check partial holds in missing groups
-      const inMissing = rec.details.missing.some(m => {
-        if (m.holds === 0) return false;
-        if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-        if (tile.type==='NUMBER' && m.tileType==='NUMBER' && m.number===tile.number && m.suit===tile.suit) return true;
-        if (tile.type==='WIND' && m.tileType==='WIND' && m.wind===tile.wind) return true;
-        if (tile.type==='DRAGON' && m.tileType==='DRAGON' && m.dragon===tile.dragon) return true;
-        return false;
-      });
+      };
+      const inMatched = rec.details.matched.some(m => tileMatchesGroup(m, false));
+      const inMissing = rec.details.missing.some(m => tileMatchesGroup(m, true));
       if (inMatched || inMissing) usefulIn++;
     });
 
     tileScores[id] = { tile, usefulIn, count };
   });
 
-  // Sort: least useful first
-  return Object.entries(tileScores)
-    .sort((a,b)=>a[1].usefulIn - b[1].usefulIn)
-    .slice(0,4)
-    .map(([id,{tile}]) => {
+  // Only recommend tiles useful in ZERO of the top 3 hands
+  // If nothing qualifies at 0, show tiles useful in only 1 hand
+  // Never recommend a tile that helps 2+ of your top 3 hands
+  const sorted = Object.entries(tileScores)
+    .sort((a,b)=>a[1].usefulIn - b[1].usefulIn);
+  const zeroUseful = sorted.filter(([,v])=>v.usefulIn===0);
+  const oneUseful  = sorted.filter(([,v])=>v.usefulIn===1);
+  const candidates = zeroUseful.length > 0 ? zeroUseful
+                   : oneUseful.length  > 0 ? oneUseful
+                   : [];
+  return candidates.slice(0,4).map(([id,{tile}]) => {
       let label = '';
       if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
       else if (tile.type==='WIND') label=`${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
@@ -2172,14 +2189,30 @@ function resolveLabel(label, suit, suitMap) {
 }
 
 function formatMissingItem(m, hand, suitMap) {
-  let label = resolveLabel(m.label, m.suit, suitMap);
-  // Replace flex number placeholders with actual resolved number
-  if (m.number != null) {
-    label = label.replace(/\bN(?:\+\d)?\b/g, String(m.number));
-    label = label.replace(/\bRank(?:\s+of)?\b/gi, String(m.number));
+  // Build a clean human-readable label from tile properties directly
+  const resolvedSuit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT')
+    ? m.suit : (m.suit && suitMap ? suitMap[m.suit] : null);
+  const suitName = resolvedSuit==='BAM'?'Bam':resolvedSuit==='CRK'?'Crack':resolvedSuit==='DOT'?'Dot':null;
+  const groupName = m.groupType==='quint'?'Quint':m.groupType==='kong'?'Kong':
+                    m.groupType==='pung'?'Pung':m.groupType==='pair'?'Pair':'Single';
+
+  let label;
+  if (m.tileType==='NUMBER' && m.number && suitName) {
+    label = `${groupName} of ${m.number}-${suitName}`;
+  } else if (m.tileType==='FLOWER') {
+    label = `${groupName} of Flowers`;
+  } else if (m.tileType==='WIND') {
+    const windName = m.wind ? m.wind[0]+m.wind.slice(1).toLowerCase() : 'Wind';
+    label = `${groupName} of ${windName} Winds`;
+  } else if (m.tileType==='DRAGON') {
+    const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
+    const dName = d==='GREEN'?'Green':d==='RED'?'Red':d==='WHITE'?'Soap':'';
+    label = `${groupName} of ${dName} Dragons`;
+  } else {
+    // Fallback to resolveLabel
+    label = resolveLabel(m.label, m.suit, suitMap);
+    if (m.number != null) label = label.replace(/\bN(?:\+\d)?\b/g, String(m.number));
   }
-  // Clean up any leftover flex notation
-  label = label.replace(/\s*\(Bam\)/, ' (Bam)').replace(/\s*\(Crack\)/, ' (Crack)').replace(/\s*\(Dot\)/, ' (Dot)');
   const need = m.need;
   const holds = m.holds;
   const total = m.groupType==='quint'?5:m.groupType==='kong'?4:m.groupType==='pung'?3:m.groupType==='pair'?2:1;
