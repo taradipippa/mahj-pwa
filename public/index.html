@@ -2250,7 +2250,7 @@ function formatMissingItem(m, hand, suitMap) {
       ? 'you can call from discard, draw, or use a joker'
       : 'you can call from discard or draw';
   } else if (m.claimState==='readyWithJoker') {
-    howStr = 'you can call from discard if you place your joker here';
+    howStr = 'you can call from discard if you place your joker(s) here';
   } else if (m.claimState==='pullMoreThenCall') {
     howStr = hand.jokers > 0
       ? 'draw more tiles first, then call or use a joker'
@@ -2380,29 +2380,44 @@ function renderResults(hand, top3, pivots, is14) {
       for (let j=0; j<hand.jokers; j++) youHaveChipData.push({label:'★', cls:'joker', count:1});
     }
     // Order chips strictly by hand definition group order — jokers always last
-    // Rebuild in hand definition order rather than scoring order
+    // Match by tileType + number + suit/dragon, not by label string
     const orderedChipData = [];
+    const unplaced = youHaveChipData.map(c=>({...c,_placed:false}));
+
     rec.handDef.groups.forEach(g => {
-      // Find matching chip in youHaveChipData
       const suit = g.suit ? rec.suitMap[g.suit] : null;
-      const suitShort = suit==='BAM'?'B':suit==='CRK'?'C':suit==='DOT'?'D':null;
-      let label;
-      if (g.tileType==='NUMBER' && g.number && suitShort) label=`${g.number}${suitShort}`;
-      else if (g.tileType==='FLOWER') label='F';
-      else if (g.tileType==='WIND' && g.wind) label=g.wind[0];
-      else if (g.tileType==='DRAGON') {
-        const d = g.dragon||(suit==='BAM'?'GREEN':suit==='CRK'?'RED':suit==='DOT'?'WHITE':null);
-        label = d==='GREEN'?'GD':d==='RED'?'RD':d==='WHITE'?'Soap':'D';
+      const resolvedDragon = g.dragon
+        || (suit==='BAM'?'GREEN':suit==='CRK'?'RED':suit==='DOT'?'WHITE':null);
+
+      const matchesCls = (c) => {
+        if (g.tileType==='FLOWER')  return c.cls==='flower';
+        if (g.tileType==='NUMBER')  return c.cls===(suit==='BAM'?'bam':suit==='CRK'?'crk':suit==='DOT'?'dot':null);
+        if (g.tileType==='WIND')    return c.cls==='wind';
+        if (g.tileType==='DRAGON')  return c.cls==='dragon';
+        return false;
+      };
+
+      // Pull chips for this group from unplaced pool
+      let pulled = 0;
+      for (const c of unplaced) {
+        if (c._placed) continue;
+        if (!matchesCls(c)) continue;
+        // Extra check for numbers — match specific number
+        if (g.tileType==='NUMBER' && g.number) {
+          if (!c.label.startsWith(String(g.number))) continue;
+        }
+        c._placed = true;
+        orderedChipData.push(c);
+        pulled++;
+        // Only pull up to what this group contributes (count or holds)
+        const groupCount = g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1;
+        if (pulled >= groupCount) break;
       }
-      if (!label) return;
-      // Find a matching unplaced chip
-      const idx = orderedChipData.length;
-      const match = youHaveChipData.find(c=>c.label===label && !c._placed);
-      if (match) { match._placed=true; orderedChipData.push(match); }
     });
+
     // Add any remaining unplaced non-joker chips, then jokers
-    youHaveChipData.filter(c=>!c._placed&&c.cls!=='joker').forEach(c=>orderedChipData.push(c));
-    youHaveChipData.filter(c=>!c._placed&&c.cls==='joker').forEach(c=>orderedChipData.push(c));
+    unplaced.filter(c=>!c._placed&&c.cls!=='joker').forEach(c=>orderedChipData.push(c));
+    unplaced.filter(c=>!c._placed&&c.cls==='joker').forEach(c=>orderedChipData.push(c));
     const youHave = makeTileChips(orderedChipData);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
