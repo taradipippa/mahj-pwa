@@ -727,9 +727,9 @@ function scoreHand(handDef, suitMap, hand) {
       let claimState = 'mustDraw';
       if (!handDef.concealed && r.groupIsClaimable) {
         const readyNow       = r.holds >= (g.count - 1);
-        // Joker check: jokers are flexible — they can make any claimable group ready
-        // We check if adding one joker would make this group callable
-        const readyWithJoker = hand.jokers > 0 && (r.holds + 1) >= (g.count - 1);
+        // Joker check: use ALL jokers — if holds + jokers >= count-1, ready to call
+        // Even 0 tiles held + 3 jokers on a kong = ready to call
+        const readyWithJoker = !readyNow && hand.jokers > 0 && (r.holds + hand.jokers) >= (g.count - 1);
         if (readyNow)            { claimState = 'readyToCall';     readyToCallCount++; }
         else if (readyWithJoker) { claimState = 'readyWithJoker';  readyToCallCount++; }
         else                     { claimState = 'pullMoreThenCall'; buildThenCallCount++; }
@@ -1938,10 +1938,8 @@ const SECTION_SIGNALS = {
   'quints': h => h.jokers>=2,
   // Singles & Pairs: need multiple actual pairs of winds or dragons
   'singles_and_pairs': h => {
-    const windPairs = Object.values(h.winds).filter(c=>c>=2).length;
-    const dragonPairs = Object.values(h.dragons).filter(c=>c>=2).length;
-    const numPairs = h.pairs.filter(p=>p.type==='NUMBER').length;
-    return windPairs>=2 || dragonPairs>=2 || (windPairs>=1&&numPairs>=3);
+    // Signal always true — threshold handled by countTilesForSection (6+ tiles)
+    return true;
   },
 };
 
@@ -2381,13 +2379,31 @@ function renderResults(hand, top3, pivots, is14) {
     if (hand.jokers > 0 && claimableGroupCount > 0) {
       for (let j=0; j<hand.jokers; j++) youHaveChipData.push({label:'★', cls:'joker', count:1});
     }
-    // Order follows hand definition group order — jokers always last
-    // youHaveChipData is already built in group order (matched then partial holds)
-    // Just move jokers to end
-    const jokerChips = youHaveChipData.filter(c=>c.cls==='joker');
-    const nonJokerChips = youHaveChipData.filter(c=>c.cls!=='joker');
-    const orderedChips = [...nonJokerChips, ...jokerChips];
-    const youHave = makeTileChips(orderedChips);
+    // Order chips strictly by hand definition group order — jokers always last
+    // Rebuild in hand definition order rather than scoring order
+    const orderedChipData = [];
+    rec.handDef.groups.forEach(g => {
+      // Find matching chip in youHaveChipData
+      const suit = g.suit ? rec.suitMap[g.suit] : null;
+      const suitShort = suit==='BAM'?'B':suit==='CRK'?'C':suit==='DOT'?'D':null;
+      let label;
+      if (g.tileType==='NUMBER' && g.number && suitShort) label=`${g.number}${suitShort}`;
+      else if (g.tileType==='FLOWER') label='F';
+      else if (g.tileType==='WIND' && g.wind) label=g.wind[0];
+      else if (g.tileType==='DRAGON') {
+        const d = g.dragon||(suit==='BAM'?'GREEN':suit==='CRK'?'RED':suit==='DOT'?'WHITE':null);
+        label = d==='GREEN'?'GD':d==='RED'?'RD':d==='WHITE'?'Soap':'D';
+      }
+      if (!label) return;
+      // Find a matching unplaced chip
+      const idx = orderedChipData.length;
+      const match = youHaveChipData.find(c=>c.label===label && !c._placed);
+      if (match) { match._placed=true; orderedChipData.push(match); }
+    });
+    // Add any remaining unplaced non-joker chips, then jokers
+    youHaveChipData.filter(c=>!c._placed&&c.cls!=='joker').forEach(c=>orderedChipData.push(c));
+    youHaveChipData.filter(c=>!c._placed&&c.cls==='joker').forEach(c=>orderedChipData.push(c));
+    const youHave = makeTileChips(orderedChipData);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
     // Compute joker-adjusted matched count
