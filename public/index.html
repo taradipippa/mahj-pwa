@@ -180,6 +180,7 @@ body{padding-top:env(safe-area-inset-top)}
 /* You Have chips */
 .yhave-row{display:flex;flex-direction:column;gap:6px}
 .yhave-chips{display:flex;flex-wrap:wrap;gap:3px}
+.yhave-chips-header{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bone2)}
 .yhave-chip{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:4px;font-size:13px;font-weight:600;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888}
 .yhave-chip.bam{background:#d4eecc;border-color:#a8d4a0;color:#1e6018}
 .yhave-chip.crk{background:#fde0dc;border-color:#f4b8b0;color:#b01808}
@@ -2241,7 +2242,10 @@ function formatMissingItem(m, hand, suitMap) {
   if (m.tileType==='NUMBER' && m.number && suitName) {
     label = `${groupName} of ${m.number}-${suitName}`;
   } else if (m.tileType==='FLOWER') {
-    label = `${groupName} of Flowers`;
+    const flowerTotal = m.holds + m.need;
+    label = `${flowerTotal} Flower${flowerTotal!==1?'s':''}` + (flowerTotal > 3 ? '' : '');
+    // Override groupName for flowers — just say the count
+    label = `${flowerTotal} Flowers`;
   } else if (m.tileType==='WIND') {
     const windName = m.wind ? m.wind[0]+m.wind.slice(1).toLowerCase() : 'Wind';
     label = `${groupName} of ${windName} Winds`;
@@ -2468,7 +2472,25 @@ function renderResults(hand, top3, pivots, is14) {
       return 0;
     });
     const youHave = makeTileChips(orderedChipData);
-    const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
+    // Merge consecutive duplicate flower groups in You Need display
+    // e.g. two pungs of 3 flowers → show as one line "6 Flowers — you have X of 6"
+    const mergedMissing = [];
+    rec.details.missing.forEach(m => {
+      const prev = mergedMissing[mergedMissing.length - 1];
+      if (prev && prev.tileType==='FLOWER' && m.tileType==='FLOWER') {
+        // Merge: combine holds and need
+        mergedMissing[mergedMissing.length - 1] = {
+          ...prev,
+          holds: prev.holds + m.holds,
+          need:  prev.need  + m.need,
+          groupType: 'kong', // treat merged as a single group for display
+          _mergedCount: (prev._mergedCount||prev.holds+prev.need) + (m.holds+m.need)
+        };
+      } else {
+        mergedMissing.push({...m});
+      }
+    });
+    const youNeed = mergedMissing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
     // Compute joker-adjusted matched count
     // Jokers count toward claimable groups only (not pairs/singles)
@@ -2489,7 +2511,7 @@ function renderResults(hand, top3, pivots, is14) {
       : '';
 
     card.innerHTML = `
-      <div class="rec-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">
+      <div class="rec-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.rec-toggle').textContent=this.nextElementSibling.classList.contains('collapsed')?'▸':'▾'">
         <span class="rec-toggle">▾</span>
         <div class="rec-rank-row">
           <span class="rec-rank-label">${rankLabel}</span>
@@ -2502,9 +2524,9 @@ function renderResults(hand, top3, pivots, is14) {
         </div>
         <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
         <div class="tiles-matched">${adjustedMatched} of ${rec.total} tiles</div>
+        ${youHave ? `<div class="yhave-chips yhave-chips-header">${youHave}</div>` : ''}
       </div>
-      <div class="rec-body">
-        ${youHave ? `<div class="rec-field yhave-row"><strong>You have</strong><div class="yhave-chips">${youHave}</div></div>` : ''}
+      <div class="rec-body collapsed">
         ${youNeed ? `<div class="rec-field need-list"><strong>You need</strong><br>${youNeed}</div>` : ''}
         ${jokerHTML}
         ${(()=>{
