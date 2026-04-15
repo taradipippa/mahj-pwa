@@ -132,7 +132,11 @@ body{padding-top:env(safe-area-inset-top)}
 .sf-reason{font-size:14px;color:var(--ink2);margin-top:2px;line-height:1.4}
 /* ── REC CARDS ───────────────────────────────────── */
 .rec-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
-.rec-header{background:var(--bone);border-bottom:1px solid var(--bone2);padding:12px 14px 10px}
+.rec-header{background:var(--bone);border-bottom:1px solid var(--bone2);padding:12px 14px 10px;cursor:pointer;user-select:none}
+.rec-header:active{opacity:.85}
+.rec-body{padding:12px 14px;transition:none}
+.rec-body.collapsed{display:none}
+.rec-toggle{float:right;font-size:13px;color:var(--ink3);margin-top:2px}
 .rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
 .rec-rank-label{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
 .rec-sec-tag{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(26,48,96,.10);border-radius:20px;padding:2px 8px}
@@ -831,7 +835,10 @@ function scoreHand(handDef, suitMap, hand) {
   let concPenalty = 0;
   if (handDef.concealed) {
     concPenalty = fitScore >= 70 ? 10 : 13;
-    if (hand.jokers >= 2) concPenalty = Math.max(0, concPenalty - 2);
+    // Reduce penalty based on jokers and structural closeness
+    const jokerRelief    = hand.jokers * 1.5;
+    const structRelief   = (fitScore / 100) * 4;
+    concPenalty = Math.max(0, concPenalty - jokerRelief - structRelief);
   }
   if (handDef.section === 'singles_and_pairs') concPenalty += 7;
 
@@ -1128,7 +1135,8 @@ const HAND_LIBRARY = [
   {id:'2468_L7',pointValue:30,exposedPlay:true,section:'2468',cardRef:makeCardRef('2468',7),
    label:'FFFFFF + 2468 Singles + Even Kong',concealed:false,suitsRequired:2,flexibility:'any_even_kong',
    groups:[
-     {label:'6 Flowers',tileType:'FLOWER',groupType:'kong',count:6},
+     {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
+     {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
      {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
      {label:'Single 4 (Suit A)',tileType:'NUMBER',number:4,suit:'A',groupType:'single',count:1},
      {label:'Single 6 (Suit A)',tileType:'NUMBER',number:6,suit:'A',groupType:'single',count:1},
@@ -1153,7 +1161,8 @@ const HAND_LIBRARY = [
   {id:'ALN_L1',pointValue:30,exposedPlay:true,section:'any_like_numbers',cardRef:makeCardRef('any_like_numbers',1),
    label:'FFFFFF + Kong-N + Kong-N (2 suits)',concealed:false,suitsRequired:2,flexibility:'any_like_number',
    groups:[
-     {label:'6 Flowers',tileType:'FLOWER',groupType:'kong',count:6},
+     {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
+     {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
      {label:'Kong of N (Suit A)',tileType:'NUMBER',numberFlex:'like',suit:'A',groupType:'kong',count:4},
      {label:'Kong of N (Suit B)',tileType:'NUMBER',numberFlex:'like',suit:'B',groupType:'kong',count:4},
    ]},
@@ -1436,7 +1445,8 @@ const HAND_LIBRARY = [
    label:'Kong-N + FFFFFF + Kong-N+1 (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:2,
    groups:[
      {label:'Kong of N',tileType:'NUMBER',numberFlex:'consec2_pos1',suit:'A',groupType:'kong',count:4},
-     {label:'6 Flowers',tileType:'FLOWER',groupType:'kong',count:6},
+     {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
+     {label:'3 Flowers',tileType:'FLOWER',groupType:'pung',count:3},
      {label:'Kong of N+1',tileType:'NUMBER',numberFlex:'consec2_pos2',suit:'A',groupType:'kong',count:4},
    ]},
   {id:'CR_L7a',pointValue:25,exposedPlay:true,section:'consecutive_run',cardRef:makeCardRef('consecutive_run',7,''),
@@ -1893,9 +1903,9 @@ const SECTION_SIGNALS = {
   },
   // Any Like Numbers: need 3+ of same number in one suit
   'any_like_numbers': h => {
-    // Need 3+ of the same number in the same suit — not just 3 total across suits
+    // Need 4+ of same number in same suit to be meaningful for ALN hands
     return Object.values(h.numberCounts).some(nc=>
-      (nc.BAM||0)>=3 || (nc.CRK||0)>=3 || (nc.DOT||0)>=3
+      (nc.BAM||0)>=4 || (nc.CRK||0)>=4 || (nc.DOT||0)>=4
     );
   },
   // Winds & Dragons: need real wind/dragon concentration
@@ -1969,7 +1979,7 @@ const SECTION_REASON = {
 };
 
 const SECTION_DISPLAY = {
-  '2026':'2026','2468':'2468 — Evens','any_like_numbers':'Any Like Numbers',
+  '2026':'2026','2468':'2468','any_like_numbers':'Any Like Numbers',
   'winds_dragons':'Winds & Dragons','369':'369','consecutive_run':'Consecutive Run',
   '13579':'13579','quints':'Quints','singles_and_pairs':'Singles & Pairs'
 };
@@ -1986,22 +1996,27 @@ function countTilesForSection(sectionKey, hand) {
   return maxTiles;
 }
 
-function getSectionFocus(hand, topSections) {
+function getSectionFocus(hand, topSections, displayedHandSections) {
   const SECTION_TILE_THRESHOLD = 6;
+  const SP_TILE_THRESHOLD = 9;
 
   const qualifying = Object.entries(SECTION_SIGNALS)
     .filter(([,fn]) => fn(hand))
     .map(([key]) => {
       const tileCount = countTilesForSection(key, hand);
+      const threshold = key === 'singles_and_pairs' ? SP_TILE_THRESHOLD : SECTION_TILE_THRESHOLD;
       return {
         key,
         name: SECTION_DISPLAY[key],
         reason: SECTION_REASON[key](hand),
         priority: topSections && topSections.includes(key) ? 1 : 0,
-        tileCount
+        tileCount,
+        threshold
       };
     })
-    .filter(s => s.tileCount >= SECTION_TILE_THRESHOLD);
+    .filter(s => s.tileCount >= s.threshold)
+    // Fix 6: only show section if at least one displayed hand is in it
+    .filter(s => displayedHandSections && displayedHandSections.includes(s.key));
 
   qualifying.sort((a,b) => b.priority - a.priority || b.tileCount - a.tileCount);
   return qualifying.slice(0, 4);
@@ -2011,8 +2026,10 @@ function getSectionFocus(hand, topSections) {
 // DISCARD ANALYSIS
 // ============================================================
 
-function getDiscardRecommendations(tiles, top3, hand) {
-  // Score each tile's contribution to top 3 hands
+function getDiscardRecommendations(tiles, top3, pivots, hand) {
+  // Usefulness based ONLY on displayed hands (top3 + pivots)
+  // Uses already-scored best paths — no recomputation
+  const displayedHands = [...top3, ...(pivots||[])];
   const tileScores = {};
 
   Object.entries(selectedTiles).forEach(([id, count]) => {
@@ -2020,33 +2037,30 @@ function getDiscardRecommendations(tiles, top3, hand) {
     if (!tile || tile.type === 'JOKER') return;
 
     let usefulIn = 0;
-    top3.forEach(rec => {
-      // Check matched groups
-      // Helper: does this tile match a group (matched or missing)?
+    displayedHands.forEach(rec => {
       const tileMatchesGroup = (m, requireHolds) => {
         if (requireHolds && m.holds === 0) return false;
         if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
         if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
             m.number===tile.number && m.suit===tile.suit) return true;
-        if (tile.type==='WIND' && m.tileType==='WIND' && (m.wind===tile.wind || !m.wind)) return true;
+        if (tile.type==='WIND' && m.tileType==='WIND') {
+          // Only match if this specific wind was resolved in the scored path
+          // windFlex:'any' groups store m.wind=null — NOT a match for all winds
+          return m.wind === tile.wind;
+        }
         if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-          // Direct match on stored dragon
           if (m.dragon && m.dragon===tile.dragon) return true;
-          // Resolve suit — m.suit may be a slot key ('A','B') or resolved ('BAM','CRK','DOT')
           const rawSuit = m.suit;
           const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
             ? rawSuit
             : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
-          // Matching dragon for suit
           if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
           if (recSuit==='CRK' && tile.dragon==='RED') return true;
           if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-          // Opposing dragon for suit
           if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
           if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
           if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
-          // Any dragon (dragonRequirement='any') — no suit, no specific dragon
-          if (!recSuit && !m.dragon) return true;
+          if (!recSuit && !m.dragon && m.holds > 0) return true;
         }
         return false;
       };
@@ -2058,9 +2072,6 @@ function getDiscardRecommendations(tiles, top3, hand) {
     tileScores[id] = { tile, usefulIn, count };
   });
 
-  // Only recommend tiles useful in ZERO of the top 3 hands
-  // If nothing qualifies at 0, show tiles useful in only 1 hand
-  // Never recommend a tile that helps 2+ of your top 3 hands
   const sorted = Object.entries(tileScores)
     .sort((a,b)=>a[1].usefulIn - b[1].usefulIn);
   const zeroUseful = sorted.filter(([,v])=>v.usefulIn===0);
@@ -2069,14 +2080,14 @@ function getDiscardRecommendations(tiles, top3, hand) {
                    : oneUseful.length  > 0 ? oneUseful
                    : [];
   return candidates.slice(0,4).map(([id,{tile}]) => {
-      let label = '';
-      if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
-      else if (tile.type==='WIND') label=`${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
-      else if (tile.type==='DRAGON') label=`${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
-      else if (tile.type==='FLOWER') label='Flower';
-      return label;
-    })
-    .filter(Boolean);
+    let label = '';
+    if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
+    else if (tile.type==='WIND') label=`${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
+    else if (tile.type==='DRAGON') label=`${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
+    else if (tile.type==='FLOWER') label='Flower';
+    return label;
+  })
+  .filter(Boolean);
 }
 
 // ============================================================
@@ -2117,45 +2128,51 @@ function glanceText(hand) {
 }
 
 function rankRationale(rec, i, top3, hand) {
-  const r = rec;
-  const readyCount = r.readyToCallCount || 0;
-  const buildCount = r.buildThenCallCount || 0;
-  const mustDrawCount = r.details.missing.filter(m=>m.isPairSingle).length;
-  const isConcealed = r.handDef.concealed;
+  const readyCount  = rec.readyToCallCount || 0;
+  const buildCount  = rec.buildThenCallCount || 0;
+  const mustDrawCount = rec.details.missing.filter(m=>m.isPairSingle).length;
+  const isConcealed = rec.handDef.concealed;
+  const concNote    = isConcealed ? ' This is concealed — no calling discards during play.' : '';
+
+  // Compare to #1 for context
+  const top1        = top3[0];
+  const moreTiles   = rec.matched > top1.matched;
+  const sameTiles   = rec.matched === top1.matched;
+  const fewerTiles  = rec.matched < top1.matched;
+  const tileContext = moreTiles ? 'more tiles than your other top hands'
+                    : sameTiles ? 'the same number of tiles as your top hand'
+                    : 'fewer tiles than your top hand';
 
   if (i === 0) {
-    // #1 rationale
     if (readyCount >= 2)
-      return `Ranked first — most tiles matched and ${readyCount} group${readyCount>1?'s are':' is'} ready to call from a discard right now.${isConcealed?' Note this is concealed — no calling during play.':''}`;
+      return `Ranked first — best overall fit and ${readyCount} group${readyCount>1?'s are':' is'} ready to call right now.${concNote}`;
     if (readyCount === 1)
-      return `Ranked first — best tile match overall and one group is ready to call. The rest you can build toward.${isConcealed?' Note this is concealed — no calling during play.':''}`;
+      return `Ranked first — best tile match and one group is ready to call. Build toward the rest.${concNote}`;
     if (buildCount > 0)
-      return `Ranked first — best tile match overall. Your gaps are claimable once you build a bit more.${isConcealed?' Note this is concealed — no calling during play.':''}`;
-    return `Ranked first — best tile match overall, though everything missing must be drawn from the wall.${isConcealed?' Concealed hand adds difficulty.':''}`;
+      return `Ranked first — best tile match overall. Your gaps are claimable once you build a bit more.${concNote}`;
+    return `Ranked first — best tile match overall, though missing tiles must be drawn from the wall.${concNote}`;
   }
 
   if (i === 1) {
-    const top = top3[0];
-    const fewerTiles = rec.matched < top.matched;
     if (readyCount >= 2)
-      return `Ranked second — ${fewerTiles?'fewer tiles than your top hand but':'similar tile count and'} ${readyCount} groups ready to call right now makes this very accessible.${isConcealed?' Concealed — no calling during play.':''}`;
+      return `Ranked second — ${tileContext} and ${readyCount} groups ready to call right now makes this very accessible.${concNote}`;
     if (readyCount === 1)
-      return `Ranked second — ${fewerTiles?'slightly fewer tiles matched but':'good tile match and'} one group you can call for today.${isConcealed?' Concealed — no calling during play.':''}`;
-    if (mustDrawCount > top.details.missing.filter(m=>m.isPairSingle).length)
-      return `Ranked second — good tile match but more of your missing tiles are in pair or single positions that must be drawn naturally.${isConcealed?' Concealed adds more difficulty.':''}`;
-    return `Ranked second — solid tile match. ${buildCount>0?'Build toward your claimable groups and this hand opens up.':'Most gaps need to come from the wall.'}${isConcealed?' Concealed — no calling during play.':''}`;
+      return `Ranked second — ${tileContext} and one group you can call for today.${concNote}`;
+    if (mustDrawCount > (top1.details.missing.filter(m=>m.isPairSingle).length))
+      return `Ranked second — ${tileContext} but more missing tiles are in pair or single positions that must be drawn naturally.${concNote}`;
+    return `Ranked second — ${tileContext}. ${buildCount>0?'Build toward your claimable groups and this hand opens up.':'Most gaps need to come from the wall.'}${concNote}`;
   }
 
   // #3
-  const top = top3[0];
-  const fewerTiles = rec.matched < top.matched;
-  if (isConcealed)
-    return `Ranked third — ${fewerTiles?'fewer tiles than your top hands and':'decent tile match but'} this is concealed, meaning no calling discards during play. Higher difficulty.`;
+  if (readyCount >= 2)
+    return `Ranked third — ${tileContext}, but ${readyCount} groups are ready to call right now. Very accessible despite the ranking.${concNote}`;
+  if (readyCount === 1)
+    return `Ranked third — ${tileContext}, but one group is ready to call. Worth keeping in mind.${concNote}`;
   if (mustDrawCount >= 3)
-    return `Ranked third — ${fewerTiles?'fewer tiles matched and':'decent tile count but'} ${mustDrawCount} missing tiles are in pair or single positions that can't be claimed. Harder to complete than your top two.`;
-  if (readyCount >= 1)
-    return `Ranked third — fewer tiles toward this hand than your top picks, but ${readyCount} group${readyCount>1?'s are':' is'} ready to call. Worth watching.`;
-  return `Ranked third — fewer tiles than your top two and gaps need building before you can call into them. Keep it in mind as your hand develops.`;
+    return `Ranked third — ${tileContext} and ${mustDrawCount} missing tiles must be drawn naturally. Harder to complete than your top two.${concNote}`;
+  if (buildCount > 0)
+    return `Ranked third — ${tileContext}. Build toward your claimable groups and this hand could develop.${concNote}`;
+  return `Ranked third — ${tileContext}. Keep it in mind as your hand develops.${concNote}`;
 }
 
 function pivotTriggerText(rec) {
@@ -2239,7 +2256,9 @@ function formatMissingItem(m, hand, suitMap) {
   }
   const need = m.need;
   const holds = m.holds;
-  const total = m.groupType==='quint'?5:m.groupType==='kong'?4:m.groupType==='pung'?3:m.groupType==='pair'?2:1;
+  // Use actual group size (holds + need) not groupType assumption
+  // Handles edge cases like 6-flower kong where kong count is 6 not 4
+  const total = holds + need;
 
   // Build hold description
   let holdStr = '';
@@ -2253,17 +2272,21 @@ function formatMissingItem(m, hand, suitMap) {
   let howStr = '';
   if (m.claimState==='readyToCall') {
     howStr = hand.jokers > 0
-      ? 'you can call from discard, draw, or use a joker'
-      : 'you can call from discard or draw';
+      ? 'you can call from discard, draw, or use your joker(s)'
+      : 'you can call from discard or draw from the wall';
   } else if (m.claimState==='readyWithJoker') {
-    howStr = 'you can call from discard if you place your joker(s) here';
+    howStr = 'you can call from discard if you place your joker(s) here, or draw from the wall';
   } else if (m.claimState==='pullMoreThenCall') {
     howStr = hand.jokers > 0
-      ? 'draw more tiles first, then call or use a joker'
-      : 'draw more tiles first, then call';
+      ? 'draw more tiles first, then you can call or use your joker(s)'
+      : 'draw more tiles first, then you can call';
   } else {
-    // mustDraw — pair or single
-    howStr = 'must draw from wall';
+    // mustDraw — for claimable groups in concealed hands, jokers still work
+    if (!m.isPairSingle && hand.jokers > 0) {
+      howStr = 'you can use your joker(s) or draw from the wall';
+    } else {
+      howStr = 'must draw from the wall';
+    }
   }
 
   // Color the tag by urgency
@@ -2287,7 +2310,9 @@ function renderResults(hand, top3, pivots, is14) {
   // Section focus
   // Pass top hand sections so they get priority in display
   const topSections = top3.map(r => r.handDef.section);
-  const sections = getSectionFocus(hand, topSections);
+  // All sections represented in displayed hands (top3 + pivots)
+  const displayedHandSections = [...top3, ...pivots].map(r => r.handDef.section);
+  const sections = getSectionFocus(hand, topSections, displayedHandSections);
   const sfRows = sections.map((s,i)=>`
     <div class="sf-row">
       <div class="sf-rank">${i+1}.</div>
@@ -2424,6 +2449,24 @@ function renderResults(hand, top3, pivots, is14) {
     // Add any remaining unplaced non-joker chips, then jokers
     unplaced.filter(c=>!c._placed&&c.cls!=='joker').forEach(c=>orderedChipData.push(c));
     unplaced.filter(c=>!c._placed&&c.cls==='joker').forEach(c=>orderedChipData.push(c));
+    // Sort number chips numerically within each suit group
+    // This ensures 1B 2B 3B not 3B 1B 2B when hand def order is unclear
+    const numOrder = label => {
+      const m = label.match(/^(\d+)([BCD])$/);
+      if (!m) return 999;
+      return parseInt(m[1]) * 10 + (m[2]==='B'?0:m[2]==='C'?1:2);
+    };
+    orderedChipData.sort((a,b) => {
+      // Keep flowers first, jokers last, sort numbers within groups
+      if (a.cls==='flower' && b.cls!=='flower') return -1;
+      if (b.cls==='flower' && a.cls!=='flower') return 1;
+      if (a.cls==='joker') return 1;
+      if (b.cls==='joker') return -1;
+      const aIsNum = /^\d+[BCD]$/.test(a.label);
+      const bIsNum = /^\d+[BCD]$/.test(b.label);
+      if (aIsNum && bIsNum) return numOrder(a.label) - numOrder(b.label);
+      return 0;
+    });
     const youHave = makeTileChips(orderedChipData);
     const youNeed = rec.details.missing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
@@ -2446,7 +2489,8 @@ function renderResults(hand, top3, pivots, is14) {
       : '';
 
     card.innerHTML = `
-      <div class="rec-header">
+      <div class="rec-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">
+        <span class="rec-toggle">▾</span>
         <div class="rec-rank-row">
           <span class="rec-rank-label">${rankLabel}</span>
           <span class="rec-sec-tag">${formatSectionName(rec.handDef.section)}</span>
@@ -2483,13 +2527,13 @@ function renderResults(hand, top3, pivots, is14) {
   });
 
   // Discard first
-  const discards = getDiscardRecommendations([], top3, hand);
+  const discards = getDiscardRecommendations([], top3, pivots, hand);
   document.getElementById('discardCard').innerHTML = discards.length>0 ? `
     <div class="discard-card">
       <div class="discard-title">Discard first</div>
       <div class="discard-text">
         <strong>Let go of:</strong> ${discards.join(', ')}.
-        These tiles don't support any of your top three paths.${hand.jokers>0?' Hold your joker.':''}
+        These tiles don't support any of your top three paths.${hand.jokers>0?' Hold your joker(s).':''}
       </div>
     </div>` : '';
 
@@ -2580,7 +2624,8 @@ function analyze() {
     const top3     = allScores.slice(0,3);
     const threshold= (top3[2]?.finalScore||0)*0.75;
     const pivots   = allScores.slice(3)
-      .filter(h=>h.finalScore>=Math.max(threshold,8))
+      .filter(h=>h.finalScore>=Math.max(threshold,10))
+      .filter(h=>h.matched>=4)
       .sort((a,b)=>b.matched-a.matched||b.finalScore-a.finalScore)
       .slice(0,3);
 
