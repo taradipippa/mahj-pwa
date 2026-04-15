@@ -136,8 +136,8 @@ body{padding-top:env(safe-area-inset-top)}
 .rec-header:active{opacity:.85}
 .rec-body{padding:12px 14px;transition:none}
 .rec-body.collapsed{display:none}
-.rec-toggle{float:right;font-size:13px;color:var(--ink3);margin-top:2px}
-.rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.rec-toggle{font-size:20px;color:var(--ink3);line-height:1;margin-left:auto;padding-left:8px;flex-shrink:0}
+.rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;width:100%}
 .rec-rank-label{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
 .rec-sec-tag{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(26,48,96,.10);border-radius:20px;padding:2px 8px}
 .conc-badge{font-size:10px;font-weight:600;color:var(--red);background:rgba(184,32,16,.1);border-radius:20px;padding:2px 7px;margin:auto}
@@ -2471,7 +2471,9 @@ function renderResults(hand, top3, pivots, is14) {
       if (aIsNum && bIsNum) return numOrder(a.label) - numOrder(b.label);
       return 0;
     });
-    const youHave = makeTileChips(orderedChipData);
+    // Fallback: if ordering loop produced nothing, use original chip data
+    const finalChips = orderedChipData.length > 0 ? orderedChipData : youHaveChipData;
+    const youHave = makeTileChips(finalChips);
     // Merge consecutive duplicate flower groups in You Need display
     // e.g. two pungs of 3 flowers → show as one line "6 Flowers — you have X of 6"
     const mergedMissing = [];
@@ -2512,11 +2514,11 @@ function renderResults(hand, top3, pivots, is14) {
 
     card.innerHTML = `
       <div class="rec-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.rec-toggle').textContent=this.nextElementSibling.classList.contains('collapsed')?'▸':'▾'">
-        <span class="rec-toggle">▾</span>
         <div class="rec-rank-row">
           <span class="rec-rank-label">${rankLabel}</span>
           <span class="rec-sec-tag">${formatSectionName(rec.handDef.section)}</span>
           ${rec.handDef.concealed?'<span class="conc-badge">Concealed</span>':''}
+          <span class="rec-toggle">▾</span>
         </div>
         <div class="card-ref" style="display:flex;align-items:center;justify-content:space-between">
           <span>${rec.handDef.cardRef}</span>
