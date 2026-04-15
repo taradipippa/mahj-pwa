@@ -136,7 +136,7 @@ body{padding-top:env(safe-area-inset-top)}
 .rec-header:active{opacity:.85}
 .rec-body{padding:12px 14px;transition:none}
 .rec-body.collapsed{display:none}
-.rec-toggle{font-size:20px;color:var(--ink3);line-height:1;margin-left:auto;padding-left:8px;flex-shrink:0}
+.rec-toggle{font-size:13px;font-weight:500;color:var(--ink3);line-height:1;margin-left:auto;padding-left:8px;flex-shrink:0;white-space:nowrap}
 .rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;width:100%}
 .rec-rank-label{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
 .rec-sec-tag{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(26,48,96,.10);border-radius:20px;padding:2px 8px}
@@ -2513,12 +2513,12 @@ function renderResults(hand, top3, pivots, is14) {
       : '';
 
     card.innerHTML = `
-      <div class="rec-header" onclick="this.nextElementSibling.classList.toggle('collapsed');this.querySelector('.rec-toggle').textContent=this.nextElementSibling.classList.contains('collapsed')?'▸':'▾'">
+      <div class="rec-header" onclick="const b=this.nextElementSibling;b.classList.toggle('collapsed');const t=this.querySelector('.rec-toggle');t.innerHTML=b.classList.contains('collapsed')?'▸ more detail':'▾ less detail';">
         <div class="rec-rank-row">
           <span class="rec-rank-label">${rankLabel}</span>
           <span class="rec-sec-tag">${formatSectionName(rec.handDef.section)}</span>
           ${rec.handDef.concealed?'<span class="conc-badge">Concealed</span>':''}
-          <span class="rec-toggle">▾</span>
+          <span class="rec-toggle">▾ less detail</span>
         </div>
         <div class="card-ref" style="display:flex;align-items:center;justify-content:space-between">
           <span>${rec.handDef.cardRef}</span>
@@ -2528,7 +2528,7 @@ function renderResults(hand, top3, pivots, is14) {
         <div class="tiles-matched">${adjustedMatched} of ${rec.total} tiles</div>
         ${youHave ? `<div class="yhave-chips yhave-chips-header">${youHave}</div>` : ''}
       </div>
-      <div class="rec-body collapsed">
+      <div class="rec-body">
         ${youNeed ? `<div class="rec-field need-list"><strong>You need</strong><br>${youNeed}</div>` : ''}
         ${jokerHTML}
         ${(()=>{
