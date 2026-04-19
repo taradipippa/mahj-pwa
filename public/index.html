@@ -177,16 +177,6 @@ body{padding-top:env(safe-area-inset-top)}
 #loadingMsg{padding:40px 20px;text-align:center;color:var(--ink3);font-size:16px}
 /* ── MISC ────────────────────────────────────────── */
 .section-divider{height:1px;background:var(--bone2);margin:4px 0 14px}
-.show-more-btn{width:100%;background:var(--bone);border:1.5px solid var(--gold);border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:12px;text-align:center}
-.show-more-btn:active{opacity:.8}
-.next5-cards{margin-bottom:12px}
-.n5-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow)}
-.n5-header{background:var(--bone);padding:10px 14px;cursor:pointer}
-.n5-header:active{opacity:.85}
-.n5-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:3px}
-.n5-ref{font-family:'Lora',serif;font-size:15px;font-weight:600;color:var(--ink)}
-.n5-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bone2)}
-.n5-body{padding:12px 14px;display:none}
 /* You Have chips */
 .yhave-row{display:flex;flex-direction:column;gap:6px}
 .yhave-chips{display:flex;flex-wrap:wrap;gap:3px}
@@ -284,7 +274,6 @@ body{padding-top:env(safe-area-inset-top)}
       <div id="sectionFocus"></div>
       <div id="top3Container"></div>
       <div id="discardCard"></div>
-      <div id="next5Container"></div>
       <div id="glanceCard"></div>
       <div id="pivotContainer"></div>
     </div>
@@ -2313,7 +2302,7 @@ function formatMissingItem(m, hand, suitMap) {
   return `${label}${holdStr} <span class="tag ${tagCls}">${howStr}</span>`;
 }
 
-function renderResults(hand, top3, pivots, allScores, is14) {
+function renderResults(hand, top3, pivots, is14) {
   // East banner
   document.getElementById('eastBanner').innerHTML = is14
     ? `<div class="east-banner">You have 14 tiles — you're East. Analyze your paths below, then discard your least useful tile to start play.</div>`
@@ -2322,8 +2311,26 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   // Remove glance card — no longer used
   document.getElementById('glanceCard').innerHTML = '';
 
-  // Section focus hidden — preserved for future use
-  document.getElementById('sectionFocus').innerHTML = '';
+  // Section focus
+  // Pass top hand sections so they get priority in display
+  const topSections = top3.map(r => r.handDef.section);
+  // All sections represented in displayed hands (top3 + pivots)
+  const displayedHandSections = [...top3, ...pivots].map(r => r.handDef.section);
+  const sections = getSectionFocus(hand, topSections, displayedHandSections);
+  const sfRows = sections.map((s,i)=>`
+    <div class="sf-row">
+      <div class="sf-rank">${i+1}.</div>
+      <div>
+        <div class="sf-name">${s.name}</div>
+        <div class="sf-reason">${s.reason}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('sectionFocus').innerHTML = `
+    <div class="section-focus">
+      <div class="sf-title">Your best sections</div>
+      ${sfRows||'<div class="sf-reason sf-scatter">Your tiles are fairly scattered and are not clearly pointing to any particular section of the card at this point.</div>'}
+    </div>`;
 
   // Top 3 hands
   const top3Container = document.getElementById('top3Container');
@@ -2449,9 +2456,9 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     // Sort number chips numerically within each suit group
     // This ensures 1B 2B 3B not 3B 1B 2B when hand def order is unclear
     const numOrder = label => {
-      const mx = label.match(/^(\d+)([BCD])$/);
-      if (!mx) return 999;
-      return parseInt(mx[1]) * 10 + (mx[2]==='B'?0:mx[2]==='C'?1:2);
+      const m = label.match(/^(\d+)([BCD])$/);
+      if (!m) return 999;
+      return parseInt(m[1]) * 10 + (m[2]==='B'?0:m[2]==='C'?1:2);
     };
     orderedChipData.sort((a,b) => {
       // Keep flowers first, jokers last, sort numbers within groups
@@ -2543,83 +2550,8 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     top3Container.appendChild(card);
   });
 
-  // ── Show 5 more hands ─────────────────────────────────────────────────
-  const next5 = allScores.slice(3).filter(r =>
-    !pivots.find(p => p.handDef.id === r.handDef.id)
-  ).slice(0, 5);
-
-  const next5Container = document.getElementById('next5Container');
-  next5Container.innerHTML = '';
-
-  if (next5.length > 0) {
-    const btn = document.createElement('button');
-    btn.className = 'show-more-btn';
-    btn.textContent = 'Show the 5 next best hands';
-
-    const cardsDiv = document.createElement('div');
-    cardsDiv.className = 'next5-cards';
-    cardsDiv.style.display = 'none';
-
-    next5.forEach(rec => {
-      // Build You Have chips
-      const chipData = [];
-      rec.details.matched.forEach(m => {
-        const cnt = m.groupType==='quint'?5:m.groupType==='kong'?4:m.groupType==='pung'?3:m.groupType==='pair'?2:1;
-        chipData.push({label:getTileChipLabel(m,rec.suitMap), cls:getTileCls(m), count:cnt});
-      });
-      rec.details.missing.forEach(m => {
-        if (m.holds>0) chipData.push({label:getTileChipLabel(m,rec.suitMap), cls:getTileCls(m), count:m.holds});
-      });
-      if (hand.jokers>0 && rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length>0) {
-        for (let j=0;j<hand.jokers;j++) chipData.push({label:'★',cls:'joker',count:1});
-      }
-      // Sort flowers first, numbers numerically, jokers last
-      chipData.sort((a,b)=>{
-        if (a.cls==='flower'&&b.cls!=='flower') return -1;
-        if (b.cls==='flower'&&a.cls!=='flower') return 1;
-        if (a.cls==='joker') return 1;
-        if (b.cls==='joker') return -1;
-        const nm = l=>{const m=l.match(/^(\d+)([BCD])$/);return m?parseInt(m[1])*10+(m[2]==='B'?0:m[2]==='C'?1:2):999;};
-        return nm(a.label)-nm(b.label);
-      });
-      const chips = chipData.map(({label,cls,count})=>
-        Array.from({length:count},()=>`<span class="yhave-chip ${cls}">${label}</span>`).join('')
-      ).join('');
-
-      const card = document.createElement('div');
-      card.className = 'n5-card';
-      card.innerHTML = `
-        <div class="n5-header" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'block':'none'">
-          <div class="n5-rank-row">
-            <span class="rec-sec-tag">${formatSectionName(rec.handDef.section)}</span>
-            <span class="n5-ref">${rec.handDef.cardRef}</span>
-            <span class="pts-badge" style="margin-left:auto">${rec.handDef.exposedPlay?'X':'C'} &middot; ${rec.handDef.pointValue||25} pts</span>
-          </div>
-          <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
-          ${chips ? `<div class="n5-chips">${chips}</div>` : ''}
-        </div>
-        <div class="n5-body">
-          ${rec.details.missing.length>0?`<div class="rec-field need-list"><strong>You need</strong><br>${rec.details.missing.map(m=>formatMissingItem(m,hand,rec.suitMap)).join('<br>')}</div>`:''}
-          <div class="rec-field rationale">${rankRationale(rec,2,[rec,rec,rec],hand)}</div>
-        </div>`;
-      cardsDiv.appendChild(card);
-    });
-
-    btn.onclick = () => {
-      const showing = cardsDiv.style.display !== 'none';
-      cardsDiv.style.display = showing ? 'none' : 'block';
-      btn.textContent = showing ? 'Show the 5 next best hands' : 'Hide';
-    };
-
-    next5Container.appendChild(btn);
-    next5Container.appendChild(cardsDiv);
-  }
-
-  // Update discard to include next5 hands
-  const allDisplayed = [...top3, ...pivots, ...next5];
-
   // Discard first
-  const discards = getDiscardRecommendations([], top3, [...pivots, ...next5], hand);
+  const discards = getDiscardRecommendations([], top3, pivots, hand);
   document.getElementById('discardCard').innerHTML = discards.length>0 ? `
     <div class="discard-card">
       <div class="discard-title">Discard first</div>
@@ -2722,7 +2654,7 @@ function analyze() {
       .slice(0,3);
 
     try {
-      renderResults(hand, top3, pivots, allScores, is14);
+      renderResults(hand, top3, pivots, is14);
     } catch(e) {
       document.getElementById('loadingMsg').textContent = 'Error: ' + e.message;
       document.getElementById('loadingMsg').style.display = 'block';
@@ -2736,7 +2668,7 @@ function resetApp() {
   Object.keys(selectedTiles).forEach(k=>delete selectedTiles[k]);
   // Clear all results DOM so old hand never persists
   const rc = document.getElementById('resultsContent');
-  if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="discardCard"></div><div id="next5Container"></div><div id="glanceCard"></div><div id="pivotContainer"></div>';
+  if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="discardCard"></div><div id="glanceCard"></div><div id="pivotContainer"></div>';
   const eb = document.getElementById('eastBanner');
   if (eb) eb.innerHTML = '';
   const lm = document.getElementById('loadingMsg');
