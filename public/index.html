@@ -2313,7 +2313,7 @@ function formatMissingItem(m, hand, suitMap) {
   return `${label}${holdStr} <span class="tag ${tagCls}">${howStr}</span>`;
 }
 
-function renderResults(hand, top3, pivots, is14) {
+function renderResults(hand, top3, pivots, allScores, is14) {
   // East banner
   document.getElementById('eastBanner').innerHTML = is14
     ? `<div class="east-banner">You have 14 tiles — you're East. Analyze your paths below, then discard your least useful tile to start play.</div>`
@@ -2722,7 +2722,7 @@ function analyze() {
       .slice(0,3);
 
     try {
-      renderResults(hand, top3, pivots, is14);
+      renderResults(hand, top3, pivots, allScores, is14);
     } catch(e) {
       document.getElementById('loadingMsg').textContent = 'Error: ' + e.message;
       document.getElementById('loadingMsg').style.display = 'block';
