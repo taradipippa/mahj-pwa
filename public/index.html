@@ -2106,6 +2106,35 @@ function getDiscardRecommendations(tiles, top3, pivots, hand) {
 // OUTPUT RENDERING
 // ============================================================
 
+function getTileChipLabel(m, suitMap) {
+  const resolvedSuit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT')
+    ? m.suit : (m.suit && suitMap ? suitMap[m.suit] : null);
+  const suitShort = resolvedSuit==='BAM'?'B':resolvedSuit==='CRK'?'C':resolvedSuit==='DOT'?'D':null;
+  if (m.tileType==='NUMBER' && m.number && suitShort) return `${m.number}${suitShort}`;
+  if (m.tileType==='FLOWER') return 'F';
+  if (m.tileType==='JOKER') return '★';
+  if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
+  if (m.tileType==='DRAGON') {
+    const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
+    if (d==='GREEN') return 'GD';
+    if (d==='RED')   return 'RD';
+    if (d==='WHITE') return 'Soap';
+    return 'D';
+  }
+  return '?';
+}
+
+function getTileCls(m) {
+  if (m.suit==='BAM') return 'bam';
+  if (m.suit==='CRK') return 'crk';
+  if (m.suit==='DOT') return 'dot';
+  if (m.tileType==='WIND') return 'wind';
+  if (m.tileType==='DRAGON') return 'dragon';
+  if (m.tileType==='FLOWER') return 'flower';
+  if (m.tileType==='JOKER') return 'joker';
+  return 'neutral';
+}
+
 function formatSectionName(s) { return SECTION_DISPLAY[s]||s; }
 
 function tileLabel(t, suitMap) {
