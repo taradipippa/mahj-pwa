@@ -180,6 +180,7 @@ body{padding-top:env(safe-area-inset-top)}
 .show-more-btn{width:100%;background:var(--bone);border:1.5px solid var(--gold);border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:12px;text-align:center}
 .show-more-btn:active{opacity:.8}
 .next5-cards{margin-bottom:12px}
+.n5-tile-count{font-size:12px;font-weight:600;color:var(--ink3);margin-right:6px;white-space:nowrap}
 .n5-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow)}
 .n5-header{background:var(--bone);padding:10px 14px;cursor:pointer}
 .n5-header:active{opacity:.85}
@@ -2449,8 +2450,13 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       const matchesCls = (c) => {
         if (g.tileType==='FLOWER')  return c.cls==='flower';
         if (g.tileType==='NUMBER')  return c.cls===(suit==='BAM'?'bam':suit==='CRK'?'crk':suit==='DOT'?'dot':null);
-        if (g.tileType==='WIND')    return c.cls==='wind';
-        if (g.tileType==='DRAGON')  return c.cls==='dragon';
+        if (g.tileType==='WIND')    return c.cls==='wind' && (!g.wind || c.label===g.wind[0]);
+        if (g.tileType==='DRAGON') {
+          if (c.cls!=='dragon') return false;
+          // Match specific dragon color when known
+          const expLabel = resolvedDragon==='GREEN'?'GD':resolvedDragon==='RED'?'RD':resolvedDragon==='WHITE'?'Soap':null;
+          return expLabel ? c.label===expLabel : true;
+        }
         return false;
       };
 
@@ -2475,24 +2481,6 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     // Add any remaining unplaced non-joker chips, then jokers
     unplaced.filter(c=>!c._placed&&c.cls!=='joker').forEach(c=>orderedChipData.push(c));
     unplaced.filter(c=>!c._placed&&c.cls==='joker').forEach(c=>orderedChipData.push(c));
-    // Sort number chips numerically within each suit group
-    // This ensures 1B 2B 3B not 3B 1B 2B when hand def order is unclear
-    const numOrder = label => {
-      const mx = label.match(/^(\d+)([BCD])$/);
-      if (!mx) return 999;
-      return parseInt(mx[1]) * 10 + (mx[2]==='B'?0:mx[2]==='C'?1:2);
-    };
-    orderedChipData.sort((a,b) => {
-      // Keep flowers first, jokers last, sort numbers within groups
-      if (a.cls==='flower' && b.cls!=='flower') return -1;
-      if (b.cls==='flower' && a.cls!=='flower') return 1;
-      if (a.cls==='joker') return 1;
-      if (b.cls==='joker') return -1;
-      const aIsNum = /^\d+[BCD]$/.test(a.label);
-      const bIsNum = /^\d+[BCD]$/.test(b.label);
-      if (aIsNum && bIsNum) return numOrder(a.label) - numOrder(b.label);
-      return 0;
-    });
     // Fallback: if ordering loop produced nothing, use original chip data
     const finalChips = orderedChipData.length > 0 ? orderedChipData : youHaveChipData;
     const youHave = makeTileChips(finalChips);
@@ -2514,6 +2502,17 @@ function renderResults(hand, top3, pivots, allScores, is14) {
         mergedMissing.push({...m});
       }
     });
+    // Order missing items by hand definition group order
+    const groupIndexMap = new Map();
+    rec.handDef.groups.forEach((g, i) => {
+      const key = g.tileType + '|' + (g.number||'') + '|' + (g.suit||'') + '|' + (g.dragon||'') + '|' + (g.wind||'');
+      if (!groupIndexMap.has(key)) groupIndexMap.set(key, i);
+    });
+    const getMissingGroupIndex = (m) => {
+      const key = m.tileType + '|' + (m.number||'') + '|' + (m.suit||'') + '|' + (m.dragon||'') + '|' + (m.wind||'');
+      return groupIndexMap.has(key) ? groupIndexMap.get(key) : 999;
+    };
+    mergedMissing.sort((a, b) => getMissingGroupIndex(a) - getMissingGroupIndex(b));
     const youNeed = mergedMissing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
     // Compute joker-adjusted matched count
@@ -2611,6 +2610,8 @@ function renderResults(hand, top3, pivots, allScores, is14) {
         const chips = chipData.map(({label,cls,count})=>
           Array.from({length:count},()=>`<span class="yhave-chip ${cls}">${label}</span>`).join('')
         ).join('');
+        const matchedTileCount = chipData.reduce((s,c)=>s+c.count, 0);
+        const totalTileCount = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1), 0);
 
         const card = document.createElement('div');
         card.className = 'n5-card';
@@ -2622,7 +2623,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
               <span class="pts-badge" style="margin-left:auto">${rec.handDef.exposedPlay?'X':'C'} &middot; ${rec.handDef.pointValue||25} pts</span>
             </div>
             <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
-            ${chips ? `<div class="n5-chips">${chips}</div>` : ''}
+            ${chips ? `<div class="n5-chips"><span class="n5-tile-count">${matchedTileCount} of ${totalTileCount} tiles</span>${chips}</div>` : ''}
           </div>
           <div class="n5-body">
             ${rec.details.missing.length>0?`<div class="rec-field need-list"><strong>You need</strong><br>${rec.details.missing.map(m=>formatMissingItem(m,hand,rec.suitMap)).join('<br>')}</div>`:''}
@@ -2663,6 +2664,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
           <span class="pivot-score">${rec.matched} of ${rec.total} tiles</span>
         </div>
         <div class="pivot-sec">${formatSectionName(rec.handDef.section)}</div>
+        <div class="hand-display" style="margin-bottom:4px">${renderHandDisplay(rec.handDef.id, rec)}</div>
         <div class="pivot-trig">${pivotTriggerText(rec)}${rec.handDef.concealed?' Concealed hand.':''}</div>
       </div>`).join('');
     pivotContainer.innerHTML = `
