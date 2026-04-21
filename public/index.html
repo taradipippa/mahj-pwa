@@ -35,6 +35,7 @@
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
 body{padding-top:env(safe-area-inset-top)}
+#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2d6a4f;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
 
 /* ── SCREENS ─────────────────────────────────────── */
 .screen{display:none;min-height:100vh}
@@ -187,7 +188,7 @@ body{padding-top:env(safe-area-inset-top)}
 .n5-header:active{opacity:.85}
 .n5-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:3px}
 .n5-ref{font-family:'Lora',serif;font-size:15px;font-weight:600;color:var(--ink)}
-.n5-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bone2)}
+.n5-chips{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bone2)}
 .n5-body{padding:12px 14px;display:none}
 /* You Have chips */
 .yhave-row{display:flex;flex-direction:column;gap:6px}
@@ -206,6 +207,10 @@ body{padding-top:env(safe-area-inset-top)}
 </style>
 </head>
 <body>
+
+<div id="updateBanner" style="display:none">
+  New version available. <span onclick="window.location.reload()" style="text-decoration:underline;cursor:pointer;font-weight:700">Tap to update.</span>
+</div>
 
 <!-- ═══════════════════════════════════════════════ -->
 <!-- SELECT SCREEN                                   -->
@@ -2788,6 +2793,17 @@ updateUI();
       navigator.serviceWorker.register('/sw.js').then(reg => {
         // Check for updates every time the app is opened
         reg.update();
+
+        // Listen for a new service worker installing
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            // New SW is installed and waiting — show the banner
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              document.getElementById('updateBanner').style.display = 'block';
+            }
+          });
+        });
       }).catch(err => {
         console.warn('Service worker registration failed:', err);
       });
