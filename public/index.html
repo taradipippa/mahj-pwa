@@ -838,18 +838,6 @@ function scoreHand(handDef, suitMap, hand) {
     m => m.groupType !== 'pair' && m.groupType !== 'single'
   ).length;
 
-  const disconnectedPairs = details.matched.filter(m => {
-    if (m.groupType !== 'pair') return false;
-    if (!m.number) return handDef.section !== 'winds_dragons'; // honor pair
-    return !details.matched.some(
-      o => o !== m && o.number != null && Math.abs(o.number - m.number) <= 2
-    );
-  }).length;
-
-  const scatteredPairPenalty = (disconnectedPairs >= 2 && matchedClaimable === 0)
-    ? disconnectedPairs * 2
-    : 0;
-
   // ── CONCEALED PENALTY ─────────────────────────────────────────────
   let concPenalty = 0;
   if (handDef.concealed) {
@@ -900,7 +888,6 @@ function scoreHand(handDef, suitMap, hand) {
     - Math.round(penalty * 1.8)
     - compoundPenalty
     - rigidityPenalty
-    - scatteredPairPenalty
     + jokerBonus
     + callBonus
     - concPenalty
