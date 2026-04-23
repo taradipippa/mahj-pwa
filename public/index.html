@@ -213,7 +213,7 @@ body{padding-top:env(safe-area-inset-top)}
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
-<!-- SELECT SCREEN  v2                                 -->
+<!-- SELECT SCREEN                                   -->
 <!-- ═══════════════════════════════════════════════ -->
 <div id="selectScreen" class="screen active">
 
@@ -2775,27 +2775,39 @@ updateUI();
 
 
 <script>
+  // ── Service worker registration (handles offline caching) ──
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').then(reg => {
-        // Check for updates every time the app is opened
-        reg.update();
-
-        // Listen for a new service worker installing
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          newWorker.addEventListener('statechange', () => {
-            // New SW is installed and waiting — show the banner
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              document.getElementById('updateBanner').style.display = 'block';
-            }
-          });
-        });
-      }).catch(err => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
         console.warn('Service worker registration failed:', err);
       });
     });
   }
+
+  // ── Version check — works reliably on iPhone ──
+  // Fetches /version.txt from Vercel on every app open.
+  // If the number differs from what's stored locally, show the update banner.
+  (function checkVersion() {
+    const STORED_KEY = 'mahj_app_version';
+    fetch('/version.txt?t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.text())
+      .then(remoteVersion => {
+        remoteVersion = remoteVersion.trim();
+        const localVersion = localStorage.getItem(STORED_KEY);
+        if (!localVersion) {
+          // First time — just store it, no banner
+          localStorage.setItem(STORED_KEY, remoteVersion);
+        } else if (localVersion !== remoteVersion) {
+          // Version changed — show banner
+          document.getElementById('updateBanner').style.display = 'block';
+          // Store new version so reloading clears the banner
+          localStorage.setItem(STORED_KEY, remoteVersion);
+        }
+      })
+      .catch(() => {
+        // Offline or fetch failed — silently do nothing
+      });
+  })();
 </script>
 </body>
 </html>
