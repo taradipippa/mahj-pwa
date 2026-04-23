@@ -35,7 +35,7 @@
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
 body{padding-top:env(safe-area-inset-top)}
-#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2d6a4f;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2d6a4f;color:#fff;text-align:center;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));font-size:14px;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
 
 /* ── SCREENS ─────────────────────────────────────── */
 .screen{display:none;min-height:100vh}
@@ -849,17 +849,6 @@ function scoreHand(handDef, suitMap, hand) {
   }
   if (handDef.section === 'singles_and_pairs') concPenalty += 7;
 
-  // ── COMPOUND PENALTY — smooth curve for multiple must-draw tiles ──
-  // Captures compounding difficulty of needing multiple natural wall draws.
-  // Curve: 0→0, 1→2, 2→6, 3→12, 4→20
-  const mustDrawTilesNeeded = details.missing
-    .filter(m => m.isPairSingle)
-    .reduce((sum, m) => sum + m.need, 0);
-  // Compound penalty: 0→0, 1→3, 2→8, 3→16, 4→28, 5→44
-  // Each additional must-draw tile compounds difficulty significantly
-  const compoundPenalty = mustDrawTilesNeeded <= 0 ? 0
-    : Math.round(mustDrawTilesNeeded * 2 + (mustDrawTilesNeeded - 1) * mustDrawTilesNeeded * 1.5);
-
   // ── RIGIDITY PENALTY — isolated missing singles only ──────────────
   // Singles that are structurally connected (adjacent matched number ±2) are
   // already softened by singleContextMult in the loop above — not penalized again.
@@ -877,21 +866,13 @@ function scoreHand(handDef, suitMap, hand) {
     : 0;
 
   // ── FINAL SCORE ───────────────────────────────────────────────────
-  // Penalty multiplier 1.8 (reduced from 2.2 to compensate for removal of
-  // competition weights which previously inflated raw penalty values)
-  // Point value tiebreaker — small bonus so higher-value hands edge out
-  // when scores are close. Normalized: 25pts=+3, 30pts=+3.6, 40pts=+4.8, 75pts=+9
-  const pointBonus = handDef.pointValue ? (handDef.pointValue / 25) * 3 : 3;
-
   const finalScore = Math.max(0,
     fitScore
     - Math.round(penalty * 1.8)
-    - compoundPenalty
     - rigidityPenalty
     + jokerBonus
     + callBonus
     - concPenalty
-    + pointBonus
   );
 
   return { fitScore, finalScore, penalty: Math.round(penalty * 10) / 10,
