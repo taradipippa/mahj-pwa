@@ -35,7 +35,7 @@
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
 body{padding-top:env(safe-area-inset-top)}
-#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2d6a4f;color:#fff;text-align:center;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));font-size:14px;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));font-size:15px;font-weight:700;font-family:'Inter',sans-serif;box-shadow:0 3px 10px rgba(0,0,0,0.35);letter-spacing:.2px}
 
 /* ── SCREENS ─────────────────────────────────────── */
 .screen{display:none;min-height:100vh}
@@ -209,7 +209,7 @@ body{padding-top:env(safe-area-inset-top)}
 <body>
 
 <div id="updateBanner" style="display:none">
-  New version available. <span onclick="window.location.reload()" style="text-decoration:underline;cursor:pointer;font-weight:700">Tap to update.</span>
+  ⚠️ Please <span onclick="window.location.reload()" style="text-decoration:underline;cursor:pointer">tap here to update</span> before using this app.
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -745,7 +745,7 @@ function scoreHand(handDef, suitMap, hand) {
     if (r.groupIsClaimable) details.jokerPositions++;
 
     if (r.effective >= g.count) {
-      details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number, tileType:g.tileType, wind:g.wind||null, dragon:g.dragon||null});
+      details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number, tileType:g.tileType, wind:g.wind||null, dragon:g.dragon||null, dragonRequirement:g.dragonRequirement||null});
     } else {
       // ── Claiming state ──────────────────────────────────────────────
       let claimState = 'mustDraw';
@@ -753,7 +753,7 @@ function scoreHand(handDef, suitMap, hand) {
         const readyNow       = r.holds >= (g.count - 1);
         // Joker check: use ALL jokers — if holds + jokers >= count-1, ready to call
         // Even 0 tiles held + 3 jokers on a kong = ready to call
-        const readyWithJoker = !readyNow && hand.jokers > 0 && (r.holds + hand.jokers) >= (g.count - 1);
+        const readyWithJoker = !readyNow && r.groupIsClaimable && hand.jokers > 0 && (r.holds + hand.jokers) >= (g.count - 1);
         if (readyNow)            { claimState = 'readyToCall';     readyToCallCount++; }
         else if (readyWithJoker) { claimState = 'readyWithJoker';  readyToCallCount++; }
         else                     { claimState = 'pullMoreThenCall'; buildThenCallCount++; }
@@ -809,6 +809,7 @@ function scoreHand(handDef, suitMap, hand) {
         tileType:    g.tileType,
         wind:        g.wind||null,
         dragon:      g.dragon||null,
+        dragonRequirement: g.dragonRequirement||null,
         tileHint:    g.tileType==='DRAGON' ? (g.dragon||'dragon')
                    : g.tileType==='WIND'   ? (g.wind||'wind')
                    : g.number ? String(g.number) : 'tile'
@@ -1820,7 +1821,7 @@ function findBestScore(handDef, hand) {
       if (best && best.suitMap && JSON.stringify(best.suitMap) !== JSON.stringify(suitMap)) {
         best._secondBest = {matched: best.matched, suitMap: best.suitMap};
       }
-      best = {...r, handDef, _priorityScore: priorityScore, _secondBest: best?._secondBest||null};
+      best = {...r, handDef, resolvedHandDef: def, _priorityScore: priorityScore, _secondBest: best?._secondBest||null};
     } else if (best && !best._secondBest && r.finalScore > 0 &&
                JSON.stringify(suitMap) !== JSON.stringify(best.suitMap)) {
       // Track second best different suit assignment
@@ -2013,68 +2014,101 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 // DISCARD ANALYSIS
 // ============================================================
 
-function getDiscardRecommendations(tiles, top3, pivots, hand) {
-  // Usefulness based ONLY on displayed hands (top3 + pivots)
-  // Uses already-scored best paths — no recomputation
-  const displayedHands = [...top3, ...(pivots||[])];
+function getDiscardRecommendations(tiles, top3, next5, pivots) {
+  // Tier 1: tiles useful to nothing across top3 + next5 + pivots → clear discard
+  // Tier 2: tiles useful only to pivots (not top3 or next5) → soft discard with caveat
+  // Tier 3: all tiles are in play → no discard recommendation
+
+  const primaryHands  = [...(top3||[]), ...(next5||[])];
+  const pivotHands    = [...(pivots||[])];
+  const allHands      = [...primaryHands, ...pivotHands];
+
   const tileScores = {};
 
   Object.entries(selectedTiles).forEach(([id, count]) => {
     const tile = ALL_TILES[id];
     if (!tile || tile.type === 'JOKER') return;
 
-    let usefulIn = 0;
-    displayedHands.forEach(rec => {
-      const tileMatchesGroup = (m, requireHolds) => {
-        if (requireHolds && m.holds === 0) return false;
-        if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-        if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
-            m.number===tile.number && m.suit===tile.suit) return true;
-        if (tile.type==='WIND' && m.tileType==='WIND') {
-          // Only match if this specific wind was resolved in the scored path
-          // windFlex:'any' groups store m.wind=null — NOT a match for all winds
-          return m.wind === tile.wind;
-        }
-        if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-          if (m.dragon && m.dragon===tile.dragon) return true;
-          const rawSuit = m.suit;
-          const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
-            ? rawSuit
-            : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
-          if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
-          if (recSuit==='CRK' && tile.dragon==='RED') return true;
-          if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-          if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
-          if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
-          if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
-          if (!recSuit && !m.dragon && m.holds > 0) return true;
-        }
-        return false;
-      };
-      const inMatched = rec.details.matched.some(m => tileMatchesGroup(m, false));
-      const inMissing = rec.details.missing.some(m => tileMatchesGroup(m, true));
-      if (inMatched || inMissing) usefulIn++;
-    });
+    const usefulInPrimary = primaryHands.filter(rec => tileUsefulInHand(tile, rec)).length;
+    const usefulInPivot   = pivotHands.filter(rec => tileUsefulInHand(tile, rec)).length;
+    const usefulInAny     = usefulInPrimary + usefulInPivot;
 
-    tileScores[id] = { tile, usefulIn, count };
+    tileScores[id] = { tile, usefulInPrimary, usefulInPivot, usefulInAny, count };
   });
 
-  const sorted = Object.entries(tileScores)
-    .sort((a,b)=>a[1].usefulIn - b[1].usefulIn);
-  const zeroUseful = sorted.filter(([,v])=>v.usefulIn===0);
-  const oneUseful  = sorted.filter(([,v])=>v.usefulIn===1);
-  const candidates = zeroUseful.length > 0 ? zeroUseful
-                   : oneUseful.length  > 0 ? oneUseful
-                   : [];
-  return candidates.slice(0,4).map(([id,{tile}]) => {
-    let label = '';
-    if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
-    else if (tile.type==='WIND') label=`${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
-    else if (tile.type==='DRAGON') label=`${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
-    else if (tile.type==='FLOWER') label='Flower';
-    return label;
-  })
-  .filter(Boolean);
+  const tileLabel = (tile) => {
+    if (tile.type==='NUMBER') return `${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
+    if (tile.type==='WIND')   return `${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
+    if (tile.type==='DRAGON') return `${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
+    if (tile.type==='FLOWER') return 'Flower';
+    return '';
+  };
+
+  // Tier 1: useless to everything
+  const tier1 = Object.entries(tileScores)
+    .filter(([,v]) => v.usefulInAny === 0)
+    .sort((a,b) => a[1].usefulInAny - b[1].usefulInAny)
+    .slice(0, 4)
+    .map(([,{tile}]) => tileLabel(tile))
+    .filter(Boolean);
+
+  if (tier1.length > 0) {
+    return { tier: 1, tiles: tier1 };
+  }
+
+  // Tier 2: useful only to pivots, not to top3 or next5
+  const tier2 = Object.entries(tileScores)
+    .filter(([,v]) => v.usefulInPrimary === 0 && v.usefulInPivot > 0)
+    .sort((a,b) => a[1].usefulInPivot - b[1].usefulInPivot)
+    .slice(0, 2)
+    .map(([,{tile}]) => tileLabel(tile))
+    .filter(Boolean);
+
+  if (tier2.length > 0) {
+    return { tier: 2, tiles: tier2 };
+  }
+
+  // Tier 3: everything is useful
+  return { tier: 3, tiles: [] };
+}
+
+function tileUsefulInHand(tile, rec) {
+  const tileMatchesGroup = (m) => {
+    if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+    if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
+        m.number===tile.number && m.suit===tile.suit) return true;
+    if (tile.type==='WIND' && m.tileType==='WIND') {
+      return m.wind === tile.wind;
+    }
+    if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
+      // Explicit dragon match
+      if (m.dragon && m.dragon===tile.dragon) return true;
+      const rawSuit = m.suit;
+      const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
+        ? rawSuit
+        : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
+      // Matching dragon requirement — only the matching color is useful
+      if (m.dragonRequirement==='matching') {
+        if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
+        if (recSuit==='CRK' && tile.dragon==='RED')   return true;
+        if (recSuit==='DOT' && tile.dragon==='WHITE')  return true;
+        return false;
+      }
+      // Opposing dragon requirement — only the opposing colors are useful
+      if (m.dragonRequirement==='opposing') {
+        if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE'))   return true;
+        if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
+        if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED'))   return true;
+        return false;
+      }
+      // Any dragon
+      if (!recSuit && !m.dragon && m.holds > 0) return true;
+    }
+    return false;
+  };
+  const inMatched = rec.details.matched.some(m => tileMatchesGroup(m));
+  const inMissing = rec.details.missing.some(m => m.holds > 0 && tileMatchesGroup(m));
+  return inMatched || inMissing;
 }
 
 // ============================================================
@@ -2090,7 +2124,17 @@ function getTileChipLabel(m, suitMap) {
   if (m.tileType==='JOKER') return '★';
   if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
   if (m.tileType==='DRAGON') {
-    const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
+    // If dragon color is explicitly known, use it
+    if (m.dragon) {
+      if (m.dragon==='GREEN') return 'GD';
+      if (m.dragon==='RED')   return 'RD';
+      if (m.dragon==='WHITE') return 'Soap';
+      return 'D';
+    }
+    // For opposing groups, do NOT fall back to the matching dragon color
+    if (m.dragonRequirement==='opposing') return 'D';
+    // For matching groups, resolve by suit
+    const d = resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null;
     if (d==='GREEN') return 'GD';
     if (d==='RED')   return 'RD';
     if (d==='WHITE') return 'Soap';
@@ -2173,7 +2217,7 @@ function rankRationale(rec, i, top3, hand) {
     if (readyCount >= 2)
       return `Ranked second — ${tileContext} and ${readyCount} groups ready to call right now makes this very accessible.${concNote}`;
     if (readyCount === 1)
-      return `Ranked second — ${tileContext} and one group you can call for today.${concNote}`;
+      return `Ranked second — ${tileContext} and one group ready to call.${concNote}`;
     if (mustDrawCount > (top1.details.missing.filter(m=>m.isPairSingle).length))
       return `Ranked second — ${tileContext} but more missing tiles are in pair or single positions that must be drawn naturally.${concNote}`;
     return `Ranked second — ${tileContext}. ${buildCount>0?'Build toward your claimable groups and this hand opens up.':'Most gaps need to come from the wall.'}${concNote}`;
@@ -2265,8 +2309,11 @@ function formatMissingItem(m, hand, suitMap) {
     const windName = m.wind ? m.wind[0]+m.wind.slice(1).toLowerCase() : 'Wind';
     label = `${groupName} of ${windName} Winds`;
   } else if (m.tileType==='DRAGON') {
-    const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
-    const dName = d==='GREEN'?'Green':d==='RED'?'Red':d==='WHITE'?'Soap':'';
+    let d = m.dragon;
+    if (!d && m.dragonRequirement !== 'opposing') {
+      d = resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null;
+    }
+    const dName = d==='GREEN'?'Green':d==='RED'?'Red':d==='WHITE'?'Soap':'Opposing';
     label = `${groupName} of ${dName} Dragons`;
   } else {
     // Fallback to resolveLabel
@@ -2416,18 +2463,19 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     const orderedChipData = [];
     const unplaced = youHaveChipData.map(c=>({...c,_placed:false}));
 
-    rec.handDef.groups.forEach(g => {
-      const suit = g.suit ? rec.suitMap[g.suit] : null;
-      const resolvedDragon = g.dragon
+    rec.handDef.groups.forEach((g, gi) => {
+      // Use resolved group if available — has actual numbers baked in for flex hands
+      const rg = (rec.resolvedHandDef && rec.resolvedHandDef.groups[gi]) ? rec.resolvedHandDef.groups[gi] : g;
+      const suit = rg.suit ? rec.suitMap[rg.suit] : null;
+      const resolvedDragon = rg.dragon
         || (suit==='BAM'?'GREEN':suit==='CRK'?'RED':suit==='DOT'?'WHITE':null);
 
       const matchesCls = (c) => {
-        if (g.tileType==='FLOWER')  return c.cls==='flower';
-        if (g.tileType==='NUMBER')  return c.cls===(suit==='BAM'?'bam':suit==='CRK'?'crk':suit==='DOT'?'dot':null);
-        if (g.tileType==='WIND')    return c.cls==='wind' && (!g.wind || c.label===g.wind[0]);
-        if (g.tileType==='DRAGON') {
+        if (rg.tileType==='FLOWER')  return c.cls==='flower';
+        if (rg.tileType==='NUMBER')  return c.cls===(suit==='BAM'?'bam':suit==='CRK'?'crk':suit==='DOT'?'dot':null);
+        if (rg.tileType==='WIND')    return c.cls==='wind' && (!rg.wind || c.label===rg.wind[0]);
+        if (rg.tileType==='DRAGON') {
           if (c.cls!=='dragon') return false;
-          // Match specific dragon color when known
           const expLabel = resolvedDragon==='GREEN'?'GD':resolvedDragon==='RED'?'RD':resolvedDragon==='WHITE'?'Soap':null;
           return expLabel ? c.label===expLabel : true;
         }
@@ -2439,15 +2487,14 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       for (const c of unplaced) {
         if (c._placed) continue;
         if (!matchesCls(c)) continue;
-        // Extra check for numbers — match specific number
-        if (g.tileType==='NUMBER' && g.number) {
-          if (!c.label.startsWith(String(g.number))) continue;
+        // Match specific number — now works for flex groups too since rg.number is resolved
+        if (rg.tileType==='NUMBER' && rg.number) {
+          if (!c.label.startsWith(String(rg.number))) continue;
         }
         c._placed = true;
         orderedChipData.push(c);
         pulled++;
-        // Only pull up to what this group contributes (count or holds)
-        const groupCount = g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1;
+        const groupCount = rg.groupType==='quint'?5:rg.groupType==='kong'?4:rg.groupType==='pung'?3:rg.groupType==='pair'?2:1;
         if (pulled >= groupCount) break;
       }
     });
@@ -2617,15 +2664,35 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // Discard first
-  const discards = getDiscardRecommendations([], top3, [...pivots, ...next5], hand);
-  document.getElementById('discardCard').innerHTML = discards.length>0 ? `
+  const discardResult = getDiscardRecommendations([], top3, next5, pivots);
+  let discardHTML = '';
+  if (discardResult.tier === 1) {
+    discardHTML = `
     <div class="discard-card">
       <div class="discard-title">Discard first</div>
       <div class="discard-text">
-        <strong>Let go of:</strong> ${discards.join(', ')}.
-        These tiles don't support any of your top three paths.${hand.jokers>0?' Hold your joker(s).':''}
+        <strong>Let go of:</strong> ${discardResult.tiles.join(', ')}.
+        These tiles don't support any of your paths.${hand.jokers>0?' Hold your joker(s).':''}
       </div>
-    </div>` : '';
+    </div>`;
+  } else if (discardResult.tier === 2) {
+    discardHTML = `
+    <div class="discard-card">
+      <div class="discard-title">Discard first</div>
+      <div class="discard-text">
+        No obvious discard — your tiles all support your top paths. If you need to let something go, <strong>${discardResult.tiles.join(' or ')}</strong> only appear${discardResult.tiles.length===1?'s':''} in a potential pivot hand.${hand.jokers>0?' Hold your joker(s).':''}
+      </div>
+    </div>`;
+  } else {
+    discardHTML = `
+    <div class="discard-card">
+      <div class="discard-title">Discard first</div>
+      <div class="discard-text">
+        No obvious discard — all your tiles are in play.${hand.jokers>0?' Hold your joker(s).':''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('discardCard').innerHTML = discardHTML;
 
   // Pivots
   const pivotContainer = document.getElementById('pivotContainer');
