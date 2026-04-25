@@ -2392,74 +2392,44 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       return 'neutral';
     }
 
-    const youHaveChipData = [];
-    // Fully matched groups — one chip per tile
-    rec.details.matched.forEach(m => {
-      const count = m.groupType==='quint'?5:m.groupType==='kong'?4:
-                    m.groupType==='pung'?3:m.groupType==='pair'?2:1;
-      const label = getTileChipLabel(m, rec.suitMap);
-      const cls   = getTileCls(m);
-      youHaveChipData.push({label, cls, count});
-    });
-    // Partial holds — one chip per tile held
-    rec.details.missing.forEach(m => {
-      if (m.holds > 0) {
-        const label = getTileChipLabel(m, rec.suitMap);
-        const cls   = getTileCls(m);
-        youHaveChipData.push({label, cls, count: m.holds});
-      }
-    });
-    // Jokers — show if hand has claimable groups
-    const claimableGroupCount = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
-    if (hand.jokers > 0 && claimableGroupCount > 0) {
-      for (let j=0; j<hand.jokers; j++) youHaveChipData.push({label:'★', cls:'joker', count:1});
-    }
-    // Order chips strictly by hand definition group order — jokers always last
-    // Match by tileType + number + suit/dragon, not by label string
+    // Build ordered You Have chips directly from scored results in hand-definition group order.
+    // matched[] and missing[] are already in scoring priority order (pairs→singles→pungs→kongs).
+    // We walk handDef.groups and find the corresponding scored item for each group by label,
+    // so numberFlex groups (no g.number) resolve correctly via their scored number.
+    const matchedPool  = rec.details.matched.map(m=>({...m,_used:false}));
+    const missingPool  = rec.details.missing.map(m=>({...m,_used:false}));
+
     const orderedChipData = [];
-    const unplaced = youHaveChipData.map(c=>({...c,_placed:false}));
 
     rec.handDef.groups.forEach(g => {
-      const suit = g.suit ? rec.suitMap[g.suit] : null;
-      // Resolve the actual dragon for this group — use stored dragon from scoring, not hardcoded matching dragon
-      const resolvedDragon = g.dragon || null;
-
-      const matchesCls = (c) => {
-        if (g.tileType==='FLOWER')  return c.cls==='flower';
-        if (g.tileType==='NUMBER')  return c.cls===(suit==='BAM'?'bam':suit==='CRK'?'crk':suit==='DOT'?'dot':null);
-        if (g.tileType==='WIND')    return c.cls==='wind' && (!g.wind || c.label===g.wind[0]);
-        if (g.tileType==='DRAGON') {
-          if (c.cls!=='dragon') return false;
-          // Match specific dragon color when known
-          const expLabel = resolvedDragon==='GREEN'?'GD':resolvedDragon==='RED'?'RD':resolvedDragon==='WHITE'?'Soap':null;
-          return expLabel ? c.label===expLabel : true;
-        }
-        return false;
-      };
-
-      // Pull chips for this group from unplaced pool
-      let pulled = 0;
-      for (const c of unplaced) {
-        if (c._placed) continue;
-        if (!matchesCls(c)) continue;
-        // Extra check for numbers — match specific number
-        if (g.tileType==='NUMBER' && g.number) {
-          if (!c.label.startsWith(String(g.number))) continue;
-        }
-        c._placed = true;
-        orderedChipData.push(c);
-        pulled++;
-        // Only pull up to what this group contributes (count or holds)
-        const groupCount = g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1;
-        if (pulled >= groupCount) break;
+      // Find the scored item for this group by label match
+      const fromMatched = matchedPool.find(m=>!m._used && m.label===g.label);
+      if (fromMatched) {
+        fromMatched._used = true;
+        const count = g.groupType==='quint'?5:g.groupType==='kong'?4:
+                      g.groupType==='pung'?3:g.groupType==='pair'?2:1;
+        const label = getTileChipLabel(fromMatched, rec.suitMap);
+        const cls   = getTileCls(fromMatched);
+        orderedChipData.push({label, cls, count});
+        return;
+      }
+      const fromMissing = missingPool.find(m=>!m._used && m.label===g.label && m.holds>0);
+      if (fromMissing) {
+        fromMissing._used = true;
+        const label = getTileChipLabel(fromMissing, rec.suitMap);
+        const cls   = getTileCls(fromMissing);
+        orderedChipData.push({label, cls, count: fromMissing.holds});
+        return;
       }
     });
 
-    // Add any remaining unplaced non-joker chips, then jokers
-    unplaced.filter(c=>!c._placed&&c.cls!=='joker').forEach(c=>orderedChipData.push(c));
-    unplaced.filter(c=>!c._placed&&c.cls==='joker').forEach(c=>orderedChipData.push(c));
-    // Fallback: if ordering loop produced nothing, use original chip data
-    const finalChips = orderedChipData.length > 0 ? orderedChipData : youHaveChipData;
+    // Jokers last — show if hand has claimable groups
+    const claimableGroupCount = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+    if (hand.jokers > 0 && claimableGroupCount > 0) {
+      for (let j=0; j<hand.jokers; j++) orderedChipData.push({label:'★', cls:'joker', count:1});
+    }
+
+    const finalChips = orderedChipData;
     const youHave = makeTileChips(finalChips);
     // Merge consecutive duplicate flower groups in You Need display
     // e.g. two pungs of 3 flowers → show as one line "6 Flowers — you have X of 6"
