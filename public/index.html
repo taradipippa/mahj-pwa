@@ -34,6 +34,7 @@
   --r-sm:6px;
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
+html{scroll-padding-top:100px}
 body{padding-top:env(safe-area-inset-top)}
 #updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2d6a4f;color:#fff;text-align:center;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));font-size:14px;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
 
@@ -64,7 +65,7 @@ body{padding-top:env(safe-area-inset-top)}
 
 
 /* ── TILE GRID ───────────────────────────────────── */
-.select-body{padding:12px 8px 80px}
+.select-body{padding:16px 8px 80px}
 .suit-section{margin-bottom:7px}
 .suit-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;padding:1px}
 .tile-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px}
@@ -625,6 +626,7 @@ function scoreGroup(g, suit, pool) {
     }
   }
 
+  let resolvedDk = null;
   const effective   = Math.min(holds, g.count);
   const stillNeeded = Math.max(0, g.count - effective);
 
@@ -638,6 +640,7 @@ function scoreGroup(g, suit, pool) {
     } else if (g.tileType==='DRAGON') {
       const dk = resolveDragonKey(g, suit, pool);
       if (dk) pool[dk] = Math.max(0,(pool[dk]||0) - effective);
+      resolvedDk = dk;
     } else if (g.tileType==='WIND') {
       const wk = g.wind ? `WIND_${g.wind}` : findBestWindKey(pool);
       if (wk) pool[wk] = Math.max(0,(pool[wk]||0) - effective);
@@ -683,7 +686,12 @@ function scoreGroup(g, suit, pool) {
     if (wrongD) dragonNote=`You hold ${wrongD} Dragon — wrong color for ${suit}s. Need ${matchD}.`;
   }
 
-  return { effective, stillNeeded, penalty, canClaim, dragonNote, holds, groupIsClaimable: canClaim };
+  // If no tiles were consumed (holds=0), resolvedDk wasn't set during consumption.
+  // Pool is still untouched for this group, so resolve it now.
+  if (g.tileType==='DRAGON' && !resolvedDk) {
+    resolvedDk = resolveDragonKey(g, suit, pool);
+  }
+  return { effective, stillNeeded, penalty, canClaim, dragonNote, holds, groupIsClaimable: canClaim, resolvedDk };
 }
 
 const hand_dragons_list = {GREEN:1,RED:1,WHITE:1};
@@ -745,7 +753,7 @@ function scoreHand(handDef, suitMap, hand) {
     if (r.groupIsClaimable) details.jokerPositions++;
 
     if (r.effective >= g.count) {
-      const resolvedDragonKey = g.tileType==='DRAGON' && !g.dragon ? (resolveDragonKey(g, suit, pool)||'').replace('DRAGON_','') || null : g.dragon||null;
+      const resolvedDragonKey = g.tileType==='DRAGON' ? (g.dragon || (r.resolvedDk ? r.resolvedDk.replace('DRAGON_','') : null)) : null;
       details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number, tileType:g.tileType, wind:g.wind||null, dragon:resolvedDragonKey});
     } else {
       // ── Claiming state ──────────────────────────────────────────────
@@ -809,7 +817,7 @@ function scoreHand(handDef, suitMap, hand) {
         number:      g.number,
         tileType:    g.tileType,
         wind:        g.wind||null,
-        dragon:      (g.tileType==='DRAGON' && !g.dragon) ? (resolveDragonKey(g, suit, pool)||'').replace('DRAGON_','') || null : g.dragon||null,
+        dragon:      g.tileType==='DRAGON' ? (g.dragon || (r.resolvedDk ? r.resolvedDk.replace('DRAGON_','') : null)) : null,
         tileHint:    g.tileType==='DRAGON' ? (g.dragon||'dragon')
                    : g.tileType==='WIND'   ? (g.wind||'wind')
                    : g.number ? String(g.number) : 'tile'
