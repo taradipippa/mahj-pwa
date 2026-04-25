@@ -2109,13 +2109,13 @@ function getTileChipLabel(m, suitMap) {
 }
 
 function getTileCls(m) {
+  if (m.tileType==='DRAGON') return 'dragon';
+  if (m.tileType==='WIND') return 'wind';
+  if (m.tileType==='FLOWER') return 'flower';
+  if (m.tileType==='JOKER') return 'joker';
   if (m.suit==='BAM') return 'bam';
   if (m.suit==='CRK') return 'crk';
   if (m.suit==='DOT') return 'dot';
-  if (m.tileType==='WIND') return 'wind';
-  if (m.tileType==='DRAGON') return 'dragon';
-  if (m.tileType==='FLOWER') return 'flower';
-  if (m.tileType==='JOKER') return 'joker';
   return 'neutral';
 }
 
@@ -2390,13 +2390,13 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     }
 
     function getTileCls(m) {
+      if (m.tileType==='DRAGON') return 'dragon';
+      if (m.tileType==='WIND') return 'wind';
+      if (m.tileType==='FLOWER') return 'flower';
+      if (m.tileType==='JOKER') return 'joker';
       if (m.suit==='BAM') return 'bam';
       if (m.suit==='CRK') return 'crk';
       if (m.suit==='DOT') return 'dot';
-      if (m.tileType==='WIND') return 'wind';
-      if (m.tileType==='DRAGON') return 'dragon';
-      if (m.tileType==='FLOWER') return 'flower';
-      if (m.tileType==='JOKER') return 'joker';
       return 'neutral';
     }
 
@@ -2460,12 +2460,10 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     // Order missing items by hand definition group order
     const groupIndexMap = new Map();
     rec.handDef.groups.forEach((g, i) => {
-      const key = g.tileType + '|' + (g.number||'') + '|' + (g.suit||'') + '|' + (g.dragon||'') + '|' + (g.wind||'');
-      if (!groupIndexMap.has(key)) groupIndexMap.set(key, i);
+      if (!groupIndexMap.has(g.label)) groupIndexMap.set(g.label, i);
     });
     const getMissingGroupIndex = (m) => {
-      const key = m.tileType + '|' + (m.number||'') + '|' + (m.suit||'') + '|' + (m.dragon||'') + '|' + (m.wind||'');
-      return groupIndexMap.has(key) ? groupIndexMap.get(key) : 999;
+      return groupIndexMap.has(m.label) ? groupIndexMap.get(m.label) : 999;
     };
     mergedMissing.sort((a, b) => getMissingGroupIndex(a) - getMissingGroupIndex(b));
     const youNeed = mergedMissing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
