@@ -1029,7 +1029,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'kong',count:4},
    ]},
   {id:'2026_L2',pointValue:25,exposedPlay:true,section:'2026',cardRef:makeCardRef('2026',2),
-   label:'2026 Singles + Matching Dragon Pungs (2 suits)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
+   label:'2026+DDD (Suit A) + Kong-2+DDD (Suit B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
      {label:'White Dragon',tileType:'DRAGON',dragon:'WHITE',groupType:'single',count:1},
@@ -1140,7 +1140,7 @@ const HAND_LIBRARY = [
      {label:'Kong of Any Even N (Suit B)',tileType:'NUMBER',numberFlex:'even',suit:'B',groupType:'kong',count:4},
    ]},
   {id:'2468_L8',pointValue:30,exposedPlay:false,section:'2468',cardRef:makeCardRef('2468',8),
-   label:'FF + 2468 Block + 2468 Block (Concealed)',concealed:true,suitsRequired:2,flexibility:'suit_assignment',
+   label:'FF + 246 888 (Suit A) + 246 888 (Suit B)',concealed:true,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
      {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
@@ -1235,7 +1235,7 @@ const HAND_LIBRARY = [
      {label:'Kong of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'kong',count:4},
    ]},
   {id:'WD_L6',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',6),
-   label:'Single+Pair+Pung+Kong with matching Wind (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
+   label:'N + EE + WWW + SSSS + 4 Consec Numbers (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
    groups:[
      {label:'Single N',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'single',count:1},
      {label:'Single North',tileType:'WIND',wind:'NORTH',groupType:'single',count:1},
@@ -1462,7 +1462,7 @@ const HAND_LIBRARY = [
      {label:'Kong of N+2 (Suit C)',tileType:'NUMBER',numberFlex:'consec3_pos3',suit:'C',groupType:'kong',count:4},
    ]},
   {id:'CR_L8',pointValue:35,exposedPlay:false,section:'consecutive_run',cardRef:makeCardRef('consecutive_run',8),
-   label:'Single+Pair+Pung (A+B) + Pair (C) — Concealed',concealed:true,suitsRequired:3,flexibility:'any_consecutive',runLength:4,
+   label:'1 22 333 (Suit A) + 1 22 333 (Suit B) + 44 (Suit C)',concealed:true,suitsRequired:3,flexibility:'any_consecutive',runLength:4,
    groups:[
      {label:'Single N (Suit A)',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'single',count:1},
      {label:'Pair of N+1 (Suit A)',tileType:'NUMBER',numberFlex:'consec4_pos2',suit:'A',groupType:'pair',count:2},
@@ -2022,26 +2022,34 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 // DISCARD ANALYSIS
 // ============================================================
 
-function getDiscardRecommendations(tiles, top3, pivots, hand) {
-  // Usefulness based ONLY on displayed hands (top3 + pivots)
-  // Uses already-scored best paths — no recomputation
-  const displayedHands = [...top3, ...(pivots||[])];
+function getDiscardRecommendations(tiles, top3, next5, hand) {
+  // Weighted keep score by hand rank:
+  //   hand #1 → +4, hand #2 → +2, hand #3 → +1, next5 → +0.5
+  // Discard priority: lowest keep score first
+  // Ties: next5-only (0.5) discards before #3-only (1)
+
+  const handWeights = [
+    ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
+    ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
+    ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
+    ...(next5||[]).map(rec => ({ rec, weight: 0.5 })),
+  ];
+
   const tileScores = {};
 
   Object.entries(selectedTiles).forEach(([id, count]) => {
     const tile = ALL_TILES[id];
     if (!tile || tile.type === 'JOKER') return;
 
-    let usefulIn = 0;
-    displayedHands.forEach(rec => {
+    let keepScore = 0;
+
+    handWeights.forEach(({ rec, weight }) => {
       const tileMatchesGroup = (m, requireHolds) => {
         if (requireHolds && m.holds === 0) return false;
         if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
         if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
             m.number===tile.number && m.suit===tile.suit) return true;
         if (tile.type==='WIND' && m.tileType==='WIND') {
-          // Only match if this specific wind was resolved in the scored path
-          // windFlex:'any' groups store m.wind=null — NOT a match for all winds
           return m.wind === tile.wind;
         }
         if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
@@ -2062,19 +2070,21 @@ function getDiscardRecommendations(tiles, top3, pivots, hand) {
       };
       const inMatched = rec.details.matched.some(m => tileMatchesGroup(m, false));
       const inMissing = rec.details.missing.some(m => tileMatchesGroup(m, true));
-      if (inMatched || inMissing) usefulIn++;
+      if (inMatched || inMissing) keepScore += weight;
     });
 
-    tileScores[id] = { tile, usefulIn, count };
+    tileScores[id] = { tile, keepScore, count };
   });
 
+  // Sort by keepScore ascending — lowest keep score = best discard candidate
   const sorted = Object.entries(tileScores)
-    .sort((a,b)=>a[1].usefulIn - b[1].usefulIn);
-  const zeroUseful = sorted.filter(([,v])=>v.usefulIn===0);
-  const oneUseful  = sorted.filter(([,v])=>v.usefulIn===1);
-  const candidates = zeroUseful.length > 0 ? zeroUseful
-                   : oneUseful.length  > 0 ? oneUseful
-                   : [];
+    .sort((a,b) => a[1].keepScore - b[1].keepScore);
+
+  // Recommend tiles with keepScore === 0 (true dead tiles) first
+  // If none, recommend lowest scoring tiles (next5-only, then #3-only, etc.)
+  const lowestScore = sorted.length > 0 ? sorted[0][1].keepScore : 0;
+  const candidates = sorted.filter(([,v]) => v.keepScore === lowestScore);
+
   return candidates.slice(0,4).map(([id,{tile}]) => {
     let label = '';
     if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
@@ -2596,13 +2606,13 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // Discard first
-  const discards = getDiscardRecommendations([], top3, [...pivots, ...next5], hand);
+  const discards = getDiscardRecommendations([], top3, next5, hand);
   const discardHtml = discards.length > 0
     ? `<div class="discard-card">
       <div class="discard-title">Discard first</div>
       <div class="discard-text">
         <strong>Let go of:</strong> ${discards.join(', ')}.
-        These tiles don't support any of your top 3 or next 5 hands.${hand.jokers>0?' Hold your joker(s).':''}
+        These tiles are your lowest priority — focus on keeping tiles that support your #1 hand.${hand.jokers>0?' Hold your joker(s).':''}
       </div>
     </div>`
     : `<div class="discard-card">
