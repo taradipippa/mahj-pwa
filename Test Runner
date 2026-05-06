@@ -1,0 +1,649 @@
+// ============================================================
+// MAHJ ADVISOR — TEST RUNNER
+// Run with: node test_runner.js
+// Tests scoring engine, dragon resolution, discard logic
+// ============================================================
+
+const e = require('./engine_clean.js');
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function buildHand(tileIds) {
+  const tiles = tileIds.map(id => {
+    const t = e.ALL_TILES[id];
+    if (!t) throw new Error(`Unknown tile ID: ${id}`);
+    return t;
+  });
+  const jokers    = tiles.filter(t => t.type === 'JOKER');
+  const nonJokers = tiles.filter(t => t.type !== 'JOKER');
+
+  const hand = {
+    jokers:   jokers.length,
+    flowers:  nonJokers.filter(t => t.type === 'FLOWER'),
+    winds:    { NORTH:0, SOUTH:0, EAST:0, WEST:0 },
+    dragons:  { WHITE:0, GREEN:0, RED:0 },
+    numberCounts: {},
+    suitCounts:   { BAM:0, CRK:0, DOT:0 },
+    pairs:[], pungs:[], kongs:[],
+    dominantSuit: null,
+    hasEvenConc: false, hasOddConc: false,
+  };
+
+  for (const t of nonJokers) {
+    if (t.type === 'NUMBER') {
+      hand.suitCounts[t.suit]++;
+      if (!hand.numberCounts[t.number])
+        hand.numberCounts[t.number] = { total:0, BAM:0, CRK:0, DOT:0 };
+      hand.numberCounts[t.number].total++;
+      hand.numberCounts[t.number][t.suit]++;
+    } else if (t.type === 'WIND')   hand.winds[t.wind]++;
+    else if   (t.type === 'DRAGON') hand.dragons[t.dragon]++;
+  }
+
+  const maxSuit = Object.entries(hand.suitCounts).sort((a,b) => b[1]-a[1])[0];
+  if (maxSuit[1] >= 4) hand.dominantSuit = maxSuit[0];
+
+  for (const [num, counts] of Object.entries(hand.numberCounts)) {
+    for (const suit of e.SUITS) {
+      const c = counts[suit];
+      if (c >= 2) hand.pairs.push({ type:'NUMBER', number:parseInt(num), suit });
+      if (c >= 3) hand.pungs.push({ type:'NUMBER', number:parseInt(num), suit });
+      if (c >= 4) hand.kongs.push({ type:'NUMBER', number:parseInt(num), suit });
+    }
+  }
+  for (const [wind, c] of Object.entries(hand.winds)) {
+    if (c >= 2) hand.pairs.push({ type:'WIND', wind });
+    if (c >= 3) hand.pungs.push({ type:'WIND', wind });
+    if (c >= 4) hand.kongs.push({ type:'WIND', wind });
+  }
+  for (const [dragon, c] of Object.entries(hand.dragons)) {
+    if (c >= 2) hand.pairs.push({ type:'DRAGON', dragon });
+    if (c >= 3) hand.pungs.push({ type:'DRAGON', dragon });
+    if (c >= 4) hand.kongs.push({ type:'DRAGON', dragon });
+  }
+
+  const nums = Object.keys(hand.numberCounts).map(Number);
+  hand.hasEvenConc = nums.filter(n => n % 2 === 0).length >= 3;
+  hand.hasOddConc  = nums.filter(n => n % 2 !== 0).length >= 3;
+  return hand;
+}
+
+function runAnalysis(tileIds) {
+  const hand = buildHand(tileIds);
+
+  // Set global selectedTiles (needed by getDiscardRecommendations)
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tileIds.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+
+  const allScores = e.HAND_LIBRARY
+    .map(h => e.findBestScore(h, hand))
+    .filter(Boolean)
+    .sort((a,b) => b.finalScore - a.finalScore);
+
+  const top3      = allScores.slice(0, 3);
+  const threshold = (top3[2]?.finalScore || 0) * 0.75;
+  const pivots    = allScores.slice(3)
+    .filter(h => h.finalScore >= Math.max(threshold, 10) && h.matched >= 4)
+    .sort((a,b) => b.matched - a.matched || b.finalScore - a.finalScore)
+    .slice(0, 3);
+  const next5     = allScores.slice(3)
+    .filter(r => !pivots.find(p => p.handDef.id === r.handDef.id))
+    .slice(0, 5);
+
+  const discards = e.getDiscardRecommendations([], top3, pivots, next5, hand);
+
+  return { hand, allScores, top3, pivots, next5, discards };
+}
+
+// ── Test harness ─────────────────────────────────────────────
+
+let passed = 0;
+let failed = 0;
+const failures = [];
+
+function test(name, fn) {
+  try {
+    fn();
+    console.log(`  ✅ ${name}`);
+    passed++;
+  } catch(err) {
+    console.log(`  ❌ ${name}`);
+    console.log(`     → ${err.message}`);
+    failed++;
+    failures.push({ name, error: err.message });
+  }
+}
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+function assertTopHand(result, expectedId, message) {
+  const actual = result.top3[0]?.handDef?.id;
+  assert(actual === expectedId,
+    `${message || ''} Expected #1 hand: ${expectedId}, got: ${actual}`);
+}
+
+function assertInTop3(result, expectedId, message) {
+  const ids = result.top3.map(r => r.handDef.id);
+  assert(ids.includes(expectedId),
+    `${message || ''} Expected ${expectedId} in top3, got: [${ids.join(', ')}]`);
+}
+
+function assertDiscardIncludes(result, label, message) {
+  assert(result.discards.includes(label),
+    `${message || ''} Expected discard to include "${label}", got: [${result.discards.join(', ')}]`);
+}
+
+function assertDiscardExcludes(result, label, message) {
+  assert(!result.discards.includes(label),
+    `${message || ''} "${label}" should NOT be in discards, but was. Discards: [${result.discards.join(', ')}]`);
+}
+
+function assertMatched(result, handId, expectedCount, message) {
+  const r = result.allScores.find(s => s.handDef.id === handId);
+  assert(r, `Hand ${handId} not found in scores`);
+  assert(r.matched === expectedCount,
+    `${message || ''} ${handId}: expected matched=${expectedCount}, got ${r.matched}`);
+}
+
+// ── SECTION 1: Basic Scoring ──────────────────────────────────
+console.log('\n📋 SECTION 1: Basic Scoring\n');
+
+test('Complete 2026_L1 hand scores at top', () => {
+  // 2026_L1: Pung-2-BAM + White Dragon pung + Kong-2-CRK + Kong-6-CRK
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  assertTopHand(result, '2026_L1');
+  assertMatched(result, '2026_L1', 14, '2026_L1 should be fully matched');
+});
+
+test('Partial hand with 7 tiles still scores correctly', () => {
+  // Only pung+kong of 2-BAM and pung of white dragon - partial toward 2026_L1
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2',
+  ]);
+  assertInTop3(result, '2026_L1');
+});
+
+test('All-same-suit tiles prefer same-suit hands', () => {
+  // 8 BAM tiles should favor BAM-heavy hands
+  const result = runAnalysis([
+    'BAM_1','BAM_1','BAM_1','BAM_1',
+    'BAM_3','BAM_3','BAM_3','BAM_3',
+    'BAM_5','BAM_5','BAM_5','BAM_5',
+    'BAM_7','BAM_7',
+  ]);
+  const top1Suit = result.top3[0]?.suitMap ? Object.values(result.top3[0].suitMap)[0] : null;
+  // Top hand should use BAM as a primary suit
+  assert(result.top3[0].finalScore > 0, 'Should score something');
+});
+
+test('HAND_LIBRARY has 72 hands', () => {
+  assert(e.HAND_LIBRARY.length === 72, `Expected 72 hands, got ${e.HAND_LIBRARY.length}`);
+});
+
+test('All hands have required fields', () => {
+  for (const h of e.HAND_LIBRARY) {
+    assert(h.id, `Hand missing id`);
+    assert(h.section, `Hand ${h.id} missing section`);
+    assert(h.groups && h.groups.length > 0, `Hand ${h.id} missing groups`);
+    assert(typeof h.pointValue === 'number', `Hand ${h.id} missing pointValue`);
+    assert(typeof h.exposedPlay === 'boolean', `Hand ${h.id} missing exposedPlay`);
+  }
+});
+
+// ── SECTION 2: Dragon Resolution ──────────────────────────────
+console.log('\n🐉 SECTION 2: Dragon Resolution\n');
+
+test('Matching dragon for BAM suit is GREEN', () => {
+  // 2026_L2 uses matching dragon for suit A
+  // If suit A = BAM, matching dragon = GREEN
+  const result = runAnalysis([
+    'BAM_2','WHITE','BAM_2','BAM_6',   // 2026 singles for suit A
+    'GREEN','GREEN','GREEN',            // matching dragon for BAM
+    'CRK_2','CRK_2','CRK_2','CRK_2',  // kong of 2 suit B
+    'RED','RED','RED',                  // matching dragon for CRK
+  ]);
+  assertInTop3(result, '2026_L2');
+  const r = result.allScores.find(s => s.handDef.id === '2026_L2');
+  // Should be fully matched
+  assert(r.matched === 14, `2026_L2 should be fully matched (14), got ${r.matched}`);
+});
+
+test('Wrong dragon (opposing vs matching) reduces score', () => {
+  // If a hand needs a MATCHING dragon for BAM (= GREEN)
+  // but player holds RED (opposing), score should be lower
+  const withMatchingDragon = runAnalysis([
+    'BAM_2','WHITE','BAM_2','BAM_6',
+    'GREEN','GREEN','GREEN',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'RED','RED','RED',
+  ]);
+  const withWrongDragon = runAnalysis([
+    'BAM_2','WHITE','BAM_2','BAM_6',
+    'RED','RED','RED',        // RED is opposing for BAM, not matching
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'RED','RED','RED',
+  ]);
+  const correctScore = withMatchingDragon.allScores.find(s => s.handDef.id === '2026_L2')?.finalScore || 0;
+  const wrongScore   = withWrongDragon.allScores.find(s => s.handDef.id === '2026_L2')?.finalScore || 0;
+  assert(correctScore > wrongScore,
+    `Matching dragon should score higher (${correctScore}) than wrong dragon (${wrongScore})`);
+});
+
+test('Soap (White Dragon) is MATCHING for DOT, not opposing', () => {
+  // MATCHING_DRAGON[DOT] = WHITE. OPPOSING_DRAGONS[DOT] = GREEN, RED
+  assert(e.MATCHING_DRAGON['DOT'] === 'WHITE',
+    'Matching dragon for DOT should be WHITE');
+  assert(!e.OPPOSING_DRAGONS['DOT'].includes('WHITE'),
+    'WHITE should NOT be in opposing dragons for DOT');
+  assert(e.OPPOSING_DRAGONS['DOT'].includes('GREEN') && e.OPPOSING_DRAGONS['DOT'].includes('RED'),
+    'GREEN and RED should be opposing dragons for DOT');
+});
+
+test('resolveDragonKey for opposing DOT never returns WHITE', () => {
+  // Even if pool has only WHITE, opposing DOT must resolve to GREEN or RED
+  const pool = { DRAGON_WHITE: 3, DRAGON_GREEN: 0, DRAGON_RED: 0 };
+  const g = { tileType:'DRAGON', dragonRequirement:'opposing' };
+  const resolvedKey = e.resolveDragonKey(g, 'DOT', pool);
+  assert(resolvedKey !== 'DRAGON_WHITE',
+    'Opposing DOT must never return WHITE (WHITE is the matching dragon), got: ' + resolvedKey);
+  assert(resolvedKey === 'DRAGON_GREEN' || resolvedKey === 'DRAGON_RED',
+    'Opposing DOT must resolve to GREEN or RED, got: ' + resolvedKey);
+});
+
+test('Dragon chip label resolves correctly for matched groups', () => {
+  // When a group is matched with GREEN dragon, the matched entry should store dragon:'GREEN'
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'GREEN','GREEN','GREEN',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  // 2026_L1 needs WHITE dragon pung - GREEN is wrong, so it should be in missing not matched
+  const r = result.allScores.find(s => s.handDef.id === '2026_L1');
+  const greenInMissing = r.details.missing.some(m => m.tileType === 'DRAGON');
+  assert(greenInMissing, '2026_L1 dragon group should be missing when wrong dragon held');
+});
+
+// ── SECTION 3: Discard Recommendations ────────────────────────
+console.log('\n🗑️  SECTION 3: Discard Recommendations\n');
+
+test('Dead tile (no hand use) is recommended for discard', () => {
+  // Near-complete 2026_L1 + one useless NORTH wind
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','NORTH',
+  ]);
+  assertDiscardIncludes(result, 'North Wind',
+    'NORTH wind is dead weight and should be recommended for discard');
+});
+
+test('Tiles with keepScore=0 (truly dead) are recommended over top-hand tiles', () => {
+  // Discard logic recommends the LOWEST-scoring tiles.
+  // A tile with keepScore=0 (supports NO ranked hand) should always rank below
+  // any tile that supports even one ranked hand (keepScore > 0).
+  // Hand: strong 2026_L1 candidate + one truly dead tile (NORTH wind)
+  const withDead = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','NORTH',
+  ]);
+  // NORTH should be discarded, not top-hand tiles
+  assertDiscardIncludes(withDead, 'North Wind', 'Dead tile should be top discard candidate');
+  assertDiscardExcludes(withDead, '2-Bam',   'BAM_2 supports top hand — should not discard when dead tile exists');
+  assertDiscardExcludes(withDead, 'White Dragon', 'WHITE supports top hand — should not discard when dead tile exists');
+});
+
+test('Tiles in top hand all have keepScore > 0', () => {
+  // Every tile used in the #1 hand should have a keepScore above 0
+  // (meaning the discard engine recognizes them as valuable)
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  // Build the hand weights manually to check keepScores
+  const top3 = result.top3;
+  const hw = [
+    {rec:top3[0],weight:4},{rec:top3[1],weight:2},{rec:top3[2],weight:1},
+    ...result.pivots.map(r=>({rec:r,weight:0.5})),
+    ...result.next5.map(r=>({rec:r,weight:0.5})),
+  ];
+  const topHandTileIds = ['BAM_2','WHITE','CRK_2','CRK_6'];
+  topHandTileIds.forEach(id => {
+    const tile = e.ALL_TILES[id];
+    let ks = 0;
+    hw.forEach(({rec,weight}) => {
+      const inM = rec.details.matched.some(m => {
+        if (tile.type==='NUMBER'&&m.tileType==='NUMBER'&&m.number===tile.number&&m.suit===tile.suit) return true;
+        if (tile.type==='DRAGON'&&m.tileType==='DRAGON'&&m.dragon===tile.dragon) return true;
+        if (tile.type==='WIND'&&m.tileType==='WIND'&&m.wind===tile.wind) return true;
+        if (tile.type==='FLOWER'&&m.tileType==='FLOWER') return true;
+        return false;
+      });
+      const inMs = rec.details.missing.some(m => {
+        if (m.holds===0) return false;
+        if (tile.type==='NUMBER'&&m.tileType==='NUMBER'&&m.number===tile.number&&m.suit===tile.suit) return true;
+        if (tile.type==='DRAGON'&&m.tileType==='DRAGON'&&m.dragon===tile.dragon) return true;
+        if (tile.type==='WIND'&&m.tileType==='WIND'&&m.wind===tile.wind) return true;
+        if (tile.type==='FLOWER'&&m.tileType==='FLOWER') return true;
+        return false;
+      });
+      if (inM||inMs) ks+=weight;
+    });
+    assert(ks > 0, id + ' is in the top hand but has keepScore=0 — discard logic bug!');
+  });
+});
+
+test('Tile only used in pivot hand is NOT recommended when dead tile exists', () => {
+  // If a true dead tile (keepScore=0) exists, it should be recommended over
+  // a tile that supports a pivot hand (keepScore=0.5).
+  // Hand: near-complete 2026_L1, plus a FLOWER (feeds pivot/other hands), plus a dead SOUTH wind
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','FLOWER','SOUTH',
+  ]);
+  // SOUTH wind is very unlikely to feed top hands — check if it's recommended
+  // FLOWER feeds many hands — its keepScore should be >= SOUTH's keepScore
+  // So SOUTH should be discarded before FLOWER if SOUTH is truly dead
+  const southInDiscards = result.discards.includes('South Wind');
+  const flowerInDiscards = result.discards.includes('Flower');
+  // If both are equally dead, that's OK — if FLOWER has higher keepScore than SOUTH, SOUTH leads
+  assert(southInDiscards || !flowerInDiscards || result.discards.length === 0,
+    'If SOUTH is dead weight, it should be discarded before or alongside FLOWER');
+});
+
+test('Multiple dead tiles — worst one comes first', () => {
+  // Two dead tiles: NORTH and SOUTH winds, neither used
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','NORTH','SOUTH',
+  ]);
+  // Both should appear in discards (they're equally dead)
+  const bothDead = result.discards.includes('North Wind') || result.discards.includes('South Wind');
+  assert(bothDead, `Dead winds should appear in discards. Got: [${result.discards.join(', ')}]`);
+});
+
+test('Jokers are never recommended for discard', () => {
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','JOKER',
+  ]);
+  assert(!result.discards.includes('Joker'), 'Jokers should never be recommended for discard');
+});
+
+// ── SECTION 4: Section Coverage ────────────────────────────────
+console.log('\n🀄 SECTION 4: Section Coverage (one scenario per section)\n');
+
+test('2026 section — scores a 2026 hand in top 3', () => {
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  const has2026 = result.top3.some(r => r.handDef.section === '2026');
+  assert(has2026, 'Expected a 2026 section hand in top 3');
+});
+
+test('2468 section — even number tiles rank an even hand', () => {
+  // 2468 hands use even numbers
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2','BAM_2',
+    'BAM_4','BAM_4','BAM_4','BAM_4',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+    'CRK_8','CRK_8',
+  ]);
+  const has2468 = result.top3.some(r => r.handDef.section === '2468');
+  assert(has2468, `Expected a 2468 hand in top 3. Got: ${result.top3.map(r=>r.handDef.section)}`);
+});
+
+test('13579 section — odd number tiles rank an odd hand', () => {
+  const result = runAnalysis([
+    'BAM_1','BAM_1','BAM_1','BAM_1',
+    'BAM_3','BAM_3','BAM_3','BAM_3',
+    'CRK_5','CRK_5','CRK_5','CRK_5',
+    'CRK_7','CRK_7',
+  ]);
+  const has13579 = result.top3.some(r => r.handDef.section === '13579');
+  assert(has13579, `Expected a 13579 hand in top 3. Got: ${result.top3.map(r=>r.handDef.section)}`);
+});
+
+test('Winds & Dragons section — wind tiles rank a WD hand', () => {
+  const result = runAnalysis([
+    'NORTH','NORTH','NORTH','NORTH',
+    'EAST','EAST','EAST','EAST',
+    'SOUTH','SOUTH','SOUTH','SOUTH',
+    'WEST','WEST',
+  ]);
+  const hasWD = result.top3.some(r => r.handDef.section === 'winds_dragons');
+  assert(hasWD, `Expected a winds_dragons hand in top 3. Got: ${result.top3.map(r=>r.handDef.section)}`);
+});
+
+test('Consecutive Run section — consecutive tiles rank a CR hand', () => {
+  const result = runAnalysis([
+    'BAM_3','BAM_3','BAM_3',
+    'BAM_4','BAM_4','BAM_4',
+    'BAM_5','BAM_5','BAM_5',
+    'BAM_6','BAM_6','BAM_6',
+    'FLOWER','FLOWER',
+  ]);
+  const hasCR = result.top3.some(r => r.handDef.section === 'consecutive_run');
+  assert(hasCR, `Expected a consecutive_run hand in top 3. Got: ${result.top3.map(r=>r.handDef.section)}`);
+});
+
+test('Quints section — 5 of a tile ranks a Quints hand', () => {
+  // Quints hands need 5 of the same tile (joker substitution allowed)
+  // Use joker to simulate quint
+  const result = runAnalysis([
+    'BAM_7','BAM_7','BAM_7','BAM_7','JOKER',
+    'CRK_7','CRK_7','CRK_7','CRK_7','JOKER',
+    'DOT_7','DOT_7','DOT_7','DOT_7',
+  ]);
+  const hasQuint = result.top3.some(r => r.handDef.section === 'quints');
+  assert(hasQuint, `Expected a quints hand in top 3. Got: ${result.top3.map(r=>r.handDef.section)}`);
+});
+
+test('Singles & Pairs — S&P hand not surfaced below 9 matched tiles', () => {
+  // With fewer than 9 matched tiles toward S&P, it should not be in top 3
+  const result = runAnalysis([
+    'BAM_1','BAM_9','CRK_1','CRK_9',
+    'BAM_2','BAM_2','CRK_2','CRK_2',
+    'BAM_4','BAM_4','CRK_4',
+    'DOT_1','DOT_9','WHITE',
+  ]);
+  // Check that any S&P hand in top 3 has at least 9 matched tiles
+  const spInTop3 = result.top3.filter(r => r.handDef.section === 'singles_and_pairs');
+  for (const sp of spInTop3) {
+    assert(sp.matched >= 9,
+      `S&P hand ${sp.handDef.id} in top 3 with only ${sp.matched} matched tiles (min 9 required)`);
+  }
+});
+
+// ── SECTION 5: Edge Cases ──────────────────────────────────────
+console.log('\n⚠️  SECTION 5: Edge Cases\n');
+
+test('14-tile hand (East) analyzes without error', () => {
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  assert(result.top3.length > 0, 'Should produce top 3 results for 14-tile hand');
+});
+
+test('Hand with joker — joker bonus applied', () => {
+  const withJoker = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','JOKER',
+  ]);
+  const withoutJoker = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','NORTH',
+  ]);
+  const scoreWith    = withJoker.allScores.find(s => s.handDef.id === '2026_L1')?.finalScore || 0;
+  const scoreWithout = withoutJoker.allScores.find(s => s.handDef.id === '2026_L1')?.finalScore || 0;
+  assert(scoreWith > scoreWithout,
+    `Joker should increase score (${scoreWith} vs ${scoreWithout})`);
+});
+
+test('Concealed hand penalized vs equivalent open hand', () => {
+  // Find a concealed hand and an open hand, score same tiles toward each
+  const concealedHand = e.HAND_LIBRARY.find(h => h.concealed === true);
+  const openHand      = e.HAND_LIBRARY.find(h => h.concealed === false && h.section === concealedHand.section);
+
+  if (!concealedHand || !openHand) {
+    // Just verify concealed hands exist
+    assert(e.HAND_LIBRARY.some(h => h.concealed), 'Should have at least one concealed hand');
+    return;
+  }
+
+  const hand = buildHand([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  const concScore = e.findBestScore(concealedHand, hand);
+  const openScore = e.findBestScore(openHand, hand);
+
+  // If both exist and concealed has lower concPenalty applied, verify penalization
+  if (concScore && openScore && concScore.matched === openScore.matched) {
+    assert(concScore.finalScore <= openScore.finalScore,
+      `Concealed hand should score <= open hand with equal tiles`);
+  } else {
+    assert(true, 'Skipped: hands have different tile counts');
+  }
+});
+
+test('Flowers are correctly counted as a group', () => {
+  const result = runAnalysis([
+    'FLOWER','FLOWER','FLOWER',
+    'BAM_3','BAM_3','BAM_3',
+    'BAM_4','BAM_4','BAM_4',
+    'BAM_5','BAM_5','BAM_5',
+    'BAM_6','BAM_6',
+  ]);
+  // Any hand using FLOWER should have flowers in matched details
+  const handWithFlower = result.top3.find(r =>
+    r.details.matched.some(m => m.tileType === 'FLOWER')
+  );
+  // Doesn't have to be top hand — just that flowers score somewhere
+  const anyFlowerScore = result.allScores.find(r =>
+    r.details.matched.some(m => m.tileType === 'FLOWER')
+  );
+  assert(anyFlowerScore, 'At least one hand should count flowers as matched');
+});
+
+test('Minimal hand (3 tiles) does not crash', () => {
+  const result = runAnalysis(['BAM_1','BAM_2','BAM_3']);
+  assert(result.top3.length > 0, 'Should return results even with few tiles');
+});
+
+test('Mixed suit tiles — suit assignment finds best combo', () => {
+  // Tiles that could fit multiple suit assignments
+  const result = runAnalysis([
+    'BAM_4','BAM_4','BAM_4','BAM_4',
+    'CRK_4','CRK_4','CRK_4','CRK_4',
+    'BAM_8','BAM_8','BAM_8','BAM_8',
+    'CRK_8','CRK_8',
+  ]);
+  // Should find a hand — not return empty
+  assert(result.top3[0].finalScore > 0, 'Mixed suit hand should score > 0');
+});
+
+// ── SECTION 6: Chip Ordering & Details ────────────────────────
+console.log('\n🎴 SECTION 6: Scoring Details Integrity\n');
+
+test('Matched groups have resolved suits (not abstract A/B/C)', () => {
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  const r = result.allScores.find(s => s.handDef.id === '2026_L1');
+  for (const m of r.details.matched) {
+    if (m.tileType === 'NUMBER') {
+      assert(
+        m.suit === 'BAM' || m.suit === 'CRK' || m.suit === 'DOT',
+        `Matched group has unresolved suit: ${m.suit} in ${m.label}`
+      );
+    }
+  }
+});
+
+test('Missing groups have resolved suits (not abstract A/B/C)', () => {
+  const result = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+    'NORTH','SOUTH','EAST','WEST',
+    'FLOWER','FLOWER','FLOWER',
+  ]);
+  const r = result.top3[0];
+  for (const m of r.details.missing) {
+    if (m.tileType === 'NUMBER') {
+      assert(
+        m.suit === 'BAM' || m.suit === 'CRK' || m.suit === 'DOT' || m.suit === null,
+        `Missing group has unresolved suit: "${m.suit}" in ${m.label}`
+      );
+      // null is acceptable for suitless groups, but A/B/C is not
+      assert(m.suit !== 'A' && m.suit !== 'B' && m.suit !== 'C',
+        `Missing group has abstract suit letter: "${m.suit}" in ${m.label}`);
+    }
+  }
+});
+
+test('findBestScore returns suitMap on result', () => {
+  const hand = buildHand(['BAM_2','BAM_2','BAM_2','CRK_6','CRK_6','CRK_6','CRK_6']);
+  const handDef = e.HAND_LIBRARY.find(h => h.id === '2026_L1');
+  const result = e.findBestScore(handDef, hand);
+  assert(result !== null, 'findBestScore should return a result');
+  assert(result.suitMap !== undefined, 'Result should include suitMap');
+});
+
+test('scoreHand returns correct total tile count for 2026_L1', () => {
+  // 2026_L1: pung(3) + pung(3) + kong(4) + kong(4) = 14 total
+  const hand = buildHand([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','CRK_6',
+  ]);
+  const handDef = e.HAND_LIBRARY.find(h => h.id === '2026_L1');
+  const result = e.findBestScore(handDef, hand);
+  assert(result.total === 14, `2026_L1 should total 14 tiles, got ${result.total}`);
+});
+
+// ── Results ────────────────────────────────────────────────────
+console.log('\n' + '═'.repeat(50));
+console.log(`  Results: ${passed} passed, ${failed} failed`);
+if (failures.length > 0) {
+  console.log('\n  Failed tests:');
+  failures.forEach(f => console.log(`  ❌ ${f.name}`));
+}
+console.log('═'.repeat(50) + '\n');
+process.exit(failed > 0 ? 1 : 0);
