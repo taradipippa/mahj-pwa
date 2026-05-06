@@ -38,12 +38,8 @@
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
 html{scroll-padding-top:100px}
 body{padding-top:env(safe-area-inset-top)}
-#updateBanner{position:fixed;inset:0;z-index:9999;background:rgba(31,42,54,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;backdrop-filter:blur(4px)}
-#updateBanner .update-box{background:#1F2A36;border-radius:16px;padding:32px 28px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
-#updateBanner .update-icon{font-size:36px;margin-bottom:16px}
-#updateBanner .update-heading{color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;font-family:'DM Sans',sans-serif}
-#updateBanner .update-body{color:rgba(255,255,255,0.7);font-size:14px;line-height:1.5;margin-bottom:24px;font-family:'DM Sans',sans-serif}
-#updateBanner .update-btn{background:#B89A5B;color:#fff;border:none;border-radius:8px;padding:14px 28px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:.3px;width:100%;font-family:'DM Sans',sans-serif}
+#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#1F2A36;color:#fff;text-align:center;padding:18px 24px;padding-top:calc(18px + env(safe-area-inset-top));font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(31,42,54,0.35);display:flex;align-items:center;justify-content:center;gap:12px}
+#updateBanner .update-btn{background:#B89A5B;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;white-space:nowrap}
 #updateBanner .update-btn:active{opacity:.85}
 
 /* ── SCREENS ─────────────────────────────────────── */
@@ -122,7 +118,7 @@ body{padding-top:env(safe-area-inset-top)}
   pointer-events:none;
 }
 .analyze-btn.enabled{
-  background:var(--red);color:#fff;pointer-events:auto;cursor:pointer;
+  background:var(--navy);color:#fff;pointer-events:auto;cursor:pointer;
 }
 .analyze-btn.enabled:active{opacity:.88}
 /* ── RESULTS SCREEN ──────────────────────────────── */
@@ -142,43 +138,60 @@ body{padding-top:env(safe-area-inset-top)}
 .sf-name{font-weight:600;font-size:16px;color:var(--ink);line-height:1.2}
 .sf-reason{font-size:14px;color:var(--ink2);margin-top:2px;line-height:1.4}
 /* ── REC CARDS ───────────────────────────────────── */
-.rec-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
-.rec-header{background:var(--bone);border-bottom:1px solid var(--bone2);padding:12px 14px 10px;cursor:pointer;user-select:none}
+.rec-card{background:#fff;border:1px solid #DDE2E8;border-radius:var(--r);margin-bottom:10px;overflow:hidden;box-shadow:0 1px 4px rgba(31,42,54,0.08)}
+.rec-header{background:#fff;padding:14px 16px;cursor:pointer;user-select:none}
 .rec-header:active{opacity:.85}
-.rec-body{padding:12px 14px;transition:none}
+.rec-body{padding:0 16px 14px;transition:none}
 .rec-body.collapsed{display:none}
-.rec-toggle{font-size:13px;font-weight:500;color:var(--ink3);line-height:1;margin-left:auto;padding-left:8px;flex-shrink:0;white-space:nowrap}
-.rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;width:100%}
-.rec-rank-label{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
-.rec-sec-tag{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(26,48,96,.10);border-radius:20px;padding:2px 8px}
-.conc-badge{font-size:10px;font-weight:600;color:var(--red);background:rgba(184,32,16,.1);border-radius:20px;padding:2px 7px;margin:auto}
+.rec-toggle{font-size:13px;font-weight:600;color:var(--navy);background:var(--bone2);border:none;border-radius:20px;padding:5px 14px;cursor:pointer;white-space:nowrap;margin-left:auto;flex-shrink:0}
+.rec-toggle:active{opacity:.8}
+.rec-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;width:100%}
+.rec-rank-label{font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:4px;padding:2px 8px;letter-spacing:.5px}
+.rec-sec-tag{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3)}
+.conc-badge{font-size:10px;font-weight:600;color:var(--red);background:rgba(184,32,16,.1);border-radius:20px;padding:2px 7px;margin-left:auto}
 .card-ref{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:3px}
 .hand-display{font-family:'Courier New',monospace;font-size:15px;letter-spacing:.5px;margin:4px 0 3px;line-height:1.4}
-.tiles-matched{font-size:13px;color:var(--ink3)}
-.pts-badge{font-size:12px;font-weight:600;color:var(--ink3);background:rgba(26,20,16,.07);border-radius:20px;padding:2px 8px}
-.rec-body{padding:12px 14px}
-.rec-field{font-size:15px;color:var(--ink2);margin-bottom:10px;line-height:1.5}
+.tiles-matched{font-size:13px;font-weight:600;color:var(--ink2)}
+.pts-badge{font-size:11px;font-weight:600;color:var(--ink3);background:var(--bone2);border-radius:20px;padding:2px 8px}
+.rec-body{padding:0 16px 14px}
+.rec-section-head{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink3);margin:12px 0 6px}
+.rec-field{font-size:15px;color:var(--ink2);margin-bottom:8px;line-height:1.5}
 .rec-field:last-child{margin-bottom:0}
 .rec-field strong{color:var(--ink);font-weight:600}
-.need-list{line-height:1.8}
+.need-list{line-height:2}
+.need-row{display:flex;align-items:baseline;justify-content:space-between;font-size:14px;padding:5px 0;border-bottom:1px solid var(--bone2)}
+.need-row:last-child{border-bottom:none}
+.need-tile{color:var(--ink);font-weight:500}
+.need-progress{color:var(--ink3);font-size:13px;margin:0 8px}
+.need-status{font-size:12px;font-weight:700;border-radius:20px;padding:2px 10px;white-space:nowrap}
+.status-callable{background:#E6F4EA;color:#1a6020}
+.status-not-callable{background:#F0F2F5;color:var(--ink3)}
+.joker-note{font-size:13px;color:var(--ink3);padding:8px 0 0;line-height:1.5}
 /* Need tags */
 .tag{display:inline-block;font-size:12px;font-weight:600;border-radius:20px;padding:1px 7px;margin:5px;vertical-align:middle;letter-spacing:.2px}
 .tag-ready{background:rgba(26,96,32,.12);color:var(--green)}
 .tag-joker{background:rgba(26,48,96,.12);color:var(--blue)}
 .tag-build{background:rgba(196,160,64,.15);color:#8a6010}
 .tag-draw{background:rgba(80,60,40,.1);color:#6a5030}
-.rationale{font-style:italic;color:var(--ink3);font-size:14px;border-top:1px solid var(--bone2);padding-top:9px;margin-top:2px}
-.joker-teaching{display:block;font-size:13px;color:var(--ink3);margin-top:4px;font-style:italic;line-height:1.5}
-.concealed-note{font-size:14px;color:var(--ink2);background:rgba(26,20,16,.05);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5}
-.dragon-warn{font-size:14px;color:var(--red);margin-top:6px;line-height:1.4}
+.rationale{font-size:14px;color:var(--ink2);line-height:1.5}
+.rationale-bullets{margin:0;padding-left:0;list-style:none}
+.rationale-bullets li{font-size:14px;color:var(--ink2);padding:3px 0;line-height:1.4}
+.rationale-bullets li::before{content:"• ";color:var(--gold)}
+.joker-note{font-size:13px;color:var(--ink3);line-height:1.5}
+.concealed-note{font-size:13px;color:var(--ink2);background:var(--bone2);border-radius:6px;padding:7px 10px;margin-top:6px;line-height:1.5}
+.dragon-warn{font-size:13px;color:var(--red);margin-top:6px;line-height:1.4}
 /* ── DISCARD CARD ────────────────────────────────── */
-.discard-card{background:var(--navy);color:#fff;border-radius:var(--r);padding:13px 14px;margin-bottom:14px}
-.discard-title{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
-.discard-text{font-size:15px;line-height:1.5;color:rgba(255,255,255,.9)}
-.discard-text strong{color:var(--gold2)}
+.discard-card{background:var(--navy);color:#fff;border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.discard-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px}
+.discard-row{display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.discard-row:last-child{border-bottom:none}
+.discard-tile{font-size:14px;font-weight:600;color:#fff}
+.discard-reason{font-size:12px;color:rgba(255,255,255,.55)}
+.discard-fallback{font-size:14px;color:rgba(255,255,255,.8);line-height:1.5}
+.section-head{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin:16px 0 8px}
 /* ── PIVOT CARDS ─────────────────────────────────── */
-.section-label{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
-.pivot-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.section-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
+.pivot-card{background:#fff;border:1px solid #DDE2E8;border-radius:var(--r);padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(31,42,54,0.06)}
 .pivot-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
 .pivot-ref{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--ink)}
 .pivot-score{font-size:13px;color:var(--ink3)}
@@ -188,8 +201,8 @@ body{padding-top:env(safe-area-inset-top)}
 #loadingMsg{padding:40px 20px;text-align:center;color:var(--ink3);font-size:16px}
 /* ── MISC ────────────────────────────────────────── */
 .section-divider{height:1px;background:var(--bone2);margin:4px 0 14px}
-.show-more-btn{width:100%;background:#fff;border:1.5px solid var(--gold);border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:12px;text-align:center}
-.show-more-btn:active{opacity:.8}
+.show-more-btn{width:100%;background:#fff;border:none;border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:12px;text-align:center;position:relative;box-shadow:0 0 0 1.5px #B89A5B,0 0 0 2.5px #E8D8A8,inset 0 1px 0 rgba(255,255,255,.8),0 2px 6px rgba(184,154,91,.25)}
+.show-more-btn:active{opacity:.85;box-shadow:0 0 0 1.5px #9a7e44,0 0 0 2.5px #d4c080,inset 0 1px 0 rgba(255,255,255,.6)}
 .next5-cards{margin-bottom:12px}
 .n5-tile-count{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px}
 .n5-chips-row{display:flex;flex-wrap:wrap;gap:3px}
@@ -218,13 +231,9 @@ body{padding-top:env(safe-area-inset-top)}
 </head>
 <body>
 
-<div id="updateBanner">
-  <div class="update-box">
-    <img src="/icon-192.png" style="width:72px;height:72px;border-radius:16px;margin-bottom:16px;" alt="Mahjong IQ" />
-    <div class="update-heading">Update Required</div>
-    <div class="update-body">A new version of the Mahjong Hand Analyzer is available. Please update to continue.</div>
-    <button class="update-btn" onclick="window.location.reload()">Update Now</button>
-  </div>
+<div id="updateBanner" style="display:none">
+  <span>A new version of Mahjong IQ is available.</span>
+  <button class="update-btn" onclick="window.location.reload()">Update Now</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -306,10 +315,10 @@ body{padding-top:env(safe-area-inset-top)}
     <div id="resultsContent" style="display:none">
       <div id="sectionFocus"></div>
       <div id="top3Container"></div>
-      <div id="discardCard"></div>
       <div id="next5Container"></div>
-      <div id="glanceCard"></div>
+      <div id="discardCard"></div>
       <div id="pivotContainer"></div>
+      <div id="glanceCard"></div>
     </div>
   </div>
 
@@ -2096,10 +2105,9 @@ function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
   const sorted = Object.entries(tileScores)
     .sort((a,b) => a[1].keepScore - b[1].keepScore);
 
-  // Recommend tiles with keepScore === 0 (true dead tiles) first
-  // If none, recommend lowest scoring tiles (next5-only, then #3-only, etc.)
-  const lowestScore = sorted.length > 0 ? sorted[0][1].keepScore : 0;
-  const candidates = sorted.filter(([,v]) => v.keepScore === lowestScore);
+  // Only recommend tiles with keepScore === 0 (truly dead — support no ranked hand)
+  // If every tile supports at least one ranked hand, return empty → fallback message shows
+  const candidates = sorted.filter(([,v]) => v.keepScore === 0);
 
   return candidates.slice(0,4).map(([id,{tile}]) => {
     let label = '';
@@ -2355,257 +2363,302 @@ function formatMissingItem(m, hand, suitMap) {
 }
 
 function renderResults(hand, top3, pivots, allScores, is14) {
+
   // East banner
   document.getElementById('eastBanner').innerHTML = is14
-    ? `<div class="east-banner">You have 14 tiles — you're East. Analyze your paths below, then discard your least useful tile to start play.</div>`
+    ? `<div class="east-banner">You have 14 tiles — you are East. Review your top hand options below, then discard your least useful tile to start play.</div>`
     : '';
 
-  // Remove glance card — no longer used
   document.getElementById('glanceCard').innerHTML = '';
-
-  // Section focus hidden — preserved for future use
   document.getElementById('sectionFocus').innerHTML = '';
 
-  // Top 3 hands
-  const top3Container = document.getElementById('top3Container');
-  top3Container.innerHTML = '';
+  // ── Helper: tile chip label ───────────────────────────────
+  function getTileChipLabel(m, suitMap) {
+    const resolvedSuit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT')
+      ? m.suit : (m.suit && suitMap ? suitMap[m.suit] : null);
+    const suitShort = resolvedSuit==='BAM'?'B':resolvedSuit==='CRK'?'C':resolvedSuit==='DOT'?'D':null;
+    if (m.tileType==='NUMBER' && m.number && suitShort) return `${m.number}${suitShort}`;
+    if (m.tileType==='FLOWER') return 'F';
+    if (m.tileType==='JOKER') return '★';
+    if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
+    if (m.tileType==='DRAGON') {
+      const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
+      if (d==='GREEN') return 'GD';
+      if (d==='RED')   return 'RD';
+      if (d==='WHITE') return 'Soap';
+      return 'D';
+    }
+    return '?';
+  }
 
-  top3.forEach((rec,i) => {
-    const card = document.createElement('div');
-    card.className = 'rec-card';
+  function getTileCls(m) {
+    if (m.tileType==='DRAGON') return 'dragon';
+    if (m.tileType==='WIND') return 'wind';
+    if (m.tileType==='FLOWER') return 'flower';
+    if (m.tileType==='JOKER') return 'joker';
+    if (m.suit==='BAM') return 'bam';
+    if (m.suit==='CRK') return 'crk';
+    if (m.suit==='DOT') return 'dot';
+    return 'neutral';
+  }
 
-    // Only count claimable groups that are NOT already fully matched
-    const matchedLabels = new Set(rec.details.matched.map(m=>m.label));
-    const jokerPositions = rec.handDef.groups.filter(
-      g=>g.groupType!=='single'&&g.groupType!=='pair'&&!matchedLabels.has(g.label)
-    ).length;
+  // ── Helper: human tile name (no jargon) ──────────────────
+  function tileDisplayName(m, suitMap) {
+    const resolvedSuit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT')
+      ? m.suit : (m.suit && suitMap ? suitMap[m.suit] : null);
+    const suitName = resolvedSuit==='BAM'?'Bam':resolvedSuit==='CRK'?'Crack':resolvedSuit==='DOT'?'Dot':null;
+    if (m.tileType==='NUMBER' && m.number && suitName) return `${m.number} ${suitName}`;
+    if (m.tileType==='FLOWER') return 'Flower';
+    if (m.tileType==='WIND') {
+      const w = m.wind; return w ? w[0]+w.slice(1).toLowerCase()+' Wind' : 'Wind';
+    }
+    if (m.tileType==='DRAGON') {
+      const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
+      return d==='GREEN'?'Green Dragon':d==='RED'?'Red Dragon':d==='WHITE'?'Soap Dragon':'Dragon';
+    }
+    return 'Tile';
+  }
 
-    // Build "You have" — fully matched groups + partial contributions
-    // Build "You have" tile chips — tiles the engine assigned to this hand
-    // Show matched groups + partial holds as small chips
-    function makeTileChips(items) {
-      return items.map(({label, cls, count}) => {
-        const chips = Array.from({length: count}, () =>
-          `<span class="yhave-chip ${cls}">${label}</span>`
-        ).join('');
-        return chips;
-      }).join('');
+  // ── Helper: callable status ───────────────────────────────
+  function callableStatus(m, hand) {
+    const holds = m.holds;
+    const total = holds + m.need;
+    // Callable now: one tile away from completing the group
+    if (m.claimState === 'readyToCall' || m.claimState === 'readyWithJoker') {
+      return { label: 'Callable now', cls: 'status-callable' };
+    }
+    // Special case: need===1 means final tile — can always call for Mahjong
+    if (m.need === 1 && m.claimState !== 'mustDraw') {
+      return { label: 'Callable now', cls: 'status-callable' };
+    }
+    return { label: 'Not callable yet', cls: 'status-not-callable' };
+  }
+
+  // ── Helper: rationale bullets ─────────────────────────────
+  function rationaleText(rec, i, top3, hand) {
+    const readyCount = rec.readyToCallCount || 0;
+    const top1 = top3[0];
+    const bullets = [];
+
+    // How many tiles match
+    const matchPct = Math.round((rec.matched / rec.total) * 100);
+    if (rec.matched === rec.total) {
+      bullets.push('All tiles in your hand support this hand');
+    } else if (matchPct >= 70) {
+      bullets.push(`Strong tile match — ${rec.matched} of ${rec.total} tiles fit`);
+    } else {
+      bullets.push(`${rec.matched} of ${rec.total} tiles currently fit`);
     }
 
-    // Build "You Have" — individual tile chips, no group language
-    // Each chip = one tile. Show matched tiles + partial holds as actual tiles.
-    function getTileChipLabel(m, suitMap) {
-      // m.suit is the RESOLVED suit string ('BAM','CRK','DOT') not a slot key
-      // For matched groups it's stored directly; for missing groups it may be a slot
-      const resolvedSuit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT')
-        ? m.suit
-        : (m.suit && suitMap ? suitMap[m.suit] : null);
-      const suitShort = resolvedSuit==='BAM'?'B':resolvedSuit==='CRK'?'C':resolvedSuit==='DOT'?'D':null;
-      if (m.tileType==='NUMBER' && m.number && suitShort) return `${m.number}${suitShort}`;
-      if (m.tileType==='FLOWER') return 'F';
-      if (m.tileType==='JOKER') return '★';
-      if (m.tileType==='WIND') return m.wind ? m.wind[0] : 'W';
-      if (m.tileType==='DRAGON') {
-        const d = m.dragon || (resolvedSuit==='BAM'?'GREEN':resolvedSuit==='CRK'?'RED':resolvedSuit==='DOT'?'WHITE':null);
-        if (d==='GREEN') return 'GD';
-        if (d==='RED')   return 'RD';
-        if (d==='WHITE') return 'Soap';
-        return 'D';
-      }
-      return '?';
+    // Callable groups
+    if (readyCount >= 2) bullets.push(`${readyCount} groups are ready to call right now`);
+    else if (readyCount === 1) bullets.push('One group is ready to call');
+    else if (rec.buildThenCallCount > 0) bullets.push('Callable groups available once you build further');
+    else bullets.push('Missing tiles must come from the wall');
+
+    // Rank context vs #1
+    if (i > 0) {
+      const diff = top1.matched - rec.matched;
+      if (diff === 0) bullets.push('Tied with your top hand on tile count');
+      else if (diff <= 2) bullets.push(`${diff} fewer tile${diff>1?'s':''} than your top hand`);
     }
 
-    function getTileCls(m) {
-      if (m.tileType==='DRAGON') return 'dragon';
-      if (m.tileType==='WIND') return 'wind';
-      if (m.tileType==='FLOWER') return 'flower';
-      if (m.tileType==='JOKER') return 'joker';
-      if (m.suit==='BAM') return 'bam';
-      if (m.suit==='CRK') return 'crk';
-      if (m.suit==='DOT') return 'dot';
-      return 'neutral';
+    // Concealed note
+    if (rec.handDef.concealed) bullets.push('Concealed — no calling during play, wall draws only');
+
+    return bullets;
+  }
+
+  // ── Helper: short one-line summary ───────────────────────
+  function handSummary(rec, i, hand) {
+    const readyCount = rec.readyToCallCount || 0;
+    if (i === 0) {
+      if (readyCount >= 2) return 'Best overall fit with multiple callable groups';
+      if (readyCount === 1) return 'Best overall fit with one callable group';
+      return 'Best overall fit with your current tiles';
     }
+    if (i === 1) {
+      if (readyCount >= 1) return 'Strong option with callable groups available';
+      return 'Strong option — flexible path to completion';
+    }
+    return 'Viable option — watch as your hand develops';
+  }
 
-    // Build ordered You Have chips directly from scored results in hand-definition group order.
-    // matched[] and missing[] are already in scoring priority order (pairs→singles→pungs→kongs).
-    // We walk handDef.groups and find the corresponding scored item for each group by label,
-    // so numberFlex groups (no g.number) resolve correctly via their scored number.
-    const matchedPool  = rec.details.matched.map(m=>({...m,_used:false}));
-    const missingPool  = rec.details.missing.map(m=>({...m,_used:false}));
-
-    const orderedChipData = [];
+  // ── Helper: build You Have chips ─────────────────────────
+  function buildYouHaveChips(rec, hand) {
+    const matchedPool = rec.details.matched.map(m=>({...m,_used:false}));
+    const missingPool = rec.details.missing.map(m=>({...m,_used:false}));
+    const chipData = [];
 
     rec.handDef.groups.forEach(g => {
-      // Find the scored item for this group by label match
       const fromMatched = matchedPool.find(m=>!m._used && m.label===g.label);
       if (fromMatched) {
         fromMatched._used = true;
-        const count = g.groupType==='quint'?5:g.groupType==='kong'?4:
-                      g.groupType==='pung'?3:g.groupType==='pair'?2:1;
-        const label = getTileChipLabel(fromMatched, rec.suitMap);
-        const cls   = getTileCls(fromMatched);
-        orderedChipData.push({label, cls, count});
+        const count = g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1;
+        chipData.push({label:getTileChipLabel(fromMatched,rec.suitMap), cls:getTileCls(fromMatched), count});
         return;
       }
       const fromMissing = missingPool.find(m=>!m._used && m.label===g.label && m.holds>0);
       if (fromMissing) {
         fromMissing._used = true;
-        const label = getTileChipLabel(fromMissing, rec.suitMap);
-        const cls   = getTileCls(fromMissing);
-        orderedChipData.push({label, cls, count: fromMissing.holds});
-        return;
+        chipData.push({label:getTileChipLabel(fromMissing,rec.suitMap), cls:getTileCls(fromMissing), count:fromMissing.holds});
       }
     });
 
-    // Jokers last — show if hand has claimable groups
     const claimableGroupCount = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
     if (hand.jokers > 0 && claimableGroupCount > 0) {
-      for (let j=0; j<hand.jokers; j++) orderedChipData.push({label:'★', cls:'joker', count:1});
+      for (let j=0;j<hand.jokers;j++) chipData.push({label:'★',cls:'joker',count:1});
     }
 
-    const finalChips = orderedChipData;
-    const youHave = makeTileChips(finalChips);
-    // Merge consecutive duplicate flower groups in You Need display
-    // e.g. two pungs of 3 flowers → show as one line "6 Flowers — you have X of 6"
+    return chipData.map(({label,cls,count}) =>
+      Array.from({length:count},()=>`<span class="yhave-chip ${cls}">${label}</span>`).join('')
+    ).join('');
+  }
+
+  // ── Helper: build What You Need rows ─────────────────────
+  function buildNeedRows(rec, hand) {
+    // Merge flowers
     const mergedMissing = [];
     rec.details.missing.forEach(m => {
-      const prev = mergedMissing[mergedMissing.length - 1];
+      const prev = mergedMissing[mergedMissing.length-1];
       if (prev && prev.tileType==='FLOWER' && m.tileType==='FLOWER') {
-        // Merge: combine holds and need
-        mergedMissing[mergedMissing.length - 1] = {
-          ...prev,
-          holds: prev.holds + m.holds,
-          need:  prev.need  + m.need,
-          groupType: 'kong', // treat merged as a single group for display
-          _mergedCount: (prev._mergedCount||prev.holds+prev.need) + (m.holds+m.need)
-        };
+        mergedMissing[mergedMissing.length-1] = {...prev, holds:prev.holds+m.holds, need:prev.need+m.need};
       } else {
         mergedMissing.push({...m});
       }
     });
-    // Order missing items by hand definition group order
-    const groupIndexMap = new Map();
-    rec.handDef.groups.forEach((g, i) => {
-      if (!groupIndexMap.has(g.label)) groupIndexMap.set(g.label, i);
-    });
-    const getMissingGroupIndex = (m) => {
-      return groupIndexMap.has(m.label) ? groupIndexMap.get(m.label) : 999;
-    };
-    mergedMissing.sort((a, b) => getMissingGroupIndex(a) - getMissingGroupIndex(b));
-    const youNeed = mergedMissing.map(m=>formatMissingItem(m, hand, rec.suitMap)).join('<br>');
 
-    // Compute joker-adjusted matched count
-    // Jokers count toward claimable groups only (not pairs/singles)
-    const claimableInHand = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+    // Sort by hand definition order
+    const groupIndexMap = new Map();
+    rec.handDef.groups.forEach((g,i) => { if (!groupIndexMap.has(g.label)) groupIndexMap.set(g.label,i); });
+    mergedMissing.sort((a,b) => (groupIndexMap.get(a.label)||999) - (groupIndexMap.get(b.label)||999));
+
+    if (!mergedMissing.length) return '<div class="need-row"><span class="need-tile">All groups complete</span></div>';
+
+    const rows = mergedMissing.map(m => {
+      const name = tileDisplayName(m, rec.suitMap);
+      const holds = m.holds;
+      const total = holds + m.need;
+      const progress = `${holds}/${total}`;
+      const status = callableStatus(m, hand);
+      return `<div class="need-row">
+        <span class="need-tile">${name}</span>
+        <span class="need-progress">${progress}</span>
+        <span class="need-status ${status.cls}">${status.label}</span>
+      </div>`;
+    }).join('');
+
+    const finalNote = '<div style="font-size:12px;color:var(--ink3);padding-top:8px;">Note: Final tile for Mahjong can always be called.</div>';
+    return rows + finalNote;
+  }
+
+  // ── TOP 3 HANDS ──────────────────────────────────────────
+  const top3Container = document.getElementById('top3Container');
+  top3Container.innerHTML = '';
+
+  top3.forEach((rec, i) => {
+    const card = document.createElement('div');
+    card.className = 'rec-card';
+
+    const claimableGroupCount = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+    const jokerPositions = rec.handDef.groups.filter(
+      g=>g.groupType!=='single'&&g.groupType!=='pair'&&!new Set(rec.details.matched.map(m=>m.label)).has(g.label)
+    ).length;
+
+    const claimableInHand = claimableGroupCount;
     const jokerContribution = claimableInHand > 0 ? hand.jokers : 0;
     const adjustedMatched = Math.min(rec.matched + jokerContribution, rec.total);
-    const rationale = rankRationale(rec, i, top3, hand);
-    const rankLabel = ['#1','#2','#3'][i];
 
-    const jokerCallable = rec.details.missing.filter(m=>m.claimState==='readyWithJoker');
-    const jokerNote = hand.jokers>0 && jokerCallable.length>0
-      ? (hand.jokers>1
-          ? 'Your jokers can each make one group ready to call — but only one group per joker. Once you expose, that joker is committed.'
-          : 'Your joker can make any one of these ready to call — but only one at a time. Once you expose, it is committed. Keep that decision open as long as you can.')
-      : '';
-    const jokerHTML = hand.jokers>0
-      ? '<div class="rec-field"><strong>Joker'+(hand.jokers>1?'s':'')+'</strong> '+jokerPositions+' eligible position'+(jokerPositions!==1?'s':'')+' in this hand'+(jokerNote ? '<br><span class="joker-teaching">'+jokerNote+'</span>' : '')+'</div>'
-      : '';
+    const rankLabel = ['#1','#2','#3'][i];
+    const summary = handSummary(rec, i, hand);
+    const youHave = buildYouHaveChips(rec, hand);
+    const needRows = buildNeedRows(rec, hand);
+    const bullets = rationaleText(rec, i, top3, hand);
+    const bulletHTML = bullets.map(b=>`<li>${b}</li>`).join('');
+
+    // Joker section
+    const jokerHTML = hand.jokers > 0 ? `
+      <div class="rec-section-head">Jokers</div>
+      <div class="joker-note">${jokerPositions} possible placement${jokerPositions!==1?'s':''} in this hand.<br>Use to complete near-complete groups. Avoid committing too early.</div>` : '';
+
+    // Dragon warning
+    const dragonWarnHTML = rec.details.dragonNotes[0]
+      ? `<div class="dragon-warn">${rec.details.dragonNotes[0]}</div>` : '';
+
+    // Concealed note
+    const concHTML = rec.handDef.concealed
+      ? `<div class="concealed-note">${rec.handDef.section==='singles_and_pairs'
+          ? 'No jokers allowed. Every tile must come from the wall.'
+          : 'Concealed — no calling during play. Wall draws only except for the final winning tile.'
+        }</div>` : '';
+
+    const cardId = `rec-body-${i}`;
 
     card.innerHTML = `
-      <div class="rec-header" onclick="const b=this.nextElementSibling;b.classList.toggle('collapsed');const t=this.querySelector('.rec-toggle');t.innerHTML=b.classList.contains('collapsed')?'▸ more detail':'▾ less detail';">
+      <div class="rec-header" onclick="const b=document.getElementById('${cardId}');const collapsed=b.classList.toggle('collapsed');this.querySelector('.rec-toggle').textContent=collapsed?'See Why':'Close';">
         <div class="rec-rank-row">
           <span class="rec-rank-label">${rankLabel}</span>
           <span class="rec-sec-tag">${formatSectionName(rec.handDef.section)}</span>
           ${rec.handDef.concealed?'<span class="conc-badge">Concealed</span>':''}
-          <span class="rec-toggle">▾ less detail</span>
+          <button class="rec-toggle">See Why</button>
         </div>
-        <div class="card-ref" style="display:flex;align-items:center;justify-content:space-between">
-          <span>${rec.handDef.cardRef}</span>
-          <span class="pts-badge">${rec.handDef.exposedPlay?'X':'C'} &middot; ${rec.handDef.pointValue||25} pts</span>
-        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--ink);margin:4px 0 2px">${rec.handDef.cardRef}</div>
         <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
-        <div class="tiles-matched">${adjustedMatched} of ${rec.total} tiles</div>
-        ${youHave ? `<div class="yhave-chips yhave-chips-header">${youHave}</div>` : ''}
+        <div style="font-size:13px;color:var(--ink3);margin-bottom:8px">${summary}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span class="tiles-matched">${adjustedMatched} / ${rec.total} tiles</span>
+          <span class="pts-badge">${rec.handDef.exposedPlay?'Exposed':'Concealed'} · ${rec.handDef.pointValue||25} pts</span>
+        </div>
+        ${youHave ? `<div class="yhave-chips">${youHave}</div>` : ''}
       </div>
-      <div class="rec-body">
-        ${youNeed ? `<div class="rec-field need-list"><strong>You need</strong><br>${youNeed}</div>` : ''}
+      <div class="rec-body collapsed" id="${cardId}">
+        <div class="rec-section-head">Why This Works</div>
+        <ul class="rationale-bullets">${bulletHTML}</ul>
+        ${dragonWarnHTML}
+        <div class="rec-section-head">What You Need</div>
+        ${needRows}
+        ${concHTML}
         ${jokerHTML}
-        ${(()=>{
-          const sb = rec._secondBest;
-          if (!sb || !sb.suitMap || sb.matched < rec.matched - 2) return '';
-          const diff = rec.matched - sb.matched;
-          const suitNames = Object.values(sb.suitMap).map(s=>s==='BAM'?'Bam':s==='CRK'?'Crack':'Dot');
-          const diffStr = diff===0?'same number of tiles':`${diff} fewer tile${diff!==1?'s':''}`;
-          return `<div class="alt-suit-note">Also works in ${suitNames.join('/')} — ${diffStr}</div>`;
-        })()}
-        <div class="rec-field rationale">${rationale}</div>
-        ${rec.handDef.concealed ? `<div class="concealed-note">${rec.handDef.section==='singles_and_pairs'
-          ? 'Singles & Pairs — no jokers allowed. Every tile must come from the wall. You can only call the final tile to win.'
-          : 'Concealed hand — no calling discards during play. Every tile except your final winning tile must come from the wall.'
-        }</div>` : ''}
-        ${rec.details.dragonNotes[0] ? `<div class="dragon-warn">${rec.details.dragonNotes[0]}</div>` : ''}
       </div>`;
 
     top3Container.appendChild(card);
   });
 
-  // ── Show 5 more hands ──────────────────────────────────────────────
+  // ── NEXT 3 HANDS ─────────────────────────────────────────
   const next5 = allScores.slice(3).filter(r =>
     !pivots.find(p => p.handDef.id === r.handDef.id)
-  ).slice(0, 5);
+  ).slice(0, 3);
 
   const next5Container = document.getElementById('next5Container');
   if (next5Container) {
     next5Container.innerHTML = '';
     if (next5.length > 0) {
+      const sectionHead = document.createElement('div');
+      sectionHead.className = 'section-head';
+      sectionHead.textContent = 'Next Best Hands';
+      next5Container.appendChild(sectionHead);
+
       const btn = document.createElement('button');
       btn.className = 'show-more-btn';
-      btn.textContent = 'Show the 5 next best hands';
+      btn.textContent = 'Show next 3 hands';
       const cardsDiv = document.createElement('div');
-      cardsDiv.className = 'next5-cards';
       cardsDiv.style.display = 'none';
 
       next5.forEach(rec => {
-        const chipData = [];
-        rec.details.matched.forEach(m => {
-          const cnt = m.groupType==='quint'?5:m.groupType==='kong'?4:m.groupType==='pung'?3:m.groupType==='pair'?2:1;
-          chipData.push({label:getTileChipLabel(m,rec.suitMap), cls:getTileCls(m), count:cnt});
-        });
-        rec.details.missing.forEach(m => {
-          if (m.holds>0) chipData.push({label:getTileChipLabel(m,rec.suitMap), cls:getTileCls(m), count:m.holds});
-        });
-        if (hand.jokers>0 && rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length>0) {
-          for (let j=0;j<hand.jokers;j++) chipData.push({label:'★',cls:'joker',count:1});
-        }
-        chipData.sort((a,b)=>{
-          if (a.cls==='flower'&&b.cls!=='flower') return -1;
-          if (b.cls==='flower'&&a.cls!=='flower') return 1;
-          if (a.cls==='joker') return 1;
-          if (b.cls==='joker') return -1;
-          const nm = l=>{const mx=l.match(/^(\d+)([BCD])$/);return mx?parseInt(mx[1])*10+(mx[2]==='B'?0:mx[2]==='C'?1:2):999;};
-          return nm(a.label)-nm(b.label);
-        });
-        const chips = chipData.map(({label,cls,count})=>
-          Array.from({length:count},()=>`<span class="yhave-chip ${cls}">${label}</span>`).join('')
-        ).join('');
-        const matchedTileCount = chipData.reduce((s,c)=>s+c.count, 0);
-        const totalTileCount = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1), 0);
-
+        const youHave = buildYouHaveChips(rec, hand);
+        const totalTiles = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1),0);
         const card = document.createElement('div');
         card.className = 'n5-card';
         card.innerHTML = `
-          <div class="n5-header" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'block':'none'">
+          <div class="n5-header">
             <div class="n5-rank-row">
               <span class="rec-sec-tag">${formatSectionName(rec.handDef.section)}</span>
-              <span class="n5-ref">${rec.handDef.cardRef}</span>
-              <span class="pts-badge" style="margin-left:auto">${rec.handDef.exposedPlay?'X':'C'} &middot; ${rec.handDef.pointValue||25} pts</span>
+              <span class="pts-badge" style="margin-left:auto">${rec.handDef.exposedPlay?'Exposed':'Concealed'} · ${rec.handDef.pointValue||25} pts</span>
             </div>
+            <div style="font-size:15px;font-weight:700;color:var(--ink);margin:4px 0 4px">${rec.handDef.cardRef}</div>
             <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
-            ${chips ? `<div class="n5-chips"><div class="n5-tile-count">${matchedTileCount} of ${totalTileCount} tiles</div><div class="n5-chips-row">${chips}</div></div>` : ''}
-          </div>
-          <div class="n5-body">
-            ${rec.details.missing.length>0?`<div class="rec-field need-list"><strong>You need</strong><br>${rec.details.missing.map(m=>formatMissingItem(m,hand,rec.suitMap)).join('<br>')}</div>`:''}
+            <div class="tiles-matched" style="margin-bottom:6px">${rec.matched} / ${totalTiles} tiles</div>
+            ${youHave ? `<div class="yhave-chips">${youHave}</div>` : ''}
           </div>`;
         cardsDiv.appendChild(card);
       });
@@ -2613,7 +2666,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       btn.onclick = () => {
         const showing = cardsDiv.style.display !== 'none';
         cardsDiv.style.display = showing ? 'none' : 'block';
-        btn.textContent = showing ? 'Show the 5 next best hands' : 'Hide';
+        btn.textContent = showing ? 'Show next 3 hands' : 'Hide';
       };
 
       next5Container.appendChild(btn);
@@ -2621,49 +2674,72 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     }
   }
 
-  // Discard first
+  // ── DISCARD RECOMMENDATIONS ───────────────────────────────
   const discards = getDiscardRecommendations([], top3, pivots, next5, hand);
-  const discardHtml = discards.length > 0
-    ? `<div class="discard-card">
-      <div class="discard-title">Discard first</div>
-      <div class="discard-text">
-        <strong>Let go of:</strong> ${discards.join(', ')}.
-        These tiles are your lowest priority — focus on keeping tiles that support your #1 hand.${hand.jokers>0?' Hold your joker(s).':''}
-      </div>
-    </div>`
-    : `<div class="discard-card">
-      <div class="discard-title">Discard first</div>
-      <div class="discard-text">
-        No obvious dead weight — every tile you're holding supports at least one of your top hands. Trust your gut on what to let go.${hand.jokers>0?' Hold your joker(s).':''}
-      </div>
-    </div>`;
-  document.getElementById('discardCard').innerHTML = discardHtml;
+  const discardReasons = [
+    'Least useful across top hands',
+    'Does not support your primary path',
+    'Low value — does not fit top hands',
+  ];
+  const discardInner = discards.length > 0
+    ? discards.slice(0,3).map((d,i)=>`
+        <div class="discard-row">
+          <span class="discard-tile">${d}</span>
+          <span class="discard-reason">${discardReasons[i]||'Low priority tile'}</span>
+        </div>`).join('')
+    : `<div class="discard-fallback">No obvious dead weight — every tile supports at least one top hand.${hand.jokers>0?' Hold your joker(s).':''}</div>`;
 
-  // Pivots
+  const discardCardEl = document.createElement('div');
+  discardCardEl.innerHTML = `
+    <div class="section-head">Discard Recommendations</div>
+    <button class="show-more-btn" id="discardToggleBtn" onclick="
+      const c=document.getElementById('discardContent');
+      const showing=c.style.display!=='none';
+      c.style.display=showing?'none':'block';
+      this.textContent=showing?'Show Discard Recommendations':'Hide';
+    ">Show Discard Recommendations</button>
+    <div id="discardContent" style="display:none">
+      <div class="discard-card">${discardInner}</div>
+    </div>`;
+  document.getElementById('discardCard').innerHTML = '';
+  document.getElementById('discardCard').appendChild(discardCardEl);
+
+  // ── POTENTIAL PIVOT HANDS ─────────────────────────────────
   const pivotContainer = document.getElementById('pivotContainer');
   pivotContainer.innerHTML = '';
-  if (pivots.length>0) {
-    const pivotHTML = pivots.map(rec=>`
+  if (pivots.length > 0) {
+    const pivotHTML = pivots.map(rec=>{
+      const youHave = buildYouHaveChips(rec, hand);
+      const totalTiles = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1),0);
+      return `
       <div class="pivot-card">
         <div class="pivot-hdr">
           <span class="pivot-ref">${rec.handDef.cardRef}</span>
-          <span class="pivot-score">${rec.matched} of ${rec.total} tiles</span>
+          <span class="pts-badge">${rec.matched} / ${totalTiles} tiles</span>
         </div>
         <div class="pivot-sec">${formatSectionName(rec.handDef.section)}</div>
-        <div class="hand-display" style="margin-bottom:4px">${renderHandDisplay(rec.handDef.id, rec)}</div>
+        <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
+        ${youHave ? `<div class="yhave-chips" style="margin:6px 0">${youHave}</div>` : ''}
         <div class="pivot-trig">${pivotTriggerText(rec)}${rec.handDef.concealed?' Concealed hand.':''}</div>
-      </div>`).join('');
-    pivotContainer.innerHTML = `
-      <div style="margin-top:4px">
-        <div class="section-label" style="margin-bottom:12px">Pivot Hands</div>
-        ${pivotHTML}
       </div>`;
+    }).join('');
+
+    pivotContainer.innerHTML = `
+      <div class="section-head">Potential Pivot Hands</div>
+      <button class="show-more-btn" onclick="
+        const c=document.getElementById('pivotContent');
+        const showing=c.style.display!=='none';
+        c.style.display=showing?'none':'block';
+        this.textContent=showing?'Show Potential Pivot Hands':'Hide';
+      ">Show Potential Pivot Hands</button>
+      <div id="pivotContent" style="display:none">${pivotHTML}</div>`;
   }
 
-  document.getElementById('loadingMsg').style.display='none';
-  document.getElementById('resultsContent').style.display='block';
+  // ── FINALIZE ──────────────────────────────────────────────
+  document.getElementById('loadingMsg').style.display = 'none';
+  document.getElementById('resultsContent').style.display = 'block';
 
-  // Selected tiles strip at top of results — read-only, reuses selectedTiles
+  // Selected tiles strip at top of results
   const _stripEl = document.createElement('div');
   _stripEl.className = 'results-hand-strip';
   const _chipEntries = [];
@@ -2692,13 +2768,12 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   });
   const _rc = document.getElementById('resultsContent');
   if (_rc) {
-    // Remove any existing hand strip from a previous analysis
     const _old = _rc.querySelector('.results-hand-strip');
     if (_old) _old.remove();
     _rc.prepend(_stripEl);
   }
-
 }
+
 
 // ============================================================
 // MAIN ANALYZE FUNCTION
@@ -2747,7 +2822,7 @@ function resetApp() {
   Object.keys(selectedTiles).forEach(k=>delete selectedTiles[k]);
   // Clear all results DOM so old hand never persists
   const rc = document.getElementById('resultsContent');
-  if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="discardCard"></div><div id="next5Container"></div><div id="glanceCard"></div><div id="pivotContainer"></div>';
+  if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="next5Container"></div><div id="discardCard"></div><div id="pivotContainer"></div><div id="glanceCard"></div>';
   const eb = document.getElementById('eastBanner');
   if (eb) eb.innerHTML = '';
   const lm = document.getElementById('loadingMsg');
@@ -2792,7 +2867,7 @@ updateUI();
           localStorage.setItem(STORED_KEY, remoteVersion);
         } else if (localVersion !== remoteVersion) {
           // Version changed — show banner
-          document.getElementById('updateBanner').style.display = 'flex';
+          document.getElementById('updateBanner').style.display = 'block';
           // Store new version so reloading clears the banner
           localStorage.setItem(STORED_KEY, remoteVersion);
         }
