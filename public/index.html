@@ -2052,12 +2052,12 @@ function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
   // Discard priority: lowest keep score first
   // Ties: next5-only (0.5) discards before #3-only (1)
 
+  // Only protect tiles used in top 3 hands — next5/pivots are too speculative
+  // to save a tile from discard. A tile must support one of your top 3 to be kept.
   const handWeights = [
     ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
     ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
     ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
-    ...(pivots||[]).map(rec => ({ rec, weight: 0.5 })),
-    ...(next5||[]).map(rec => ({ rec, weight: 0.5 })),
   ];
 
   const tileScores = {};
@@ -2647,6 +2647,9 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       next5.forEach(rec => {
         const youHave = buildYouHaveChips(rec, hand);
         const totalTiles = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1),0);
+        const n3ClaimableGroups = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+        const n3JokerContrib = n3ClaimableGroups > 0 ? hand.jokers : 0;
+        const n3AdjustedMatched = Math.min(rec.matched + n3JokerContrib, totalTiles);
         const card = document.createElement('div');
         card.className = 'n5-card';
         card.innerHTML = `
@@ -2657,7 +2660,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
             </div>
             <div style="font-size:15px;font-weight:700;color:var(--ink);margin:4px 0 4px">${rec.handDef.cardRef}</div>
             <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
-            <div class="tiles-matched" style="margin-bottom:6px">${rec.matched} / ${totalTiles} tiles</div>
+            <div class="tiles-matched" style="margin-bottom:6px">${n3AdjustedMatched} / ${totalTiles} tiles</div>
             ${youHave ? `<div class="yhave-chips">${youHave}</div>` : ''}
           </div>`;
         cardsDiv.appendChild(card);
