@@ -1640,10 +1640,9 @@ function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
   const sorted = Object.entries(tileScores)
     .sort((a,b) => a[1].keepScore - b[1].keepScore);
 
-  // Recommend tiles with keepScore === 0 (true dead tiles) first
-  // If none, recommend lowest scoring tiles (next5-only, then #3-only, etc.)
-  const lowestScore = sorted.length > 0 ? sorted[0][1].keepScore : 0;
-  const candidates = sorted.filter(([,v]) => v.keepScore === lowestScore);
+  // Only recommend tiles with keepScore === 0 (truly dead — support no ranked hand)
+  // If every tile supports at least one ranked hand, return empty → fallback message shows
+  const candidates = sorted.filter(([,v]) => v.keepScore === 0);
 
   return candidates.slice(0,4).map(([id,{tile}]) => {
     let label = '';
