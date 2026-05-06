@@ -1587,12 +1587,11 @@ function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
   // Discard priority: lowest keep score first
   // Ties: next5-only (0.5) discards before #3-only (1)
 
+  // Only protect tiles used in top 3 hands
   const handWeights = [
     ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
     ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
     ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
-    ...(pivots||[]).map(rec => ({ rec, weight: 0.5 })),
-    ...(next5||[]).map(rec => ({ rec, weight: 0.5 })),
   ];
 
   const tileScores = {};
