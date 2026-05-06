@@ -6,9 +6,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mahj">
-<meta name="theme-color" content="#1a1410">
-<title>Mahjong Hand Analyzer</title>
+<meta name="apple-mobile-web-app-title" content="Mahjong IQ">
+<meta name="theme-color" content="#1F2A36">
+<title>Mahjong IQ — Hand Analyzer</title>
 <link rel="manifest" href="/manifest.json?v=2">
 <link rel="apple-touch-icon" href="/icon-192.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,36 +16,45 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bone:#f5f0e8;
-  --bone2:#ede5cf;
-  --ink:#1a1410;
-  --ink2:#4a3f30;
-  --ink3:#8a7860;
-  --gold:#c4a040;
-  --gold2:#dcc870;
+  --bone:#F4F5F7;
+  --bone2:#ECEFF2;
+  --ink:#1F2A36;
+  --ink2:#4B5563;
+  --ink3:#6B7280;
+  --gold:#B89A5B;
+  --gold2:#C9AE7A;
   --red:#b82010;
   --green:#1a6020;
-  --blue:#1a3060;
+  --blue:#1F2A36;
   --bam:#2a6020;
   --crk:#b82010;
   --dot:#1a3060;
-  --shadow:0 2px 8px rgba(26,20,16,0.15);
+  --navy:#1F2A36;
+  --navy-hover:#2F3A45;
+  --shadow:0 2px 8px rgba(31,42,54,0.12);
   --r:10px;
   --r-sm:6px;
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
 html{scroll-padding-top:100px}
 body{padding-top:env(safe-area-inset-top)}
-#updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#2d6a4f;color:#fff;text-align:center;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));font-size:14px;font-family:'Inter',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+#updateBanner{position:fixed;inset:0;z-index:9999;background:rgba(31,42,54,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;backdrop-filter:blur(4px)}
+#updateBanner .update-box{background:#1F2A36;border-radius:16px;padding:32px 28px;max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+#updateBanner .update-icon{font-size:36px;margin-bottom:16px}
+#updateBanner .update-heading{color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;font-family:'DM Sans',sans-serif}
+#updateBanner .update-body{color:rgba(255,255,255,0.7);font-size:14px;line-height:1.5;margin-bottom:24px;font-family:'DM Sans',sans-serif}
+#updateBanner .update-btn{background:#B89A5B;color:#fff;border:none;border-radius:8px;padding:14px 28px;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:.3px;width:100%;font-family:'DM Sans',sans-serif}
+#updateBanner .update-btn:active{opacity:.85}
 
 /* ── SCREENS ─────────────────────────────────────── */
 .screen{display:none;min-height:100vh}
 .screen.active{display:block}
 
 /* ── HEADER ─────────────────────────────────────── */
-.app-header{background:var(--ink);color:var(--bone);padding:10px 14px 8px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
-.app-title{font-family:'Lora',serif;font-size:18px;font-weight:600;letter-spacing:.3px}
-.app-subtitle{font-size:12px;color:var(--gold2);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.app-header{background:var(--navy);color:#fff;padding:10px 14px 8px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.app-title{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.2px;color:#fff;line-height:1.2}
+.app-byline{font-size:11px;color:var(--gold2);letter-spacing:.3px;margin-top:1px;font-weight:400}
+.app-icon{width:32px;height:32px;flex-shrink:0}
 .tile-counter{background:rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:15px;font-weight:600;min-width:54px;text-align:center;transition:all .2s}
 .tile-counter.ready{background:var(--gold);color:var(--ink)}
 
@@ -53,7 +62,7 @@ body{padding-top:env(safe-area-inset-top)}
 .tile-strip-wrap{background:var(--bone2);border-bottom:1px solid #d4c89a;padding:7px 10px 6px;min-height:44px;position:sticky;top:52px;z-index:90}
 .tile-strip{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;align-items:center}
 .strip-empty{font-size:14px;color:var(--ink3);font-style:italic}
-.tile-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px 3px 8px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888;user-select:none;-webkit-tap-highlight-color:transparent}
+.tile-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px 3px 8px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;background:#E8ECF0;color:var(--ink);border:1px solid #C5CDD6;user-select:none;-webkit-tap-highlight-color:transparent}
 .tile-chip:active{opacity:.7}
 .tile-chip.bam{background:#d4eecc;border-color:#a8d4a0;color:var(--bam)}
 .tile-chip.crk{background:#fde0dc;border-color:#f4b8b0;color:var(--crk)}
@@ -74,8 +83,8 @@ body{padding-top:env(safe-area-inset-top)}
 .tile-grid.extras-grid{grid-template-columns:repeat(2,1fr)}
 .tile-btn{
   position:relative;
-  background:var(--bone);
-  border:1.5px solid #c8b068;
+  background:#FFFFFF;
+  border:1.5px solid #D1D9E0;
   border-radius:5px;
   text-align:center;
   cursor:pointer;
@@ -86,11 +95,11 @@ body{padding-top:env(safe-area-inset-top)}
   touch-action:manipulation;
 }
 /* Selected: dark bg with clearly readable colored text — NOT black text on black */
-.tile-btn.selected{background:#2a2018;border-color:#c4a040;}
+.tile-btn.selected{background:#1F2A36;border-color:#B89A5B;}
 .tile-btn.selected .tile-num{color:#f0d878}
 .tile-btn.selected .tile-sub{color:rgba(240,216,120,.55)}
 /* Suit number colors — unselected */
-.tile-num{font-family:'Lora',serif;font-size:18px;font-weight:600;line-height:1;color:var(--ink)}
+.tile-num{font-family:'DM Sans',sans-serif;font-size:18px;font-weight:700;line-height:1;color:var(--ink)}
 .tile-sub{font-size:10px;color:var(--ink3);margin-top:1px;letter-spacing:.2px}
 .bam .tile-num{color:#1e6018}
 .crk .tile-num{color:#b01808}
@@ -117,7 +126,7 @@ body{padding-top:env(safe-area-inset-top)}
 }
 .analyze-btn.enabled:active{opacity:.88}
 /* ── RESULTS SCREEN ──────────────────────────────── */
-.results-header{background:var(--ink);color:var(--bone);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.results-header{background:var(--navy);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .results-title{font-family:'Lora',serif;font-size:19px;font-weight:600}
 .btn-edit,.btn-reset{background:rgba(255,255,255,.12);border:none;color:var(--bone);padding:7px 13px;border-radius:20px;font-size:15px;font-weight:500;cursor:pointer}
 .btn-edit:active,.btn-reset:active{background:rgba(255,255,255,.22)}
@@ -143,7 +152,7 @@ body{padding-top:env(safe-area-inset-top)}
 .rec-rank-label{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.5px}
 .rec-sec-tag{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);background:rgba(26,48,96,.10);border-radius:20px;padding:2px 8px}
 .conc-badge{font-size:10px;font-weight:600;color:var(--red);background:rgba(184,32,16,.1);border-radius:20px;padding:2px 7px;margin:auto}
-.card-ref{font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--ink);line-height:1.2;margin-bottom:3px}
+.card-ref{font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:3px}
 .hand-display{font-family:'Courier New',monospace;font-size:15px;letter-spacing:.5px;margin:4px 0 3px;line-height:1.4}
 .tiles-matched{font-size:13px;color:var(--ink3)}
 .pts-badge{font-size:12px;font-weight:600;color:var(--ink3);background:rgba(26,20,16,.07);border-radius:20px;padding:2px 8px}
@@ -163,7 +172,7 @@ body{padding-top:env(safe-area-inset-top)}
 .concealed-note{font-size:14px;color:var(--ink2);background:rgba(26,20,16,.05);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5}
 .dragon-warn{font-size:14px;color:var(--red);margin-top:6px;line-height:1.4}
 /* ── DISCARD CARD ────────────────────────────────── */
-.discard-card{background:var(--ink);color:var(--bone);border-radius:var(--r);padding:13px 14px;margin-bottom:14px}
+.discard-card{background:var(--navy);color:#fff;border-radius:var(--r);padding:13px 14px;margin-bottom:14px}
 .discard-title{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
 .discard-text{font-size:15px;line-height:1.5;color:rgba(255,255,255,.9)}
 .discard-text strong{color:var(--gold2)}
@@ -171,7 +180,7 @@ body{padding-top:env(safe-area-inset-top)}
 .section-label{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
 .pivot-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
 .pivot-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-.pivot-ref{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--ink)}
+.pivot-ref{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--ink)}
 .pivot-score{font-size:13px;color:var(--ink3)}
 .pivot-sec{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:5px}
 .pivot-trig{font-size:15px;color:var(--ink2);line-height:1.4}
@@ -179,23 +188,23 @@ body{padding-top:env(safe-area-inset-top)}
 #loadingMsg{padding:40px 20px;text-align:center;color:var(--ink3);font-size:16px}
 /* ── MISC ────────────────────────────────────────── */
 .section-divider{height:1px;background:var(--bone2);margin:4px 0 14px}
-.show-more-btn{width:100%;background:var(--bone);border:1.5px solid var(--gold);border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:12px;text-align:center}
+.show-more-btn{width:100%;background:#fff;border:1.5px solid var(--gold);border-radius:var(--r);padding:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:12px;text-align:center}
 .show-more-btn:active{opacity:.8}
 .next5-cards{margin-bottom:12px}
 .n5-tile-count{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:4px}
 .n5-chips-row{display:flex;flex-wrap:wrap;gap:3px}
 .n5-card{background:#fff;border:1px solid var(--bone2);border-radius:var(--r);margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow)}
-.n5-header{background:var(--bone);padding:10px 14px;cursor:pointer}
+.n5-header{background:#fff;padding:10px 14px;cursor:pointer}
 .n5-header:active{opacity:.85}
 .n5-rank-row{display:flex;align-items:center;gap:8px;margin-bottom:3px}
-.n5-ref{font-family:'Lora',serif;font-size:15px;font-weight:600;color:var(--ink)}
+.n5-ref{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:var(--ink)}
 .n5-chips{display:flex;flex-direction:column;gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bone2)}
 .n5-body{padding:12px 14px;display:none}
 /* You Have chips */
 .yhave-row{display:flex;flex-direction:column;gap:6px}
 .yhave-chips{display:flex;flex-wrap:wrap;gap:3px}
 .yhave-chips-header{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;padding-top:6px;border-top:1px solid var(--bone2)}
-.yhave-chip{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:4px;font-size:13px;font-weight:600;background:#e8dfc8;color:var(--ink);border:1px solid #c8b888}
+.yhave-chip{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:4px;font-size:13px;font-weight:600;background:#E8ECF0;color:var(--ink);border:1px solid #C5CDD6}
 .yhave-chip.bam{background:#d4eecc;border-color:#a8d4a0;color:#1e6018}
 .yhave-chip.crk{background:#fde0dc;border-color:#f4b8b0;color:#b01808}
 .yhave-chip.dot{background:#d8e8f8;border-color:#a8c8e8;color:#1430a0}
@@ -209,8 +218,13 @@ body{padding-top:env(safe-area-inset-top)}
 </head>
 <body>
 
-<div id="updateBanner" style="display:none">
-  New version available. <span onclick="window.location.reload()" style="text-decoration:underline;cursor:pointer;font-weight:700">Tap to update.</span>
+<div id="updateBanner">
+  <div class="update-box">
+    <img src="/icon-192.png" style="width:72px;height:72px;border-radius:16px;margin-bottom:16px;" alt="Mahjong IQ" />
+    <div class="update-heading">Update Required</div>
+    <div class="update-body">A new version of the Mahjong Hand Analyzer is available. Please update to continue.</div>
+    <button class="update-btn" onclick="window.location.reload()">Update Now</button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
@@ -219,9 +233,10 @@ body{padding-top:env(safe-area-inset-top)}
 <div id="selectScreen" class="screen active">
 
   <div class="app-header">
-    <div>
+    <img src="/icon-192.png" class="app-icon" alt="Mahjong IQ" />
+    <div style="flex:1">
       <div class="app-title">Mahjong Hand Analyzer</div>
-      <div class="app-subtitle">2026 Edition</div>
+      <div class="app-byline">by Mahjong IQ</div>
     </div>
     <div id="tileCounter" class="tile-counter">0 / 13</div>
   </div>
@@ -976,7 +991,7 @@ function renderHandDisplay(handId, rec) {
   // 3 suits: green + red + navy
   // Honors (winds, dragons, flowers) always blue
   const suitColors = suitsReq >= 3
-    ? {G:'#2d6a3f', R:'#c0392b', N:'#1a1410'}
+    ? {G:'#2d6a3f', R:'#c0392b', N:'#1F2A36'}
     : suitsReq === 2
     ? {G:'#2d6a3f', R:'#c0392b', N:'#2d6a3f'}
     : {G:'#2d6a3f', R:'#2d6a3f', N:'#2d6a3f'};
@@ -993,7 +1008,7 @@ function renderHandDisplay(handId, rec) {
     // Dragons show their LITERAL color — not suit-mapped
     const isDragon = /^D+$/.test(t) || t==='Soap';
     // Literal color map (for dragons)
-    const literalColors = {'G':'#2d6a3f','R':'#c0392b','N':'#1a1410','':'#1a3060'};
+    const literalColors = {'G':'#2d6a3f','R':'#c0392b','N':'#1F2A36','':'#1a3060'};
     const color = isAlwaysBlue ? blueColor
                 : isDragon     ? (c==='' ? blueColor : (literalColors[c] || blueColor))
                 : c===''       ? blueColor
@@ -2022,9 +2037,9 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 // DISCARD ANALYSIS
 // ============================================================
 
-function getDiscardRecommendations(tiles, top3, next5, hand) {
+function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
   // Weighted keep score by hand rank:
-  //   hand #1 → +4, hand #2 → +2, hand #3 → +1, next5 → +0.5
+  //   hand #1 → +4, hand #2 → +2, hand #3 → +1, pivot → +0.5, next5 → +0.5
   // Discard priority: lowest keep score first
   // Ties: next5-only (0.5) discards before #3-only (1)
 
@@ -2032,6 +2047,7 @@ function getDiscardRecommendations(tiles, top3, next5, hand) {
     ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
     ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
     ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
+    ...(pivots||[]).map(rec => ({ rec, weight: 0.5 })),
     ...(next5||[]).map(rec => ({ rec, weight: 0.5 })),
   ];
 
@@ -2606,7 +2622,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // Discard first
-  const discards = getDiscardRecommendations([], top3, next5, hand);
+  const discards = getDiscardRecommendations([], top3, pivots, next5, hand);
   const discardHtml = discards.length > 0
     ? `<div class="discard-card">
       <div class="discard-title">Discard first</div>
@@ -2776,7 +2792,7 @@ updateUI();
           localStorage.setItem(STORED_KEY, remoteVersion);
         } else if (localVersion !== remoteVersion) {
           // Version changed — show banner
-          document.getElementById('updateBanner').style.display = 'block';
+          document.getElementById('updateBanner').style.display = 'flex';
           // Store new version so reloading clears the banner
           localStorage.setItem(STORED_KEY, remoteVersion);
         }
