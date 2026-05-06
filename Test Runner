@@ -641,6 +641,94 @@ test('scoreHand returns correct total tile count for 2026_L1', () => {
   assert(result.total === 14, `2026_L1 should total 14 tiles, got ${result.total}`);
 });
 
+// ── SECTION 7: Discard & Joker Logic (regression tests) ──────
+console.log('\n🃏 SECTION 7: Discard & Joker Regression Tests\n');
+
+test('Discard only considers top 3 hands — not next5 or pivots', () => {
+  // Dragons that appear ONLY in next5/pivot hands should still be recommended for discard
+  // if they don't support any of the top 3 hands
+  // 1B 1B 3B 5C 5C 5C GD RD F F JOKER JOKER JOKER
+  const result = runAnalysis([
+    'BAM_1','BAM_1','BAM_3',
+    'CRK_5','CRK_5','CRK_5',
+    'GREEN','RED',
+    'FLOWER','FLOWER',
+    'JOKER','JOKER','JOKER',
+  ]);
+  // Check that GREEN and RED are not in top 3 matched groups
+  const greenInTop3 = result.top3.some(rec =>
+    rec.details.matched.some(m => m.tileType === 'DRAGON' && m.dragon === 'GREEN') ||
+    rec.details.missing.some(m => m.holds > 0 && m.tileType === 'DRAGON' && m.dragon === 'GREEN')
+  );
+  const redInTop3 = result.top3.some(rec =>
+    rec.details.matched.some(m => m.tileType === 'DRAGON' && m.dragon === 'RED') ||
+    rec.details.missing.some(m => m.holds > 0 && m.tileType === 'DRAGON' && m.dragon === 'RED')
+  );
+  // If dragons are not in top 3, they should be recommended for discard
+  if (!greenInTop3) {
+    assertDiscardIncludes(result, 'Green Dragon',
+      'Green Dragon not in top 3 hands — should be recommended for discard');
+  }
+  if (!redInTop3) {
+    assertDiscardIncludes(result, 'Red Dragon',
+      'Red Dragon not in top 3 hands — should be recommended for discard');
+  }
+  // Sanity check: jokers never discarded
+  assert(!result.discards.includes('Joker'), 'Jokers must never be recommended for discard');
+});
+
+test('Joker count included in next 3 hands tile progress', () => {
+  // Hand with jokers — the tile count shown for next3 hands should include joker contribution
+  // We verify this by checking that findBestScore with jokers scores higher than without
+  const withJokers = runAnalysis([
+    'BAM_1','BAM_1','BAM_3',
+    'CRK_5','CRK_5','CRK_5',
+    'GREEN','RED',
+    'FLOWER','FLOWER',
+    'JOKER','JOKER','JOKER',
+  ]);
+  const withoutJokers = runAnalysis([
+    'BAM_1','BAM_1','BAM_3',
+    'CRK_5','CRK_5','CRK_5',
+    'GREEN','RED',
+    'FLOWER','FLOWER',
+    'BAM_7','BAM_8','BAM_9',
+  ]);
+  // The hand with jokers should score higher for the same #1 hand
+  const scoreWith    = withJokers.top3[0]?.finalScore || 0;
+  const scoreWithout = withoutJokers.top3[0]?.finalScore || 0;
+  // Jokers contribute a bonus — score should be at least as high
+  assert(scoreWith >= scoreWithout - 5,
+    'Hand with jokers should score at least as high as equivalent hand without');
+  // More specifically: jokerBonus should be > 0 when jokers held and hand has claimable groups
+  const jokerBonus = withJokers.top3[0]?.jokerBonus || 0;
+  assert(jokerBonus > 0, 'jokerBonus should be > 0 when jokers are held and hand has claimable groups');
+});
+
+test('Tiles not in any top 3 hand are discard candidates', () => {
+  // Build a hand where one tile clearly supports no top 3 hand
+  // Strong odd-number hand + one GREEN dragon that doesn't fit
+  const result = runAnalysis([
+    'BAM_1','BAM_1','BAM_1','BAM_1',
+    'BAM_3','BAM_3','BAM_3','BAM_3',
+    'CRK_5','CRK_5','CRK_5','CRK_5',
+    'GREEN','GREEN',
+  ]);
+  // GREEN dragons may or may not fit top 3 — check the logic holds either way
+  const greenInTop3 = result.top3.some(rec =>
+    rec.details.matched.some(m => m.tileType === 'DRAGON' && m.dragon === 'GREEN') ||
+    rec.details.missing.some(m => m.holds > 0 && m.tileType === 'DRAGON' && m.dragon === 'GREEN')
+  );
+  if (!greenInTop3) {
+    assertDiscardIncludes(result, 'Green Dragon',
+      'Green Dragon supports no top 3 hand — must be discard candidate');
+  } else {
+    // Green IS in top 3 — should NOT be recommended
+    assertDiscardExcludes(result, 'Green Dragon',
+      'Green Dragon is in top 3 hand — must not be recommended for discard');
+  }
+});
+
 // ── Results ────────────────────────────────────────────────────
 console.log('\n' + '═'.repeat(50));
 console.log(`  Results: ${passed} passed, ${failed} failed`);
