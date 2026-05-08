@@ -1582,76 +1582,97 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 // ============================================================
 
 function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
-  // Weighted keep score by hand rank:
-  //   hand #1 → +4, hand #2 → +2, hand #3 → +1, pivot → +0.5, next5 → +0.5
-  // Discard priority: lowest keep score first
-  // Ties: next5-only (0.5) discards before #3-only (1)
+  // Tiered discard logic:
+  // Tier 1: tiles not used in top3 + next3 + pivots
+  // Tier 2: tiles not used in top3 + next3
+  // Tier 3: tiles not used in top3 only
+  // Tier 4: fallback — everything is used in top 3
 
-  // Only protect tiles used in top 3 hands
-  const handWeights = [
-    ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
-    ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
-    ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
-  ];
-
-  const tileScores = {};
-
-  Object.entries(selectedTiles).forEach(([id, count]) => {
-    const tile = ALL_TILES[id];
-    if (!tile || tile.type === 'JOKER') return;
-
-    let keepScore = 0;
-
-    handWeights.forEach(({ rec, weight }) => {
-      const tileMatchesGroup = (m, requireHolds) => {
-        if (requireHolds && m.holds === 0) return false;
-        if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-        if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
-            m.number===tile.number && m.suit===tile.suit) return true;
-        if (tile.type==='WIND' && m.tileType==='WIND') {
-          return m.wind === tile.wind;
-        }
-        if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-          if (m.dragon && m.dragon===tile.dragon) return true;
-          const rawSuit = m.suit;
-          const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
-            ? rawSuit
-            : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
-          if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
-          if (recSuit==='CRK' && tile.dragon==='RED') return true;
-          if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-          if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
-          if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
-          if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
-          if (!recSuit && !m.dragon && m.holds > 0) return true;
-        }
-        return false;
-      };
-      const inMatched = rec.details.matched.some(m => tileMatchesGroup(m, false));
-      const inMissing = rec.details.missing.some(m => tileMatchesGroup(m, true));
-      if (inMatched || inMissing) keepScore += weight;
+  const buildKeepScores = (handList) => {
+    const tileScores = {};
+    Object.entries(selectedTiles).forEach(([id, count]) => {
+      const tile = ALL_TILES[id];
+      if (!tile || tile.type === 'JOKER') return;
+      let keepScore = 0;
+      handList.forEach(({ rec }) => {
+        const tileMatchesGroup = (m) => {
+          if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+          if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
+              m.number===tile.number && m.suit===tile.suit) return true;
+          if (tile.type==='WIND' && m.tileType==='WIND') return m.wind === tile.wind;
+          if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
+            if (m.dragon && m.dragon===tile.dragon) return true;
+            const rawSuit = m.suit;
+            const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
+              ? rawSuit
+              : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
+            if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
+            if (recSuit==='CRK' && tile.dragon==='RED') return true;
+            if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
+            if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
+            if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
+            if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
+            if (!recSuit && !m.dragon && m.holds > 0) return true;
+          }
+          return false;
+        };
+        const inMatched = rec.details.matched.some(m => tileMatchesGroup(m));
+        const inMissing = rec.details.missing.some(m => tileMatchesGroup(m));
+        if (inMatched || inMissing) keepScore += 1;
+      });
+      tileScores[id] = { tile, keepScore, count };
     });
+    return tileScores;
+  };
 
-    tileScores[id] = { tile, keepScore, count };
-  });
+  const formatTileLabel = (tile) => {
+    if (tile.type==='NUMBER') return `${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
+    if (tile.type==='WIND') return `${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
+    if (tile.type==='DRAGON') return `${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
+    if (tile.type==='FLOWER') return 'Flower';
+    return '';
+  };
 
-  // Sort by keepScore ascending — lowest keep score = best discard candidate
-  const sorted = Object.entries(tileScores)
-    .sort((a,b) => a[1].keepScore - b[1].keepScore);
+  const getCandidates = (handList) => {
+    const scores = buildKeepScores(handList);
+    return Object.entries(scores)
+      .filter(([,v]) => v.keepScore === 0)
+      .map(([,{tile}]) => formatTileLabel(tile))
+      .filter(Boolean);
+  };
 
-  // Only recommend tiles with keepScore === 0 (truly dead — support no ranked hand)
-  // If every tile supports at least one ranked hand, return empty → fallback message shows
-  const candidates = sorted.filter(([,v]) => v.keepScore === 0);
+  // Tier 1: dead to top3 + next3 + pivots
+  const allHands = [
+    ...(top3[0] ? [{rec:top3[0]}] : []),
+    ...(top3[1] ? [{rec:top3[1]}] : []),
+    ...(top3[2] ? [{rec:top3[2]}] : []),
+    ...(next5||[]).map(rec=>({rec})),
+    ...(pivots||[]).map(rec=>({rec})),
+  ];
+  let candidates = getCandidates(allHands);
+  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 1 };
 
-  return candidates.slice(0,4).map(([id,{tile}]) => {
-    let label = '';
-    if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
-    else if (tile.type==='WIND') label=`${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
-    else if (tile.type==='DRAGON') label=`${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
-    else if (tile.type==='FLOWER') label='Flower';
-    return label;
-  })
-  .filter(Boolean);
+  // Tier 2: dead to top3 + next3
+  const top3AndNext = [
+    ...(top3[0] ? [{rec:top3[0]}] : []),
+    ...(top3[1] ? [{rec:top3[1]}] : []),
+    ...(top3[2] ? [{rec:top3[2]}] : []),
+    ...(next5||[]).map(rec=>({rec})),
+  ];
+  candidates = getCandidates(top3AndNext);
+  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 2 };
+
+  // Tier 3: dead to top3 only
+  const top3Only = [
+    ...(top3[0] ? [{rec:top3[0]}] : []),
+    ...(top3[1] ? [{rec:top3[1]}] : []),
+    ...(top3[2] ? [{rec:top3[2]}] : []),
+  ];
+  candidates = getCandidates(top3Only);
+  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 3 };
+
+  // Tier 4: everything is used
+  return { tiles: [], tier: 4 };
 }
 
 // ============================================================
