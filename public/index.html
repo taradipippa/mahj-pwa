@@ -36,7 +36,7 @@
   --r-sm:6px;
 }
 html,body{height:100%;background:var(--bone);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.5;overflow-x:hidden}
-html{scroll-padding-top:120px}
+html{scroll-padding-top:100px}
 body{padding-top:env(safe-area-inset-top)}
 #updateBanner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#1F2A36;color:#fff;text-align:center;padding:18px 24px;padding-top:calc(18px + env(safe-area-inset-top));font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(31,42,54,0.35);display:flex;align-items:center;justify-content:center;gap:12px}
 #updateBanner .update-btn{background:#B89A5B;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px;white-space:nowrap}
@@ -55,7 +55,7 @@ body{padding-top:env(safe-area-inset-top)}
 .tile-counter.ready{background:var(--gold);color:var(--ink)}
 
 /* ── SELECTED TILE STRIP ─────────────────────────── */
-.tile-strip-wrap{background:var(--bone2);border-bottom:1px solid #d4c89a;padding:7px 10px 6px;min-height:44px;position:sticky;top:64px;z-index:90}
+.tile-strip-wrap{background:var(--bone2);border-bottom:1px solid #d4c89a;padding:7px 10px 6px;min-height:44px;position:sticky;top:52px;z-index:90}
 .tile-strip{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;align-items:center}
 .strip-empty{font-size:14px;color:var(--ink3);font-style:italic}
 .tile-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px 3px 8px;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;background:#E8ECF0;color:var(--ink);border:1px solid #C5CDD6;user-select:none;-webkit-tap-highlight-color:transparent}
@@ -70,7 +70,7 @@ body{padding-top:env(safe-area-inset-top)}
 
 
 /* ── TILE GRID ───────────────────────────────────── */
-.select-body{padding:20px 8px 80px}
+.select-body{padding:16px 8px 80px}
 .suit-section{margin-bottom:7px}
 .suit-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;padding:1px}
 .tile-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px}
@@ -188,6 +188,7 @@ body{padding-top:env(safe-area-inset-top)}
 .discard-tile{font-size:14px;font-weight:600;color:#fff}
 .discard-reason{font-size:12px;color:rgba(255,255,255,.55)}
 .discard-fallback{font-size:14px;color:rgba(255,255,255,.8);line-height:1.5}
+.discard-note{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px;font-style:italic}
 .section-head{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin:16px 0 8px}
 /* ── PIVOT CARDS ─────────────────────────────────── */
 .section-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
@@ -2047,7 +2048,98 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 // ============================================================
 
 function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
-  // Weighted keep score by hand rank:
+  // Tiered discard logic:
+  // Tier 1: tiles not used in top3 + next3 + pivots
+  // Tier 2: tiles not used in top3 + next3
+  // Tier 3: tiles not used in top3 only
+  // Tier 4: fallback message — everything is used in top 3
+
+  const buildKeepScores = (handList) => {
+    const tileScores = {};
+    Object.entries(selectedTiles).forEach(([id, count]) => {
+      const tile = ALL_TILES[id];
+      if (!tile || tile.type === 'JOKER') return;
+      let keepScore = 0;
+      handList.forEach(({ rec }) => {
+        const tileMatchesGroup = (m) => {
+          if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+          if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
+              m.number===tile.number && m.suit===tile.suit) return true;
+          if (tile.type==='WIND' && m.tileType==='WIND') return m.wind === tile.wind;
+          if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
+            if (m.dragon && m.dragon===tile.dragon) return true;
+            const rawSuit = m.suit;
+            const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
+              ? rawSuit
+              : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
+            if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
+            if (recSuit==='CRK' && tile.dragon==='RED') return true;
+            if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
+            if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
+            if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
+            if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
+            if (!recSuit && !m.dragon && m.holds > 0) return true;
+          }
+          return false;
+        };
+        const inMatched = rec.details.matched.some(m => tileMatchesGroup(m));
+        const inMissing = rec.details.missing.some(m => tileMatchesGroup(m));
+        if (inMatched || inMissing) keepScore += 1;
+      });
+      tileScores[id] = { tile, keepScore, count };
+    });
+    return tileScores;
+  };
+
+  const formatTileLabel = (tile) => {
+    if (tile.type==='NUMBER') return `${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
+    if (tile.type==='WIND') return `${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
+    if (tile.type==='DRAGON') return `${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
+    if (tile.type==='FLOWER') return 'Flower';
+    return '';
+  };
+
+  const getCandidates = (handList) => {
+    const scores = buildKeepScores(handList);
+    return Object.entries(scores)
+      .filter(([,v]) => v.keepScore === 0)
+      .map(([,{tile}]) => formatTileLabel(tile))
+      .filter(Boolean);
+  };
+
+  // Tier 1: dead to top3 + next3 + pivots
+  const allHands = [
+    ...(top3[0] ? [{rec:top3[0]}] : []),
+    ...(top3[1] ? [{rec:top3[1]}] : []),
+    ...(top3[2] ? [{rec:top3[2]}] : []),
+    ...(next5||[]).map(rec=>({rec})),
+    ...(pivots||[]).map(rec=>({rec})),
+  ];
+  let candidates = getCandidates(allHands);
+  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 1 };
+
+  // Tier 2: dead to top3 + next3
+  const top3AndNext = [
+    ...(top3[0] ? [{rec:top3[0]}] : []),
+    ...(top3[1] ? [{rec:top3[1]}] : []),
+    ...(top3[2] ? [{rec:top3[2]}] : []),
+    ...(next5||[]).map(rec=>({rec})),
+  ];
+  candidates = getCandidates(top3AndNext);
+  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 2 };
+
+  // Tier 3: dead to top3 only
+  const top3Only = [
+    ...(top3[0] ? [{rec:top3[0]}] : []),
+    ...(top3[1] ? [{rec:top3[1]}] : []),
+    ...(top3[2] ? [{rec:top3[2]}] : []),
+  ];
+  candidates = getCandidates(top3Only);
+  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 3 };
+
+  // Tier 4: everything is used
+  return { tiles: [], tier: 4 };
+}
   //   hand #1 → +4, hand #2 → +2, hand #3 → +1, pivot → +0.5, next5 → +0.5
   // Discard priority: lowest keep score first
   // Ties: next5-only (0.5) discards before #3-only (1)
@@ -2102,24 +2194,6 @@ function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
   });
 
   // Sort by keepScore ascending — lowest keep score = best discard candidate
-  const sorted = Object.entries(tileScores)
-    .sort((a,b) => a[1].keepScore - b[1].keepScore);
-
-  // Only recommend tiles with keepScore === 0 (truly dead — support no ranked hand)
-  // If every tile supports at least one ranked hand, return empty → fallback message shows
-  const candidates = sorted.filter(([,v]) => v.keepScore === 0);
-
-  return candidates.slice(0,4).map(([id,{tile}]) => {
-    let label = '';
-    if (tile.type==='NUMBER') label=`${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
-    else if (tile.type==='WIND') label=`${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
-    else if (tile.type==='DRAGON') label=`${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
-    else if (tile.type==='FLOWER') label='Flower';
-    return label;
-  })
-  .filter(Boolean);
-}
-
 // ============================================================
 // OUTPUT RENDERING
 // ============================================================
@@ -2565,8 +2639,8 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       g=>g.groupType!=='single'&&g.groupType!=='pair'&&!new Set(rec.details.matched.map(m=>m.label)).has(g.label)
     ).length;
 
-    const claimableInHand = claimableGroupCount;
-    const jokerContribution = claimableInHand > 0 ? hand.jokers : 0;
+    const canUseJokers = !(rec.handDef.concealed && rec.handDef.section === 'singles_and_pairs');
+    const jokerContribution = (canUseJokers && claimableGroupCount > 0) ? hand.jokers : 0;
     const adjustedMatched = Math.min(rec.matched + jokerContribution, rec.total);
 
     const rankLabel = ['#1','#2','#3'][i];
@@ -2606,7 +2680,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
         <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
         <div style="font-size:13px;color:var(--ink3);margin-bottom:8px">${summary}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span class="tiles-matched">${adjustedMatched} / ${rec.total} tiles</span>
+          <span class="tiles-matched">${adjustedMatched} / 14 tiles</span>
           <span class="pts-badge">${rec.handDef.exposedPlay?'Exposed':'Concealed'} · ${rec.handDef.pointValue||25} pts</span>
         </div>
         ${youHave ? `<div class="yhave-chips">${youHave}</div>` : ''}
@@ -2647,8 +2721,9 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       next5.forEach(rec => {
         const youHave = buildYouHaveChips(rec, hand);
         const totalTiles = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1),0);
+        const n3CanUseJokers = !rec.handDef.concealed || rec.handDef.section !== 'singles_and_pairs';
         const n3ClaimableGroups = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
-        const n3JokerContrib = n3ClaimableGroups > 0 ? hand.jokers : 0;
+        const n3JokerContrib = (n3CanUseJokers && n3ClaimableGroups > 0) ? hand.jokers : 0;
         const n3AdjustedMatched = Math.min(rec.matched + n3JokerContrib, totalTiles);
         const card = document.createElement('div');
         card.className = 'n5-card';
@@ -2660,7 +2735,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
             </div>
             <div style="font-size:15px;font-weight:700;color:var(--ink);margin:4px 0 4px">${rec.handDef.cardRef}</div>
             <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
-            <div class="tiles-matched" style="margin-bottom:6px">${n3AdjustedMatched} / ${totalTiles} tiles</div>
+            <div class="tiles-matched" style="margin-bottom:6px">${n3AdjustedMatched} / 14 tiles</div>
             ${youHave ? `<div class="yhave-chips">${youHave}</div>` : ''}
           </div>`;
         cardsDiv.appendChild(card);
@@ -2678,19 +2753,37 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // ── DISCARD RECOMMENDATIONS ───────────────────────────────
-  const discards = getDiscardRecommendations([], top3, pivots, next5, hand);
+  const discardResult = getDiscardRecommendations([], top3, pivots, next5, hand);
+  const discardTiles = discardResult.tiles;
+  const discardTier = discardResult.tier;
+
+  const tier2Note = discardTier === 2 ? '<div class="discard-note">These tiles aren\'t needed by your top 3 or next 3 hands.</div>' : '';
+  const tier3Note = discardTier === 3 ? '<div class="discard-note">These tiles aren\'t needed by your top 3 hands, but are used in next 3 or pivot hands.</div>' : '';
+
   const discardReasons = [
-    'Least useful across top hands',
-    'Does not support your primary path',
-    'Low value — does not fit top hands',
+    'Not needed in top 3, next 3, or pivot hands',
+    'Not needed in top 3, next 3, or pivot hands',
+    'Not needed in top 3, next 3, or pivot hands',
   ];
-  const discardInner = discards.length > 0
-    ? discards.slice(0,3).map((d,i)=>`
+  const tier2Reasons = [
+    'Not needed by your top 3 or next 3 hands',
+    'Not needed by your top 3 or next 3 hands',
+    'Not needed by your top 3 or next 3 hands',
+  ];
+  const tier3Reasons = [
+    'Not needed by your top 3 hands',
+    'Not needed by your top 3 hands',
+    'Not needed by your top 3 hands',
+  ];
+  const reasons = discardTier === 3 ? tier3Reasons : discardTier === 2 ? tier2Reasons : discardReasons;
+
+  const discardInner = discardTiles.length > 0
+    ? (tier2Note || tier3Note || '') + discardTiles.map((d,i)=>`
         <div class="discard-row">
           <span class="discard-tile">${d}</span>
-          <span class="discard-reason">${discardReasons[i]||'Low priority tile'}</span>
+          <span class="discard-reason">${reasons[i]||'Low priority tile'}</span>
         </div>`).join('')
-    : `<div class="discard-fallback">No obvious dead weight — every tile supports at least one top hand.${hand.jokers>0?' Hold your joker(s).':''}</div>`;
+    : `<div class="discard-fallback">There are no obvious tiles for discard at this point — all tiles are used in your top 3 hands. See how the game unfolds to decide your best tile for discard.${hand.jokers>0?' Hold your joker(s).':''}</div>`;
 
   const discardCardEl = document.createElement('div');
   discardCardEl.innerHTML = `
@@ -2718,7 +2811,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       <div class="pivot-card">
         <div class="pivot-hdr">
           <span class="pivot-ref">${rec.handDef.cardRef}</span>
-          <span class="pts-badge">${rec.matched} / ${totalTiles} tiles</span>
+          <span class="pts-badge">${rec.matched} / 14 tiles</span>
         </div>
         <div class="pivot-sec">${formatSectionName(rec.handDef.section)}</div>
         <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
@@ -2823,6 +2916,8 @@ function analyze() {
 function resetApp() {
   // Clear tile selection state
   Object.keys(selectedTiles).forEach(k=>delete selectedTiles[k]);
+  // Scroll to top so Bam row is visible after reset
+  window.scrollTo(0, 0);
   // Clear all results DOM so old hand never persists
   const rc = document.getElementById('resultsContent');
   if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="next5Container"></div><div id="discardCard"></div><div id="pivotContainer"></div><div id="glanceCard"></div>';
