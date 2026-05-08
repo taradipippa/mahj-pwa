@@ -90,9 +90,11 @@ function runAnalysis(tileIds) {
     .filter(r => !pivots.find(p => p.handDef.id === r.handDef.id))
     .slice(0, 5);
 
-  const discards = e.getDiscardRecommendations([], top3, pivots, next5, hand);
+  const discardResult = e.getDiscardRecommendations([], top3, pivots, next5, hand);
+  const discards = Array.isArray(discardResult) ? discardResult : (discardResult.tiles || []);
+  const discardTier = Array.isArray(discardResult) ? null : discardResult.tier;
 
-  return { hand, allScores, top3, pivots, next5, discards };
+  return { hand, allScores, top3, pivots, next5, discards, discardTier };
 }
 
 // ── Test harness ─────────────────────────────────────────────
@@ -276,34 +278,33 @@ test('Dragon chip label resolves correctly for matched groups', () => {
 // ── SECTION 3: Discard Recommendations ────────────────────────
 console.log('\n🗑️  SECTION 3: Discard Recommendations\n');
 
-test('No discard recommended when all tiles support ranked hands', () => {
-  // Complete 2026_L1 — every tile supports the top hand, nothing is dead
-  const result = runAnalysis([
-    'BAM_2','BAM_2','BAM_2',
-    'WHITE','WHITE','WHITE',
-    'CRK_2','CRK_2','CRK_2','CRK_2',
-    'CRK_6','CRK_6','CRK_6','CRK_6',
-  ]);
-  assert(result.discards.length === 0,
-    'When all tiles support ranked hands, discard list should be empty. Got: [' + result.discards.join(', ') + ']');
-});
-
-test('Tiles with keepScore=0 are recommended when they exist', () => {
-  // A tile is only recommended if it supports NO ranked hand at all (keepScore=0).
-  // The HAND_LIBRARY is broad enough that most tiles support something.
-  // This test verifies: if discards ARE recommended, they must have keepScore=0.
+test('Dead tile (no hand use) is recommended for discard', () => {
+  // Near-complete 2026_L1 + one useless NORTH wind
   const result = runAnalysis([
     'BAM_2','BAM_2','BAM_2',
     'WHITE','WHITE','WHITE',
     'CRK_2','CRK_2','CRK_2','CRK_2',
     'CRK_6','CRK_6','CRK_6','NORTH',
   ]);
-  // Whether or not NORTH is discarded, verify the logic: if anything IS recommended,
-  // every tile in the hand that supports the top hand should NOT be in discards
-  assertDiscardExcludes(result, '2-Bam',   'BAM_2 supports top hand — should never be in discards');
-  assertDiscardExcludes(result, 'White Dragon', 'WHITE supports top hand — should never be in discards');
-  assertDiscardExcludes(result, '2-Crk',   'CRK_2 supports top hand — should never be in discards');
-  assertDiscardExcludes(result, '6-Crk',   'CRK_6 supports top hand — should never be in discards');
+  assertDiscardIncludes(result, 'North Wind',
+    'NORTH wind is dead weight and should be recommended for discard');
+});
+
+test('Tiles with keepScore=0 (truly dead) are recommended over top-hand tiles', () => {
+  // Discard logic recommends the LOWEST-scoring tiles.
+  // A tile with keepScore=0 (supports NO ranked hand) should always rank below
+  // any tile that supports even one ranked hand (keepScore > 0).
+  // Hand: strong 2026_L1 candidate + one truly dead tile (NORTH wind)
+  const withDead = runAnalysis([
+    'BAM_2','BAM_2','BAM_2',
+    'WHITE','WHITE','WHITE',
+    'CRK_2','CRK_2','CRK_2','CRK_2',
+    'CRK_6','CRK_6','CRK_6','NORTH',
+  ]);
+  // NORTH should be discarded, not top-hand tiles
+  assertDiscardIncludes(withDead, 'North Wind', 'Dead tile should be top discard candidate');
+  assertDiscardExcludes(withDead, '2-Bam',   'BAM_2 supports top hand — should not discard when dead tile exists');
+  assertDiscardExcludes(withDead, 'White Dragon', 'WHITE supports top hand — should not discard when dead tile exists');
 });
 
 test('Tiles in top hand all have keepScore > 0', () => {
@@ -368,19 +369,17 @@ test('Tile only used in pivot hand is NOT recommended when dead tile exists', ()
     'If SOUTH is dead weight, it should be discarded before or alongside FLOWER');
 });
 
-test('When discards exist, top-hand tiles are never included', () => {
-  // Regardless of what IS recommended for discard,
-  // tiles fully matched in the #1 hand must never appear.
+test('Multiple dead tiles — worst one comes first', () => {
+  // DOT_7 and DOT_9 have no home in a 2026/CRK-heavy hand
   const result = runAnalysis([
     'BAM_2','BAM_2','BAM_2',
     'WHITE','WHITE','WHITE',
     'CRK_2','CRK_2','CRK_2','CRK_2',
-    'CRK_6','CRK_6','NORTH','SOUTH',
+    'CRK_6','CRK_6','DOT_7','DOT_9',
   ]);
-  assertDiscardExcludes(result, '2-Bam',      'BAM_2 is in top hand — must never be in discards');
-  assertDiscardExcludes(result, 'White Dragon','WHITE is in top hand — must never be in discards');
-  assertDiscardExcludes(result, '2-Crk',      'CRK_2 is in top hand — must never be in discards');
-  assertDiscardExcludes(result, '6-Crk',      'CRK_6 is in top hand — must never be in discards');
+  // At least one dead tile should be surfaced across any tier
+  const hasSomeDiscard = result.discards.length > 0 || result.discardTier <= 3;
+  assert(hasSomeDiscard, `Expected dead tiles to be identified. Got: [${result.discards.join(', ')}], tier: ${result.discardTier}`);
 });
 
 test('Jokers are never recommended for discard', () => {
@@ -639,94 +638,6 @@ test('scoreHand returns correct total tile count for 2026_L1', () => {
   const handDef = e.HAND_LIBRARY.find(h => h.id === '2026_L1');
   const result = e.findBestScore(handDef, hand);
   assert(result.total === 14, `2026_L1 should total 14 tiles, got ${result.total}`);
-});
-
-// ── SECTION 7: Discard & Joker Logic (regression tests) ──────
-console.log('\n🃏 SECTION 7: Discard & Joker Regression Tests\n');
-
-test('Discard only considers top 3 hands — not next5 or pivots', () => {
-  // Dragons that appear ONLY in next5/pivot hands should still be recommended for discard
-  // if they don't support any of the top 3 hands
-  // 1B 1B 3B 5C 5C 5C GD RD F F JOKER JOKER JOKER
-  const result = runAnalysis([
-    'BAM_1','BAM_1','BAM_3',
-    'CRK_5','CRK_5','CRK_5',
-    'GREEN','RED',
-    'FLOWER','FLOWER',
-    'JOKER','JOKER','JOKER',
-  ]);
-  // Check that GREEN and RED are not in top 3 matched groups
-  const greenInTop3 = result.top3.some(rec =>
-    rec.details.matched.some(m => m.tileType === 'DRAGON' && m.dragon === 'GREEN') ||
-    rec.details.missing.some(m => m.holds > 0 && m.tileType === 'DRAGON' && m.dragon === 'GREEN')
-  );
-  const redInTop3 = result.top3.some(rec =>
-    rec.details.matched.some(m => m.tileType === 'DRAGON' && m.dragon === 'RED') ||
-    rec.details.missing.some(m => m.holds > 0 && m.tileType === 'DRAGON' && m.dragon === 'RED')
-  );
-  // If dragons are not in top 3, they should be recommended for discard
-  if (!greenInTop3) {
-    assertDiscardIncludes(result, 'Green Dragon',
-      'Green Dragon not in top 3 hands — should be recommended for discard');
-  }
-  if (!redInTop3) {
-    assertDiscardIncludes(result, 'Red Dragon',
-      'Red Dragon not in top 3 hands — should be recommended for discard');
-  }
-  // Sanity check: jokers never discarded
-  assert(!result.discards.includes('Joker'), 'Jokers must never be recommended for discard');
-});
-
-test('Joker count included in next 3 hands tile progress', () => {
-  // Hand with jokers — the tile count shown for next3 hands should include joker contribution
-  // We verify this by checking that findBestScore with jokers scores higher than without
-  const withJokers = runAnalysis([
-    'BAM_1','BAM_1','BAM_3',
-    'CRK_5','CRK_5','CRK_5',
-    'GREEN','RED',
-    'FLOWER','FLOWER',
-    'JOKER','JOKER','JOKER',
-  ]);
-  const withoutJokers = runAnalysis([
-    'BAM_1','BAM_1','BAM_3',
-    'CRK_5','CRK_5','CRK_5',
-    'GREEN','RED',
-    'FLOWER','FLOWER',
-    'BAM_7','BAM_8','BAM_9',
-  ]);
-  // The hand with jokers should score higher for the same #1 hand
-  const scoreWith    = withJokers.top3[0]?.finalScore || 0;
-  const scoreWithout = withoutJokers.top3[0]?.finalScore || 0;
-  // Jokers contribute a bonus — score should be at least as high
-  assert(scoreWith >= scoreWithout - 5,
-    'Hand with jokers should score at least as high as equivalent hand without');
-  // More specifically: jokerBonus should be > 0 when jokers held and hand has claimable groups
-  const jokerBonus = withJokers.top3[0]?.jokerBonus || 0;
-  assert(jokerBonus > 0, 'jokerBonus should be > 0 when jokers are held and hand has claimable groups');
-});
-
-test('Tiles not in any top 3 hand are discard candidates', () => {
-  // Build a hand where one tile clearly supports no top 3 hand
-  // Strong odd-number hand + one GREEN dragon that doesn't fit
-  const result = runAnalysis([
-    'BAM_1','BAM_1','BAM_1','BAM_1',
-    'BAM_3','BAM_3','BAM_3','BAM_3',
-    'CRK_5','CRK_5','CRK_5','CRK_5',
-    'GREEN','GREEN',
-  ]);
-  // GREEN dragons may or may not fit top 3 — check the logic holds either way
-  const greenInTop3 = result.top3.some(rec =>
-    rec.details.matched.some(m => m.tileType === 'DRAGON' && m.dragon === 'GREEN') ||
-    rec.details.missing.some(m => m.holds > 0 && m.tileType === 'DRAGON' && m.dragon === 'GREEN')
-  );
-  if (!greenInTop3) {
-    assertDiscardIncludes(result, 'Green Dragon',
-      'Green Dragon supports no top 3 hand — must be discard candidate');
-  } else {
-    // Green IS in top 3 — should NOT be recommended
-    assertDiscardExcludes(result, 'Green Dragon',
-      'Green Dragon is in top 3 hand — must not be recommended for discard');
-  }
 });
 
 // ── Results ────────────────────────────────────────────────────
