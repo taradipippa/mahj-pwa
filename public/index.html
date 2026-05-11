@@ -159,11 +159,11 @@ body{padding-top:env(safe-area-inset-top)}
 .rec-field:last-child{margin-bottom:0}
 .rec-field strong{color:var(--ink);font-weight:600}
 .need-list{line-height:2}
-.need-row{display:flex;align-items:baseline;justify-content:space-between;font-size:14px;padding:5px 0;border-bottom:1px solid var(--bone2)}
+.need-row{display:flex;align-items:center;font-size:14px;padding:5px 0;border-bottom:1px solid var(--bone2)}
 .need-row:last-child{border-bottom:none}
-.need-tile{color:var(--ink);font-weight:500}
-.need-progress{color:var(--ink3);font-size:13px;margin:0 8px}
-.need-status{font-size:12px;font-weight:700;border-radius:20px;padding:2px 10px;white-space:nowrap}
+.need-tile{color:var(--ink);font-weight:500;flex:1;min-width:0}
+.need-progress{color:var(--ink3);font-size:13px;width:36px;text-align:center;flex-shrink:0}
+.need-status{font-size:12px;font-weight:700;border-radius:20px;padding:2px 10px;white-space:nowrap;flex-shrink:0}
 .status-callable{background:#E6F4EA;color:#1a6020}
 .status-not-callable{background:#F0F2F5;color:var(--ink3)}
 .joker-note{font-size:13px;color:var(--ink3);padding:8px 0 0;line-height:1.5}
@@ -2480,7 +2480,11 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // ── Helper: callable status ───────────────────────────────
-  function callableStatus(m, hand) {
+  function callableStatus(m, hand, rec) {
+    // Concealed hands: calling is never allowed (wall draws only)
+    if (rec && rec.handDef.concealed) {
+      return { label: 'Not callable', cls: 'status-not-callable' };
+    }
     const holds = m.holds;
     const total = holds + m.need;
     // Callable now: one tile away from completing the group
@@ -2601,7 +2605,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       const holds = m.holds;
       const total = holds + m.need;
       const progress = `${holds}/${total}`;
-      const status = callableStatus(m, hand);
+      const status = callableStatus(m, hand, rec);
       return `<div class="need-row">
         <span class="need-tile">${name}</span>
         <span class="need-progress">${progress}</span>
@@ -2898,8 +2902,6 @@ function analyze() {
 function resetApp() {
   // Clear tile selection state
   Object.keys(selectedTiles).forEach(k=>delete selectedTiles[k]);
-  // Scroll to top so Bam row is visible after reset
-  window.scrollTo(0, 0);
   // Clear all results DOM so old hand never persists
   const rc = document.getElementById('resultsContent');
   if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="next5Container"></div><div id="discardCard"></div><div id="pivotContainer"></div><div id="glanceCard"></div>';
@@ -2909,6 +2911,8 @@ function resetApp() {
   if (lm) { lm.style.display = 'block'; lm.textContent = 'Analyzing...'; }
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
+  // Scroll after layout settles so sticky BAM row is fully visible
+  requestAnimationFrame(() => { window.scrollTo(0, 0); });
   updateUI();
 }
 
