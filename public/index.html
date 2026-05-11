@@ -608,7 +608,7 @@ function getSuitCombos(n) {
 }
 
 // Score a single group against a tile pool (tiles consumed in place)
-// Returns { matched, needed, penalty, canClaim, dragonNote }
+// Returns { matched, needed, penalty, canClaim }
 
 // ============================================================
 // SCORING ENGINE — mechanics-only difficulty model
@@ -698,25 +698,12 @@ function scoreGroup(g, suit, pool) {
 
   const penalty = stillNeeded * difficultyPerTile;
 
-  // Dragon notes for UI — unchanged
-  let dragonNote = null;
-  if (g.tileType==='DRAGON' && g.dragonRequirement==='opposing' && suit && holds===0) {
-    const matchD = MATCHING_DRAGON[suit];
-    if ((pool[`DRAGON_${matchD}`]||0)>0)
-      dragonNote=`You hold ${matchD} Dragon — that MATCHES ${suit}s, not opposes it.`;
-  }
-  if (g.tileType==='DRAGON' && g.dragonRequirement==='matching' && suit && holds===0) {
-    const matchD = MATCHING_DRAGON[suit];
-    const wrongD = ['GREEN','RED','WHITE'].find(d=>d!==matchD&&(pool[`DRAGON_${d}`]||0)>0);
-    if (wrongD) dragonNote=`You hold ${wrongD} Dragon — wrong color for ${suit}s. Need ${matchD}.`;
-  }
-
   // If no tiles were consumed (holds=0), resolvedDk wasn't set during consumption.
   // Pool is still untouched for this group, so resolve it now.
   if (g.tileType==='DRAGON' && !resolvedDk) {
     resolvedDk = resolveDragonKey(g, suit, pool);
   }
-  return { effective, stillNeeded, penalty, canClaim, dragonNote, holds, groupIsClaimable: canClaim, resolvedDk };
+  return { effective, stillNeeded, penalty, canClaim, holds, groupIsClaimable: canClaim, resolvedDk };
 }
 
 const hand_dragons_list = {GREEN:1,RED:1,WHITE:1};
@@ -766,7 +753,7 @@ function scoreHand(handDef, suitMap, hand) {
 
   let matched=0, total=0, penalty=0;
   let readyToCallCount=0, buildThenCallCount=0;
-  const details = { matched:[], missing:[], dragonNotes:[], jokerPositions:0 };
+  const details = { matched:[], missing:[], jokerPositions:0 };
 
   for (const g of sorted) {
     total += g.count;
@@ -774,7 +761,6 @@ function scoreHand(handDef, suitMap, hand) {
     const r    = scoreGroup(g, suit, pool);
 
     matched += r.effective;
-    if (r.dragonNote) details.dragonNotes.push(r.dragonNote);
     if (r.groupIsClaimable) details.jokerPositions++;
 
     if (r.effective >= g.count) {
@@ -2509,19 +2495,20 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // ── Helper: rationale bullets ─────────────────────────────
-  function rationaleText(rec, i, top3, hand) {
+  function rationaleText(rec, i, top3, hand, adjustedMatched) {
     const readyCount = rec.readyToCallCount || 0;
     const top1 = top3[0];
     const bullets = [];
 
-    // How many tiles match
-    const matchPct = Math.round((rec.matched / rec.total) * 100);
-    if (rec.matched === rec.total) {
+    // How many tiles match (use joker-adjusted count for display)
+    const displayMatched = adjustedMatched != null ? adjustedMatched : rec.matched;
+    const matchPct = Math.round((displayMatched / rec.total) * 100);
+    if (displayMatched === rec.total) {
       bullets.push('All tiles in your hand support this hand');
     } else if (matchPct >= 70) {
-      bullets.push(`Strong tile match — ${rec.matched} of ${rec.total} tiles fit`);
+      bullets.push(`Strong tile match — ${displayMatched} of ${rec.total} tiles fit`);
     } else {
-      bullets.push(`${rec.matched} of ${rec.total} tiles currently fit`);
+      bullets.push(`${displayMatched} of ${rec.total} tiles currently fit`);
     }
 
     // Callable groups
@@ -2647,17 +2634,13 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     const summary = handSummary(rec, i, hand);
     const youHave = buildYouHaveChips(rec, hand);
     const needRows = buildNeedRows(rec, hand);
-    const bullets = rationaleText(rec, i, top3, hand);
+    const bullets = rationaleText(rec, i, top3, hand, adjustedMatched);
     const bulletHTML = bullets.map(b=>`<li>${b}</li>`).join('');
 
     // Joker section
     const jokerHTML = hand.jokers > 0 ? `
       <div class="rec-section-head">Jokers</div>
       <div class="joker-note">${jokerPositions} possible placement${jokerPositions!==1?'s':''} in this hand.<br>Use to complete near-complete groups. Avoid committing too early.</div>` : '';
-
-    // Dragon warning
-    const dragonWarnHTML = rec.details.dragonNotes[0]
-      ? `<div class="dragon-warn">${rec.details.dragonNotes[0]}</div>` : '';
 
     // Concealed note
     const concHTML = rec.handDef.concealed
@@ -2688,8 +2671,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
       <div class="rec-body collapsed" id="${cardId}">
         <div class="rec-section-head">Why This Works</div>
         <ul class="rationale-bullets">${bulletHTML}</ul>
-        ${dragonWarnHTML}
-        <div class="rec-section-head">What You Need</div>
+        <div class="rec-section-head">What You Have &amp; What You Need</div>
         ${needRows}
         ${concHTML}
         ${jokerHTML}
