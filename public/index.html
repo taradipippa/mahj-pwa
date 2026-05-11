@@ -2961,5 +2961,58 @@ updateUI();
       });
   })();
 </script>
+
+<!-- ── PAYWALL OVERLAY ── -->
+<div id="mjiq-paywall" style="display:none;position:fixed;inset:0;background:rgba(31,42,54,.94);z-index:9999;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#fff;border-radius:14px;padding:40px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.35);">
+    <div style="font-size:40px;margin-bottom:18px;">🀄</div>
+    <h2 style="font-family:'Lora',serif;font-size:21px;font-weight:600;color:#1F2A36;margin-bottom:12px;line-height:1.3;">You've used your 3 free analyses</h2>
+    <p style="color:#6B7280;font-size:15px;line-height:1.65;margin-bottom:28px;">Unlock unlimited access with a one-time purchase of $14.99.</p>
+    <a href="https://www.getmahjongiq.com/get-started.html" style="display:block;background:#B89A5B;color:#1F2A36;text-decoration:none;padding:16px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:12px;">Get Unlimited Access — $14.99</a>
+    <p style="font-size:13px;color:#9BA4AF;">Already purchased? <a href="https://www.getmahjongiq.com/get-started.html" style="color:#B89A5B;text-decoration:none;">Restore access →</a></p>
+  </div>
+</div>
+
+<script>
+/* ── TRIAL + ACCESS GATE ─────────────────────────────────────────────────────
+ * This gate is permanent — do not remove when updating other parts of the app.
+ *
+ * How it works:
+ *   - Tracks analyses used in localStorage (mjiq_app_trials_v1)
+ *   - After 3 uses, shows paywall overlay pointing to getmahjongiq.com
+ *   - After purchase, getmahjongiq.com sends user back with ?access=mjiq_unlock_v1
+ *   - App detects that code, stores permanent access, strips it from the URL
+ *   - ACCESS_CODE must always match the value in get-started.html on the marketing site
+ * ──────────────────────────────────────────────────────────────────────────── */
+(function () {
+  var TRIAL_KEY   = 'mjiq_app_trials_v1';
+  var ACCESS_KEY  = 'mjiq_app_access_v1';
+  var MAX_TRIALS  = 3;
+  var ACCESS_CODE = 'mjiq_unlock_v1';
+
+  /* Unlock if returning from purchase with access code in URL */
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('access') === ACCESS_CODE) {
+    localStorage.setItem(ACCESS_KEY, 'true');
+    history.replaceState({}, '', window.location.pathname);
+  }
+
+  function hasAccess()  { return localStorage.getItem(ACCESS_KEY) === 'true'; }
+  function trialsUsed() { return parseInt(localStorage.getItem(TRIAL_KEY) || '0'); }
+  function trialsLeft() { return Math.max(0, MAX_TRIALS - trialsUsed()); }
+
+  /* Wrap analyze() — every analysis call goes through this gate */
+  var _orig = window.analyze;
+  window.analyze = function () {
+    if (hasAccess()) { _orig(); return; }
+    if (trialsLeft() === 0) {
+      document.getElementById('mjiq-paywall').style.display = 'flex';
+      return;
+    }
+    localStorage.setItem(TRIAL_KEY, trialsUsed() + 1);
+    _orig();
+  };
+})();
+</script>
 </body>
 </html>
