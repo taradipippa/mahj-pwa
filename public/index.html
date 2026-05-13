@@ -2093,93 +2093,40 @@ function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
       .filter(Boolean);
   };
 
-  // Tier 1: dead to top3 + next3 + pivots
-  const allHands = [
-    ...(top3[0] ? [{rec:top3[0]}] : []),
-    ...(top3[1] ? [{rec:top3[1]}] : []),
-    ...(top3[2] ? [{rec:top3[2]}] : []),
-    ...(next5||[]).map(rec=>({rec})),
-    ...(pivots||[]).map(rec=>({rec})),
-  ];
-  let candidates = getCandidates(allHands);
-  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 1 };
+  // Evaluate all tiers independently — Tier 3 (dead to top3) is always the floor.
+  // Tier 1: dead to top3 + next3 + pivots (nothing wants it)
+  // Tier 2: dead to top3 + next3, but used in pivots
+  // Tier 3: dead to top3 only (used in next3 or pivots — show with note)
+  // Tier 4: everything used in top3 — no recommendation
 
-  // Tier 2: dead to top3 + next3
-  const top3AndNext = [
-    ...(top3[0] ? [{rec:top3[0]}] : []),
-    ...(top3[1] ? [{rec:top3[1]}] : []),
-    ...(top3[2] ? [{rec:top3[2]}] : []),
-    ...(next5||[]).map(rec=>({rec})),
-  ];
-  candidates = getCandidates(top3AndNext);
-  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 2 };
-
-  // Tier 3: dead to top3 only
   const top3Only = [
     ...(top3[0] ? [{rec:top3[0]}] : []),
     ...(top3[1] ? [{rec:top3[1]}] : []),
     ...(top3[2] ? [{rec:top3[2]}] : []),
   ];
-  candidates = getCandidates(top3Only);
-  if (candidates.length > 0) return { tiles: candidates.slice(0,3), tier: 3 };
-
-  // Tier 4: everything is used
-  return { tiles: [], tier: 4 };
-}
-  //   hand #1 → +4, hand #2 → +2, hand #3 → +1, pivot → +0.5, next5 → +0.5
-  // Discard priority: lowest keep score first
-  // Ties: next5-only (0.5) discards before #3-only (1)
-
-  // Only protect tiles used in top 3 hands — next5/pivots are too speculative
-  // to save a tile from discard. A tile must support one of your top 3 to be kept.
-  const handWeights = [
-    ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
-    ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
-    ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
+  const top3AndNext = [
+    ...top3Only,
+    ...(next5||[]).map(rec=>({rec})),
+  ];
+  const allHands = [
+    ...top3AndNext,
+    ...(pivots||[]).map(rec=>({rec})),
   ];
 
-  const tileScores = {};
+  // Tier 3 is the floor — tiles dead to top3
+  const tier3candidates = getCandidates(top3Only);
+  if (tier3candidates.length === 0) return { tiles: [], tier: 4 };
 
-  Object.entries(selectedTiles).forEach(([id, count]) => {
-    const tile = ALL_TILES[id];
-    if (!tile || tile.type === 'JOKER') return;
+  // Of those, narrow to also dead to next3
+  const deadToNext = getCandidates(top3AndNext);
+  // Of those, narrow to also dead to pivots
+  const deadToAll = getCandidates(allHands);
 
-    let keepScore = 0;
+  if (deadToAll.length > 0) return { tiles: deadToAll.slice(0,3), tier: 1 };
+  if (deadToNext.length > 0) return { tiles: deadToNext.slice(0,3), tier: 2 };
+  return { tiles: tier3candidates.slice(0,3), tier: 3 };
+}
 
-    handWeights.forEach(({ rec, weight }) => {
-      const tileMatchesGroup = (m, requireHolds) => {
-        if (requireHolds && m.holds === 0) return false;
-        if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-        if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
-            m.number===tile.number && m.suit===tile.suit) return true;
-        if (tile.type==='WIND' && m.tileType==='WIND') {
-          return m.wind === tile.wind;
-        }
-        if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-          if (m.dragon && m.dragon===tile.dragon) return true;
-          const rawSuit = m.suit;
-          const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
-            ? rawSuit
-            : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
-          if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
-          if (recSuit==='CRK' && tile.dragon==='RED') return true;
-          if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-          if (recSuit==='BAM' && (tile.dragon==='RED'||tile.dragon==='WHITE')) return true;
-          if (recSuit==='CRK' && (tile.dragon==='GREEN'||tile.dragon==='WHITE')) return true;
-          if (recSuit==='DOT' && (tile.dragon==='GREEN'||tile.dragon==='RED')) return true;
-          if (!recSuit && !m.dragon && m.holds > 0) return true;
-        }
-        return false;
-      };
-      const inMatched = rec.details.matched.some(m => tileMatchesGroup(m, false));
-      const inMissing = rec.details.missing.some(m => tileMatchesGroup(m, true));
-      if (inMatched || inMissing) keepScore += weight;
-    });
-
-    tileScores[id] = { tile, keepScore, count };
-  });
-
-  // Sort by keepScore ascending — lowest keep score = best discard candidate
 // ============================================================
 // OUTPUT RENDERING
 // ============================================================
@@ -2793,11 +2740,15 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     const pivotHTML = pivots.map(rec=>{
       const youHave = buildYouHaveChips(rec, hand);
       const totalTiles = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1),0);
+      const pivotCanUseJokers = !rec.handDef.concealed || rec.handDef.section !== 'singles_and_pairs';
+      const pivotClaimableGroups = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
+      const pivotJokerContrib = (pivotCanUseJokers && pivotClaimableGroups > 0) ? hand.jokers : 0;
+      const pivotAdjustedMatched = Math.min(rec.matched + pivotJokerContrib, totalTiles);
       return `
       <div class="pivot-card">
         <div class="pivot-hdr">
           <span class="pivot-ref">${rec.handDef.cardRef}</span>
-          <span class="pts-badge">${rec.matched} / 14 tiles</span>
+          <span class="pts-badge">${pivotAdjustedMatched} / 14 tiles</span>
         </div>
         <div class="pivot-sec">${formatSectionName(rec.handDef.section)}</div>
         <div class="hand-display">${renderHandDisplay(rec.handDef.id, rec)}</div>
@@ -2911,8 +2862,8 @@ function resetApp() {
   if (lm) { lm.style.display = 'block'; lm.textContent = 'Analyzing...'; }
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
-  // Scroll after layout settles so sticky BAM row is fully visible
-  requestAnimationFrame(() => { window.scrollTo(0, 0); });
+  // Double rAF: first frame switches screen, second ensures layout is painted before scroll
+  requestAnimationFrame(() => { requestAnimationFrame(() => { window.scrollTo(0, 0); }); });
   updateUI();
 }
 
@@ -2960,59 +2911,6 @@ updateUI();
         // Offline or fetch failed — silently do nothing
       });
   })();
-</script>
-
-<!-- ── PAYWALL OVERLAY ── -->
-<div id="mjiq-paywall" style="display:none;position:fixed;inset:0;background:rgba(31,42,54,.94);z-index:9999;align-items:center;justify-content:center;padding:24px;">
-  <div style="background:#fff;border-radius:14px;padding:40px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.35);">
-    <div style="font-size:40px;margin-bottom:18px;">🀄</div>
-    <h2 style="font-family:'Lora',serif;font-size:21px;font-weight:600;color:#1F2A36;margin-bottom:12px;line-height:1.3;">You've used your 3 free analyses</h2>
-    <p style="color:#6B7280;font-size:15px;line-height:1.65;margin-bottom:28px;">Unlock unlimited access with a one-time purchase of $14.99.</p>
-    <a href="https://www.getmahjongiq.com/get-started.html" style="display:block;background:#B89A5B;color:#1F2A36;text-decoration:none;padding:16px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:12px;">Get Unlimited Access — $14.99</a>
-    <p style="font-size:13px;color:#9BA4AF;">Already purchased? <a href="https://www.getmahjongiq.com/get-started.html" style="color:#B89A5B;text-decoration:none;">Restore access →</a></p>
-  </div>
-</div>
-
-<script>
-/* ── TRIAL + ACCESS GATE ─────────────────────────────────────────────────────
- * This gate is permanent — do not remove when updating other parts of the app.
- *
- * How it works:
- *   - Tracks analyses used in localStorage (mjiq_app_trials_v1)
- *   - After 3 uses, shows paywall overlay pointing to getmahjongiq.com
- *   - After purchase, getmahjongiq.com sends user back with ?access=mjiq_unlock_v1
- *   - App detects that code, stores permanent access, strips it from the URL
- *   - ACCESS_CODE must always match the value in get-started.html on the marketing site
- * ──────────────────────────────────────────────────────────────────────────── */
-(function () {
-  var TRIAL_KEY   = 'mjiq_app_trials_v1';
-  var ACCESS_KEY  = 'mjiq_app_access_v1';
-  var MAX_TRIALS  = 3;
-  var ACCESS_CODE = 'mjiq_unlock_v1';
-
-  /* Unlock if returning from purchase with access code in URL */
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('access') === ACCESS_CODE) {
-    localStorage.setItem(ACCESS_KEY, 'true');
-    history.replaceState({}, '', window.location.pathname);
-  }
-
-  function hasAccess()  { return localStorage.getItem(ACCESS_KEY) === 'true'; }
-  function trialsUsed() { return parseInt(localStorage.getItem(TRIAL_KEY) || '0'); }
-  function trialsLeft() { return Math.max(0, MAX_TRIALS - trialsUsed()); }
-
-  /* Wrap analyze() — every analysis call goes through this gate */
-  var _orig = window.analyze;
-  window.analyze = function () {
-    if (hasAccess()) { _orig(); return; }
-    if (trialsLeft() === 0) {
-      document.getElementById('mjiq-paywall').style.display = 'flex';
-      return;
-    }
-    localStorage.setItem(TRIAL_KEY, trialsUsed() + 1);
-    _orig();
-  };
-})();
 </script>
 </body>
 </html>
