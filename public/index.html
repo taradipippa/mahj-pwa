@@ -67,6 +67,10 @@ body{padding-top:env(safe-area-inset-top)}
 .tile-chip.dragon,.tile-chip.flower,.tile-chip.joker{background:#f4ecd4;border-color:#d4b870;color:#6a4a10}
 .chip-x{font-size:10px;opacity:.6;margin:1px}
 .results-hand-strip{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 8px;background:var(--bone2);border-bottom:1px solid #d4c89a;margin-bottom:14px;}
+.results-disclaimer{font-size:12px;color:var(--ink3);padding:8px 14px 10px;border-bottom:1px solid var(--bone2);margin-bottom:14px;line-height:1.5;font-style:italic;}
+.report-btn-wrap{padding:10px 14px 20px;text-align:center;}
+.report-btn{display:inline-block;font-size:13px;color:var(--ink3);border:1px solid var(--bone2);border-radius:20px;padding:6px 16px;background:var(--bone);cursor:pointer;text-decoration:none;transition:background .15s;}
+.report-btn:active{background:var(--bone2);}
 
 
 /* ── TILE GRID ───────────────────────────────────── */
@@ -2766,6 +2770,37 @@ function renderResults(hand, top3, pivots, allScores, is14, next3Param) {
       <div id="pivotContent" style="display:none">${pivotHTML}</div>`;
   }
 
+  // ── REPORT BUTTON ────────────────────────────────────────
+  const _glance = document.getElementById('glanceCard');
+  if (_glance) {
+    const _oldReport = document.querySelector('.report-btn-wrap');
+    if (_oldReport) _oldReport.remove();
+    const _top3Names = top3.map(r => r.handDef.cardRef).join(', ');
+    const _next3Names = (next3Param||[]).map(r => r.handDef.cardRef).join(', ');
+    const _discardStr = discardTiles && discardTiles.length ? discardTiles.join(', ') : 'None';
+    const _pivotNames = (pivots||[]).map(r => r.handDef.cardRef).join(', ');
+    const _tileStr = Object.entries(selectedTiles).filter(([,c])=>c>0).map(([id,c])=>{
+      const t = ALL_TILES[id];
+      if (!t) return '';
+      if (t.type==='NUMBER') return c>1?c+'x '+t.number+'-'+t.suit[0]+t.suit.slice(1).toLowerCase():t.number+'-'+t.suit[0]+t.suit.slice(1).toLowerCase();
+      if (t.type==='WIND') return c>1?c+'x '+t.wind:'1x '+t.wind;
+      if (t.type==='DRAGON') return c>1?c+'x '+(t.dragon==='WHITE'?'Soap':t.dragon):'1x '+(t.dragon==='WHITE'?'Soap':t.dragon);
+      if (t.type==='FLOWER') return c>1?c+'x Flower':'1x Flower';
+      if (t.type==='JOKER') return c>1?c+'x Joker':'1x Joker';
+      return '';
+    }).filter(Boolean).join(' | ');
+    const _handData = 'TILES: '+_tileStr+'
+TOP 3: '+_top3Names+'
+NEXT 3: '+(_next3Names||'None')+'
+DISCARDS: '+_discardStr+'
+PIVOTS: '+(_pivotNames||'None');
+    const _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSex10meHSA6Cic3LK5S_JhHVuRYNhUSI4NdhB4XUtQGtwpRyw/viewform?usp=pp_url&entry.524763729='+encodeURIComponent(_handData)+'&entry.1303947514=';
+    const _wrap = document.createElement('div');
+    _wrap.className = 'report-btn-wrap';
+    _wrap.innerHTML = '<a href=+_formUrl+ target=_blank rel=noopener class=report-btn>Report an issue or give feedback</a>';
+    _glance.after(_wrap);
+  }
+
   // ── FINALIZE ──────────────────────────────────────────────
   document.getElementById('loadingMsg').style.display = 'none';
   document.getElementById('resultsContent').style.display = 'block';
@@ -2802,6 +2837,13 @@ function renderResults(hand, top3, pivots, allScores, is14, next3Param) {
     const _old = _rc.querySelector('.results-hand-strip');
     if (_old) _old.remove();
     _rc.prepend(_stripEl);
+    // Add disclaimer between tile strip and top 3
+    const _oldDisc = _rc.querySelector('.results-disclaimer');
+    if (_oldDisc) _oldDisc.remove();
+    const _disc = document.createElement('div');
+    _disc.className = 'results-disclaimer';
+    _disc.textContent = 'Mahjong IQ analyzes your tiles using a weighted recommendation system that considers multiple strategic factors, including tile fit, hand flexibility, joker usage, callability, completion difficulty, and overall hand potential.';
+    _rc.insertBefore(_disc, _rc.querySelector('#top3Container') || _rc.children[1] || null);
   }
 }
 
