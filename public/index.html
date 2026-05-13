@@ -69,8 +69,8 @@ body{padding-top:env(safe-area-inset-top)}
 .results-hand-strip{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 8px;background:var(--bone2);border-bottom:1px solid #d4c89a;margin-bottom:14px;}
 .results-disclaimer{font-size:12px;color:var(--ink3);padding:8px 14px 10px;border-bottom:1px solid var(--bone2);margin-bottom:14px;line-height:1.5;font-style:italic;}
 .report-btn-wrap{padding:10px 14px 20px;text-align:center;}
-.report-btn{display:inline-block;font-size:13px;color:var(--ink3);border:1px solid var(--bone2);border-radius:20px;padding:6px 16px;background:var(--bone);cursor:pointer;text-decoration:none;transition:background .15s;}
-.report-btn:active{background:var(--bone2);}
+.report-btn{font-size:13px;color:var(--gold);text-decoration:underline;cursor:pointer;}
+.report-btn:active{opacity:.7;}
 
 
 /* ── TILE GRID ───────────────────────────────────── */
@@ -2793,7 +2793,7 @@ function renderResults(hand, top3, pivots, allScores, is14, next3Param) {
     const _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSex10meHSA6Cic3LK5S_JhHVuRYNhUSI4NdhB4XUtQGtwpRyw/viewform?usp=pp_url&entry.524763729='+encodeURIComponent(_handData)+'&entry.1303947514=';
     const _wrap = document.createElement('div');
     _wrap.className = 'report-btn-wrap';
-    _wrap.innerHTML = '<a href=+_formUrl+ target=_blank rel=noopener class=report-btn>Report an issue or give feedback</a>';
+    const _link = document.createElement('a'); _link.href = _formUrl; _link.target = '_blank'; _link.rel = 'noopener'; _link.className = 'report-btn'; _link.textContent = 'Report an issue or give feedback'; _wrap.appendChild(_link);
     _glance.after(_wrap);
   }
 
