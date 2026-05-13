@@ -2789,11 +2789,7 @@ function renderResults(hand, top3, pivots, allScores, is14, next3Param) {
       if (t.type==='JOKER') return c>1?c+'x Joker':'1x Joker';
       return '';
     }).filter(Boolean).join(' | ');
-    const _handData = 'TILES: '+_tileStr+'
-TOP 3: '+_top3Names+'
-NEXT 3: '+(_next3Names||'None')+'
-DISCARDS: '+_discardStr+'
-PIVOTS: '+(_pivotNames||'None');
+    const _handData = 'TILES: '+_tileStr+' | TOP 3: '+_top3Names+' | NEXT 3: '+(_next3Names||'None')+' | DISCARDS: '+_discardStr+' | PIVOTS: '+(_pivotNames||'None');
     const _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSex10meHSA6Cic3LK5S_JhHVuRYNhUSI4NdhB4XUtQGtwpRyw/viewform?usp=pp_url&entry.524763729='+encodeURIComponent(_handData)+'&entry.1303947514=';
     const _wrap = document.createElement('div');
     _wrap.className = 'report-btn-wrap';
