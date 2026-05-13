@@ -2369,7 +2369,7 @@ function formatMissingItem(m, hand, suitMap) {
   return `${label}${holdStr} <span class="tag ${tagCls}">${howStr}</span>`;
 }
 
-function renderResults(hand, top3, pivots, allScores, is14) {
+function renderResults(hand, top3, pivots, allScores, is14, next3Param) {
 
   // East banner
   document.getElementById('eastBanner').innerHTML = is14
@@ -2632,9 +2632,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   });
 
   // ── NEXT 3 HANDS ─────────────────────────────────────────
-  const next5 = allScores.slice(3).filter(r =>
-    !pivots.find(p => p.handDef.id === r.handDef.id)
-  ).slice(0, 3);
+  const next5 = next3Param || [];
 
   const next5Container = document.getElementById('next5Container');
   if (next5Container) {
@@ -2833,15 +2831,17 @@ function analyze() {
     allScores.sort((a,b)=>b.finalScore-a.finalScore);
 
     const top3     = allScores.slice(0,3);
-    const threshold= (top3[2]?.finalScore||0)*0.75;
-    const pivots   = allScores.slice(3)
-      .filter(h=>h.finalScore>=Math.max(threshold,10))
+    // Next3: ranks 4-6 by score, always
+    const next3    = allScores.slice(3, 6);
+    // Pivots: hands outside top3 + next3, with enough matched tiles to be worth considering
+    const next3Ids = new Set(next3.map(r=>r.handDef.id));
+    const pivots   = allScores.slice(6)
       .filter(h=>h.matched>=4)
       .sort((a,b)=>b.matched-a.matched||b.finalScore-a.finalScore)
       .slice(0,3);
 
     try {
-      renderResults(hand, top3, pivots, allScores, is14);
+      renderResults(hand, top3, pivots, allScores, is14, next3);
     } catch(e) {
       document.getElementById('loadingMsg').textContent = 'Error: ' + e.message;
       document.getElementById('loadingMsg').style.display = 'block';
@@ -2862,8 +2862,20 @@ function resetApp() {
   if (lm) { lm.style.display = 'block'; lm.textContent = 'Analyzing...'; }
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
-  // Double rAF: first frame switches screen, second ensures layout is painted before scroll
-  requestAnimationFrame(() => { requestAnimationFrame(() => { window.scrollTo(0, 0); }); });
+  // Force scroll on both window and the select screen element — iOS Safari restores
+  // scroll position on display:block, so we hammer it from multiple angles
+  window.scrollTo(0, 0);
+  document.getElementById('selectScreen').scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  requestAnimationFrame(() => {
+    window.scrollTo(0, 0);
+    document.getElementById('selectScreen').scrollTop = 0;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.getElementById('selectScreen').scrollTop = 0;
+    });
+  });
   updateUI();
 }
 
