@@ -2938,9 +2938,9 @@ updateUI();
   }
 
   // ── Version check — works reliably on iPhone ──
-  // Fetches /version.txt from Vercel on every app open.
-  // If the number differs from what's stored locally, show the update banner.
-  (function checkVersion() {
+  // Fetches /version.txt from Vercel on every app open AND every time
+  // the app returns to the foreground (e.g. user switches back from another app).
+  function checkVersion() {
     const STORED_KEY = 'mahj_app_version';
     fetch('/version.txt?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.text())
@@ -2960,7 +2960,15 @@ updateUI();
       .catch(() => {
         // Offline or fetch failed — silently do nothing
       });
-  })();
+  }
+
+  // Run on load
+  checkVersion();
+
+  // Also run when user returns to the app from background
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkVersion();
+  });
 </script>
 
 <!-- ── PAYWALL OVERLAY ── -->
