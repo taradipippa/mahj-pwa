@@ -2868,6 +2868,8 @@ function analyze() {
 
   document.getElementById('selectScreen').classList.remove('active');
   document.getElementById('resultsScreen').classList.add('active');
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
   document.getElementById('loadingMsg').style.display='block';
   document.getElementById('resultsContent').style.display='none';
 
