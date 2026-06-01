@@ -2912,14 +2912,15 @@ function resetApp() {
   if (lm) { lm.style.display = 'block'; lm.textContent = 'Analyzing...'; }
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
-  // Scroll after layout settles so sticky BAM row is fully visible
-  requestAnimationFrame(() => { window.scrollTo(0, 0); });
+  // Scroll after transition completes so sticky BAM row is fully visible
+  setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 50);
   updateUI();
 }
 
 function editHand() {
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
+  setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 50);
 }
 
 updateUI();
@@ -2978,11 +2979,33 @@ updateUI();
     <h2 style="font-family:'Lora',serif;font-size:21px;font-weight:600;color:#1F2A36;margin-bottom:12px;line-height:1.3;">You've used your 3 free analyses</h2>
     <p style="color:#6B7280;font-size:15px;line-height:1.65;margin-bottom:28px;">Unlock unlimited access with a one-time purchase of $14.99.</p>
     <a href="https://buy.stripe.com/28E3cp9EC2HTcS0g08dAk01" style="display:block;background:#B89A5B;color:#1F2A36;text-decoration:none;padding:16px;border-radius:8px;font-weight:700;font-size:15px;margin-bottom:12px;">Unlock Mahjong IQ</a>
-    <p style="font-size:13px;color:#9BA4AF;">Already purchased? <a href="https://www.getmahjongiq.com/get-started.html" style="color:#B89A5B;text-decoration:none;">Restore access →</a></p>
+    <div style="margin-top:20px;border-top:1px solid #E5E7EB;padding-top:18px;">
+      <p style="font-size:13px;color:#9BA4AF;margin-bottom:10px;">Already purchased? Enter your access code:</p>
+      <div style="display:flex;gap:8px;">
+        <input id="mjiq-code-input" type="text" placeholder="Access code" style="flex:1;padding:10px 12px;border:1px solid #D1D5DB;border-radius:6px;font-size:14px;outline:none;" />
+        <button onclick="mjiqRedeemCode()" style="background:#B89A5B;color:#1F2A36;border:none;padding:10px 16px;border-radius:6px;font-weight:700;font-size:14px;cursor:pointer;">Go</button>
+      </div>
+      <p id="mjiq-code-error" style="font-size:12px;color:#DC2626;margin-top:6px;display:none;">Invalid code. Please try again.</p>
+    </div>
   </div>
 </div>
 
 <script>
+/* ── ACCESS CODE REDEMPTION ── */
+function mjiqRedeemCode() {
+  var input = document.getElementById('mjiq-code-input').value.trim();
+  var error = document.getElementById('mjiq-code-error');
+  if (input === 'MJIQ-2026-M4JX9Q') {
+    localStorage.setItem('mjiq_app_access_v1', 'true');
+    document.getElementById('mjiq-paywall').style.display = 'none';
+    error.style.display = 'none';
+    // Run the analysis they were trying to do
+    if (window._origAnalyze) window._origAnalyze();
+  } else {
+    error.style.display = 'block';
+  }
+}
+
 /* ── TRIAL + ACCESS GATE ─────────────────────────────────────────────────────
  * This gate is permanent — do not remove when updating other parts of the app.
  *
@@ -2997,7 +3020,7 @@ updateUI();
   var TRIAL_KEY   = 'mjiq_app_trials_v1';
   var ACCESS_KEY  = 'mjiq_app_access_v1';
   var MAX_TRIALS  = 3;
-  var ACCESS_CODE = 'mjiq_unlock_v1';
+  var ACCESS_CODE = 'MJIQ-2026-M4JX9Q';
 
   /* Unlock if returning from purchase with access code in URL */
   var params = new URLSearchParams(window.location.search);
@@ -3012,6 +3035,7 @@ updateUI();
 
   /* Wrap analyze() — every analysis call goes through this gate */
   var _orig = window.analyze;
+  window._origAnalyze = _orig; // exposed so mjiqRedeemCode() can call it after unlock
   window.analyze = function () {
     if (hasAccess()) { _orig(); return; }
     if (trialsLeft() === 0) {
