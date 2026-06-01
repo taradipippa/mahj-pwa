@@ -2913,14 +2913,14 @@ function resetApp() {
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
   // Scroll after transition completes so sticky BAM row is fully visible
-  setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 50);
+  setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 150);
   updateUI();
 }
 
 function editHand() {
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
-  setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 50);
+  setTimeout(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, 150);
 }
 
 updateUI();
