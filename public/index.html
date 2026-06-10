@@ -67,6 +67,17 @@ body{padding-top:env(safe-area-inset-top)}
 .tile-chip.dragon,.tile-chip.flower,.tile-chip.joker{background:#f4ecd4;border-color:#d4b870;color:#6a4a10}
 .chip-x{font-size:10px;opacity:.6;margin:1px}
 .results-hand-strip{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 8px;background:var(--bone2);border-bottom:1px solid #d4c89a;margin-bottom:14px;}
+.results-disclaimer{font-size:12px;color:var(--ink3);padding:8px 14px 10px;border-bottom:1px solid var(--bone2);margin-bottom:14px;line-height:1.5;font-style:italic;}
+.report-btn-wrap{padding:10px 14px 20px;text-align:center;}
+.report-btn{font-size:13px;color:var(--gold);text-decoration:underline;cursor:pointer;}
+.report-btn:active{opacity:.7;}
+.charleston-memory{background:#FBF6E9;border:1px solid #d4c89a;border-radius:8px;padding:10px 12px;margin:0 12px 12px;display:none;}
+.charleston-memory.active{display:block;}
+.charleston-memory-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.charleston-memory-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.charleston-memory-chip{font-size:13px;font-weight:600;color:#1F2A36;background:#fff;border:1px solid #d4c89a;border-radius:6px;padding:6px 10px;line-height:1.2;}
+.charleston-memory-reason{font-size:10px;font-weight:400;color:var(--ink3);display:block;margin-top:2px;line-height:1.1;}
+.charleston-memory-dismiss{background:none;border:none;font-size:16px;color:var(--ink3);cursor:pointer;padding:0;line-height:1;}
 
 
 /* ── TILE GRID ───────────────────────────────────── */
@@ -407,6 +418,15 @@ body{padding-top:env(safe-area-inset-top)}
     <div id="tileStrip" class="tile-strip">
       <span class="strip-empty">Tap tiles to build your hand</span>
     </div>
+  </div>
+
+  <!-- Charleston discard memory banner — shown when arriving here via "Do the Charleston" -->
+  <div id="charlestonMemoryBanner" class="charleston-memory">
+    <div class="charleston-memory-label">
+      <span>Charleston — tiles to consider passing</span>
+      <button class="charleston-memory-dismiss" onclick="hideCharlestonMemoryBanner()" aria-label="Dismiss">×</button>
+    </div>
+    <div class="charleston-memory-chips" id="charlestonMemoryChips"></div>
   </div>
 
   <div class="select-body">
@@ -1428,15 +1448,15 @@ const HAND_LIBRARY = [
      {label:'Kong of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'kong',count:4},
    ]},
   {id:'WD_L6',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',6),
-   label:'N + EE + WWW + SSSS + 4 Consec Numbers (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
+   label:'1 + N + 2 + EE + 3 + WWW + 4 + SSSS (1 suit, numbers fixed)',concealed:false,suitsRequired:1,
    groups:[
-     {label:'Single N',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'single',count:1},
+     {label:'Single 1',tileType:'NUMBER',number:1,suit:'A',groupType:'single',count:1},
      {label:'Single North',tileType:'WIND',wind:'NORTH',groupType:'single',count:1},
-     {label:'Single N+1',tileType:'NUMBER',numberFlex:'consec4_pos2',suit:'A',groupType:'single',count:1},
+     {label:'Single 2',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
      {label:'Pair of East',tileType:'WIND',wind:'EAST',groupType:'pair',count:2},
-     {label:'Single N+2',tileType:'NUMBER',numberFlex:'consec4_pos3',suit:'A',groupType:'single',count:1},
+     {label:'Single 3',tileType:'NUMBER',number:3,suit:'A',groupType:'single',count:1},
      {label:'Pung of West',tileType:'WIND',wind:'WEST',groupType:'pung',count:3},
-     {label:'Single N+3',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'A',groupType:'single',count:1},
+     {label:'Single 4',tileType:'NUMBER',number:4,suit:'A',groupType:'single',count:1},
      {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
    ]},
   {id:'WD_L7a',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
@@ -3055,6 +3075,13 @@ function renderResults(hand, top3, pivots, allScores, is14) {
     const _old = _rc.querySelector('.results-hand-strip');
     if (_old) _old.remove();
     _rc.prepend(_stripEl);
+    // Disclaimer between tile strip and top 3
+    const _oldDisc = _rc.querySelector('.results-disclaimer');
+    if (_oldDisc) _oldDisc.remove();
+    const _disc = document.createElement('div');
+    _disc.className = 'results-disclaimer';
+    _disc.textContent = 'Mahjong IQ analyzes your tiles using a weighted recommendation system that considers multiple strategic factors, including tile fit, hand flexibility, joker usage, callability, completion difficulty, and overall hand potential.';
+    _rc.insertBefore(_disc, _rc.querySelector('#top3Container') || _rc.children[1] || null);
   }
 
   // ── Charleston button ─────────────────────────────────────
@@ -3065,6 +3092,44 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   _chCta.innerHTML = `<button onclick="editHand()" style="width:100%;margin:8px 0 16px;padding:14px;border-radius:8px;background:#B89A5B;border:none;color:#1F2A36;cursor:pointer;text-align:center;"><span style="display:block;font-size:14px;font-weight:700;letter-spacing:.04em;">Do the Charleston (Optional)</span><span style="display:block;font-size:11px;font-weight:500;margin-top:4px;opacity:.75;">Refer to the discard recommendations first, then click this button to edit your rack by removing and adding tiles</span></button>`;
   const _strip = document.querySelector('.results-hand-strip');
   if (_strip) _strip.insertAdjacentElement('afterend', _chCta);
+
+  // ── Stash discard recs for the Charleston memory banner ───
+  window._lastDiscards = (discardTiles && discardTiles.length)
+    ? { tiles: discardTiles.slice(), reasons: (discardReasons || []).slice() }
+    : null;
+
+  // ── Report button (Google Form feedback) ──────────────────
+  const _glance = document.getElementById('glanceCard');
+  if (_glance) {
+    const _oldReport = document.querySelector('.report-btn-wrap');
+    if (_oldReport) _oldReport.remove();
+    const _top3Names = top3.map(r => r.handDef.cardRef).join(', ');
+    const _next3Names = (next5||[]).map(r => r.handDef.cardRef).join(', ');
+    const _discardStr = discardTiles && discardTiles.length ? discardTiles.join(', ') : 'None';
+    const _pivotNames = (pivots||[]).map(r => r.handDef.cardRef).join(', ');
+    const _tileStr = Object.entries(selectedTiles).filter(([,c])=>c>0).map(([id,c])=>{
+      const t = ALL_TILES[id];
+      if (!t) return '';
+      if (t.type==='NUMBER') return c>1?c+'x '+t.number+'-'+t.suit[0]+t.suit.slice(1).toLowerCase():t.number+'-'+t.suit[0]+t.suit.slice(1).toLowerCase();
+      if (t.type==='WIND') return c>1?c+'x '+t.wind:'1x '+t.wind;
+      if (t.type==='DRAGON') return c>1?c+'x '+(t.dragon==='WHITE'?'Soap':t.dragon):'1x '+(t.dragon==='WHITE'?'Soap':t.dragon);
+      if (t.type==='FLOWER') return c>1?c+'x Flower':'1x Flower';
+      if (t.type==='JOKER') return c>1?c+'x Joker':'1x Joker';
+      return '';
+    }).filter(Boolean).join(' | ');
+    const _handData = 'TILES: '+_tileStr+' | TOP 3: '+_top3Names+' | NEXT 3: '+(_next3Names||'None')+' | DISCARDS: '+_discardStr+' | PIVOTS: '+(_pivotNames||'None');
+    const _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSex10meHSA6Cic3LK5S_JhHVuRYNhUSI4NdhB4XUtQGtwpRyw/viewform?usp=pp_url&entry.524763729='+encodeURIComponent(_handData)+'&entry.1303947514=';
+    const _wrap = document.createElement('div');
+    _wrap.className = 'report-btn-wrap';
+    const _link = document.createElement('a');
+    _link.href = _formUrl;
+    _link.target = '_blank';
+    _link.rel = 'noopener';
+    _link.className = 'report-btn';
+    _link.textContent = 'Report an issue or give feedback';
+    _wrap.appendChild(_link);
+    _glance.after(_wrap);
+  }
 }
 
 
@@ -3675,6 +3740,9 @@ function analyze() {
   const total = getTotalCount();
   if (total<13||total>14) return;
 
+  // Clear the Charleston memory banner — new analysis supersedes prior discards
+  hideCharlestonMemoryBanner();
+
   document.getElementById('selectScreen').classList.remove('active');
   document.getElementById('resultsScreen').classList.add('active');
   document.documentElement.scrollTop = 0;
@@ -3714,6 +3782,9 @@ function analyze() {
 function resetApp() {
   // Clear tile selection state
   Object.keys(selectedTiles).forEach(k=>delete selectedTiles[k]);
+  // Clear Charleston memory banner state
+  window._lastDiscards = null;
+  hideCharlestonMemoryBanner();
   // Clear all results DOM so old hand never persists
   const rc = document.getElementById('resultsContent');
   if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="next5Container"></div><div id="discardCard"></div><div id="pivotContainer"></div><div id="glanceCard"></div>';
@@ -3738,6 +3809,28 @@ function editHand() {
   document.getElementById('selectScreen').classList.add('active');
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
+  showCharlestonMemoryBanner();
+}
+
+function showCharlestonMemoryBanner() {
+  const banner = document.getElementById('charlestonMemoryBanner');
+  const chips  = document.getElementById('charlestonMemoryChips');
+  if (!banner || !chips) return;
+  const last = window._lastDiscards;
+  if (!last || !last.tiles || !last.tiles.length) {
+    banner.classList.remove('active');
+    return;
+  }
+  chips.innerHTML = last.tiles.map((t,i) => {
+    const reason = (last.reasons && last.reasons[i]) ? last.reasons[i] : '';
+    return `<div class="charleston-memory-chip">${t}${reason ? `<span class="charleston-memory-reason">${reason}</span>` : ''}</div>`;
+  }).join('');
+  banner.classList.add('active');
+}
+
+function hideCharlestonMemoryBanner() {
+  const banner = document.getElementById('charlestonMemoryBanner');
+  if (banner) banner.classList.remove('active');
 }
 
 updateUI();
