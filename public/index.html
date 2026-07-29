@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -202,6 +201,10 @@ body{padding-top:env(safe-area-inset-top)}
 .discard-reason{font-size:12px;color:rgba(255,255,255,.55)}
 .discard-fallback{font-size:14px;color:rgba(255,255,255,.8);line-height:1.5}
 .discard-note{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px;font-style:italic}
+.discard-heading{font-size:13px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.discard-warning{font-size:12px;color:rgba(255,255,255,.6);margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.08);border-radius:6px;line-height:1.5;font-style:italic}
+.discard-charleston-note{font-size:11px;color:rgba(255,255,255,.45);margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);line-height:1.5}
+.discard-subtext{font-size:13px;color:rgba(255,255,255,.6);font-style:italic}
 .section-head{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin:16px 0 8px}
 /* ── PIVOT CARDS ─────────────────────────────────── */
 .section-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3)}
@@ -2238,187 +2241,241 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 // DISCARD ANALYSIS
 // ============================================================
 
-function getDiscardRecommendations(tiles, top3, pivots, next5, hand) {
-  // Discard logic:
-  // - Protect only tiles that support your top 3 hands.
-  // - Among non-top3 tiles, list TRUE DEAD WEIGHT first (not in top3 OR next 3),
-  //   then tiles that only support next 3, ranked by ascending importance.
-  // - Fallback (tier 3): if every tile supports top3, show weakest by weighted score.
-
-  const buildKeepScores = (handList) => {
-    const tileScores = {};
-    Object.entries(selectedTiles).forEach(([id, count]) => {
-      const tile = ALL_TILES[id];
-      if (!tile || tile.type === 'JOKER') return;
-      let keepScore = 0;
-      handList.forEach(({ rec }) => {
-        const tileMatchesGroup = (m) => {
-          if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-          if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
-              m.number===tile.number && m.suit===tile.suit) return true;
-          if (tile.type==='WIND' && m.tileType==='WIND') return m.wind === tile.wind;
-          if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-            if (m.dragon && m.dragon===tile.dragon) return true;
-            const rawSuit = m.suit;
-            const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
-              ? rawSuit
-              : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
-            if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
-            if (recSuit==='CRK' && tile.dragon==='RED') return true;
-            if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-            // If the group's suit is resolved, only the matching dragon color
-            // counts as "needed". Wrong-color dragons should be discardable.
-            if (!recSuit && !m.dragon && m.holds > 0) return true;
-          }
-          return false;
-        };
-        const inMatched = rec.details.matched.some(m => tileMatchesGroup(m));
-        const inMissing = rec.details.missing.some(m => tileMatchesGroup(m));
-        if (inMatched || inMissing) keepScore += 1;
-      });
-      tileScores[id] = { tile, keepScore, count };
-    });
-    return tileScores;
-  };
+function getDiscardRecommendations(rackSnapshot, top3, pivots, next5, hand) {
+  // Master spec discard logic (July 2026):
+  // - Build candidates ONLY from tiles in rackSnapshot (frozen copy of current rack)
+  // - Jokers: NEVER recommended (hard exclusion before tier logic)
+  // - Top-3 protection: tile TYPE used in any top-3 hand is never recommended
+  // - Flowers: pulled out of tier system; only shown when Tiers 1-3 are all empty
+  // - Tier 1: tiles not used in any hand (top3, next3, pivots)
+  // - Tier 2: tiles used only in pivot hands
+  // - Tier 3: tiles used in next-3 hands (activates only when Tiers 1+2 empty)
+  // - If tile is in both next-3 and pivot, classify as Tier 3 (more protective)
+  // - Backfill: Tier 1 >= 2 -> Tier 1 only; Tier 1 = 1 -> may add 1 Tier 2;
+  //   Tier 1 = 0 -> up to 2 Tier 2; Tier 3 never supplements 1 or 2
+  // - Cap at 2 unless genuinely tied within active tier
+  // - Final validation gate re-checks every candidate against rackSnapshot
 
   const formatTileLabel = (tile) => {
-    if (tile.type==='NUMBER') return `${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
-    if (tile.type==='WIND') return `${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
-    if (tile.type==='DRAGON') return `${tile.dragon[0]}${tile.dragon.slice(1).toLowerCase()} Dragon`;
+    if (tile.type==='NUMBER') return tile.number + '-' + tile.suit[0] + tile.suit.slice(1).toLowerCase();
+    if (tile.type==='WIND') return tile.wind[0] + tile.wind.slice(1).toLowerCase() + ' Wind';
+    if (tile.type==='DRAGON') return tile.dragon[0] + tile.dragon.slice(1).toLowerCase() + ' Dragon';
     if (tile.type==='FLOWER') return 'Flower';
     return '';
   };
 
-  // Weighted keep scores for ranking (hand #1 = 4pts, #2 = 2pts, #3 = 1pt, next5 = 0.5pt)
-  const buildWeightedScores = () => {
-    const weights = [
-      ...(top3[0] ? [{ rec: top3[0], weight: 4 }] : []),
-      ...(top3[1] ? [{ rec: top3[1], weight: 2 }] : []),
-      ...(top3[2] ? [{ rec: top3[2], weight: 1 }] : []),
-      ...(next5||[]).map(rec => ({ rec, weight: 0.5 })),
-    ];
-    const tileScores = {};
-    Object.entries(selectedTiles).forEach(([id, count]) => {
-      const tile = ALL_TILES[id];
-      if (!tile || tile.type === 'JOKER') return;
-      let score = 0;
-      weights.forEach(({ rec, weight }) => {
-        const matches = (m) => {
-          if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-          if (tile.type==='NUMBER' && m.tileType==='NUMBER' && m.number===tile.number && m.suit===tile.suit) return true;
-          if (tile.type==='WIND' && m.tileType==='WIND') return m.wind===tile.wind;
-          if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-            if (m.dragon && m.dragon===tile.dragon) return true;
-            const suit = (m.suit==='BAM'||m.suit==='CRK'||m.suit==='DOT') ? m.suit : (m.suit && rec.suitMap ? rec.suitMap[m.suit] : null);
-            if (suit==='BAM'&&tile.dragon==='GREEN') return true;
-            if (suit==='CRK'&&tile.dragon==='RED') return true;
-            if (suit==='DOT'&&tile.dragon==='WHITE') return true;
-          }
-          return false;
-        };
-        if (rec.details.matched.some(m=>matches(m)) || rec.details.missing.some(m=>m.holds>0&&matches(m))) score += weight;
+  // Check if a tile is used in a hand's matched or missing details
+  const tileUsedInHand = (tile, rec) => {
+    const matchesGroup = (m) => {
+      if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+      if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
+          m.number===tile.number && m.suit===tile.suit) return true;
+      if (tile.type==='WIND' && m.tileType==='WIND') return m.wind === tile.wind;
+      if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
+        if (m.dragon && m.dragon===tile.dragon) return true;
+        const rawSuit = m.suit;
+        const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
+          ? rawSuit
+          : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
+        if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
+        if (recSuit==='CRK' && tile.dragon==='RED') return true;
+        if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
+        if (!recSuit && !m.dragon && m.holds > 0) return true;
+      }
+      return false;
+    };
+    return rec.details.matched.some(m => matchesGroup(m)) ||
+           rec.details.missing.some(m => matchesGroup(m));
+  };
+
+  // Build candidate list ONLY from rackSnapshot tile types
+  const rackEntries = Object.entries(rackSnapshot);
+  const top3Recs = top3.filter(Boolean);
+  const next3Recs = (next5 || []).filter(Boolean);
+  const pivotRecs = (pivots || []).filter(Boolean);
+
+  // Classify each held tile type
+  const tier1 = []; // not in any hand
+  const tier2 = []; // in pivots only
+  const tier3 = []; // in next-3 (regardless of pivot)
+  const flowerCandidates = []; // flowers handled separately
+
+  for (const [id, count] of rackEntries) {
+    if (!count || count <= 0) continue;
+    const tile = ALL_TILES[id];
+    if (!tile) continue;
+
+    // Hard exclusion: jokers never recommended
+    if (tile.type === 'JOKER') continue;
+
+    // Top-3 protection: if tile type is used in ANY top-3 hand, skip entirely
+    const inTop3 = top3Recs.some(rec => tileUsedInHand(tile, rec));
+    if (inTop3) continue;
+
+    // Flowers are pulled out of tier system
+    if (tile.type === 'FLOWER') {
+      flowerCandidates.push({ id: id, tile: tile, count: count });
+      continue;
+    }
+
+    // Check next-3 and pivot usage
+    const inNext3 = next3Recs.some(rec => tileUsedInHand(tile, rec));
+    const inPivot = pivotRecs.some(rec => tileUsedInHand(tile, rec));
+
+    // If in next-3 at all -> Tier 3 (most protective bucket)
+    if (inNext3) {
+      tier3.push({ id: id, tile: tile, count: count });
+    } else if (inPivot) {
+      tier2.push({ id: id, tile: tile, count: count });
+    } else {
+      tier1.push({ id: id, tile: tile, count: count });
+    }
+  }
+
+  // Select candidates per the approved backfill rules
+  let selected = [];
+  let activeTier = 0;
+  let explanation = '';
+  const warnings = [];
+
+  if (tier1.length >= 2) {
+    // Two or more Tier 1: use Tier 1 only, cap at 2 unless genuinely tied
+    selected = tier1.length === 2 ? tier1.slice() : tier1.slice(0, 2);
+    // If more than 2 tier1 candidates, check if they are genuinely tied
+    // (all unused by every hand = all equivalent), show all
+    if (tier1.length > 2) {
+      selected = tier1.slice(); // all genuinely interchangeable
+    }
+    activeTier = 1;
+    explanation = tier1.length === 1
+      ? 'This tile does not support your strongest hand options.'
+      : 'These tiles do not support your strongest hand options.';
+  } else if (tier1.length === 1) {
+    selected = [tier1[0]];
+    activeTier = 1;
+    // May supplement with strongest Tier 2 candidate
+    if (tier2.length > 0) {
+      selected.push(tier2[0]);
+      // Mixed explanation handled per-tile in rendering
+      explanation = '__MIXED_1_2__';
+    } else {
+      // Do NOT dip into Tier 3 to fill
+      explanation = 'This tile does not support your strongest hand options.';
+    }
+  } else if (tier2.length > 0) {
+    // Tier 1 empty, use up to 2 Tier 2
+    selected = tier2.length === 1 ? [tier2[0]] : tier2.slice(0, 2);
+    if (tier2.length > 2) {
+      selected = tier2.slice(); // all genuinely interchangeable pivot-only tiles
+    }
+    activeTier = 2;
+    explanation = selected.length === 1
+      ? 'This tile supports only a possible pivot direction and provides limited support for your strongest current options.'
+      : 'These tiles support only possible pivot directions and provide limited support for your strongest current options.';
+  } else if (tier3.length > 0) {
+    // Tiers 1 and 2 both empty, use up to 2 Tier 3
+    selected = tier3.length === 1 ? [tier3[0]] : tier3.slice(0, 2);
+    if (tier3.length > 2) {
+      selected = tier3.slice(); // all genuinely interchangeable
+    }
+    activeTier = 3;
+    explanation = selected.length === 1
+      ? 'This tile supports a lower-ranked backup option. Consider which hand direction you are most willing to give up before passing or discarding it.'
+      : 'These tiles support lower-ranked backup options. Consider which hand direction you are most willing to give up before passing or discarding them.';
+  } else if (flowerCandidates.length > 0) {
+    // Tiers 1-3 all empty, flowers are last resort
+    selected = [flowerCandidates[0]];
+    activeTier = 4; // flower tier
+    explanation = 'Strategy note: Flowers are generally worth protecting during the Charleston. If the Charleston is complete and the flower does not fit the hand you are pursuing, consider discarding it early in play.';
+  } else {
+    // Nothing qualifies
+    return {
+      tiles: [],
+      reasons: [],
+      tier: 5,
+      explanation: 'No clear tiles to discard.',
+      subtext: 'Your tiles are supporting multiple possible hand directions. Use your judgment based on the hand you want to pursue.',
+      warnings: [],
+    };
+  }
+
+  // ── FINAL VALIDATION GATE ──────────────────────────────────
+  // Independent re-check against rackSnapshot. Every candidate must:
+  // 1. Exist in rackSnapshot
+  // 2. Not be a joker
+  // 3. Not be used in a top-3 hand
+  // 4. Quantity held must be sufficient
+  const validated = [];
+  for (const candidate of selected) {
+    const heldCount = rackSnapshot[candidate.id] || 0;
+    if (heldCount <= 0) continue; // Not in rack
+    if (candidate.tile.type === 'JOKER') continue; // Double-check joker exclusion
+    if (top3Recs.some(rec => tileUsedInHand(candidate.tile, rec))) continue; // Double-check top-3
+    validated.push(candidate);
+  }
+
+  if (validated.length === 0) {
+    return {
+      tiles: [],
+      reasons: [],
+      tier: 5,
+      explanation: 'No clear tiles to discard.',
+      subtext: 'Your tiles are supporting multiple possible hand directions. Use your judgment based on the hand you want to pursue.',
+      warnings: [],
+    };
+  }
+
+  // ── BUILD OUTPUT ───────────────────────────────────────────
+  const tiles = [];
+  const reasons = [];
+
+  for (const v of validated) {
+    tiles.push(formatTileLabel(v.tile));
+    if (explanation === '__MIXED_1_2__') {
+      // Mixed Tier 1 + Tier 2: per-tile explanation
+      const isTier1 = tier1.some(t => t.id === v.id);
+      reasons.push(isTier1
+        ? 'Does not support your strongest or backup hand directions.'
+        : 'Supports only a possible pivot direction.');
+    } else if (activeTier === 4) {
+      reasons.push(explanation);
+    } else {
+      reasons.push(explanation);
+    }
+  }
+
+  // ── WARNINGS ───────────────────────────────────────────────
+  // Pair warning: if a validated tile is held 2+ copies
+  for (const v of validated) {
+    if (v.count >= 2) {
+      warnings.push({
+        type: 'pair',
+        tile: formatTileLabel(v.tile),
+        count: v.count,
+        text: 'Pair note: Pairs are generally worth protecting during the Charleston. Avoid passing both copies together.',
       });
-      tileScores[id] = { tile, score };
+    }
+  }
+
+  // Wind warning: if 2+ different winds in validated candidates
+  const windTiles = validated.filter(v => v.tile.type === 'WIND');
+  const uniqueWinds = new Set(windTiles.map(v => v.tile.wind));
+  if (uniqueWinds.size >= 2) {
+    warnings.push({
+      type: 'wind',
+      text: 'Charleston note: Two winds are generally not recommended to be passed together. Consider choosing only one wind for the same pass.',
     });
-    return tileScores;
+  }
+
+  return {
+    tiles: tiles,
+    reasons: reasons,
+    tier: activeTier,
+    explanation: explanation === '__MIXED_1_2__' ? '' : explanation,
+    subtext: '',
+    warnings: warnings,
+    charlestonReminder: 'Before passing, consider how the three tiles work together. Avoid passing pairs, multiple winds, connected numbers in the same suit, or recognizable number groupings together.',
   };
-
-  // Score tiles against top3 and next3 separately so we can distinguish
-  // dead weight from "next3-only" tiles.
-  const top3List = [
-    ...(top3[0] ? [{ rec: top3[0] }] : []),
-    ...(top3[1] ? [{ rec: top3[1] }] : []),
-    ...(top3[2] ? [{ rec: top3[2] }] : []),
-  ];
-  const next3List = (next5 || []).map(rec => ({ rec }));
-  const topScores = buildKeepScores(top3List);
-  const nextScores = buildKeepScores(next3List);
-
-  // Tier 1: any tile not needed by top3 is a candidate.
-  // Order within tier: non-flowers before flowers (flowers are risky in Charleston —
-  // many hands use them, so we demote them even when they're technically discardable).
-  // Then: dead weight before next3-only, then next3-only by ascending importance.
-  const isFlower = (t) => t && t.type === 'FLOWER';
-  const candidates = Object.entries(topScores)
-    .filter(([, v]) => v.keepScore === 0)
-    .map(([id, v]) => ({
-      id,
-      tile: v.tile,
-      inNext3: (nextScores[id]?.keepScore || 0) > 0,
-      next3Score: nextScores[id]?.keepScore || 0,
-    }))
-    .sort((a, b) => {
-      if (a.inNext3 !== b.inNext3) return a.inNext3 ? 1 : -1;
-      const af = isFlower(a.tile), bf = isFlower(b.tile);
-      if (af !== bf) return af ? 1 : -1;
-      return a.next3Score - b.next3Score;
-    });
-
-  const MIN_TILES = 3; // Charleston requires passing 3 — always offer at least this many.
-  const MAX_TILES = 5;
-  const reasonFor = (it) => {
-    if (isFlower(it.tile)) return 'Not recommended to pass during Charleston — many hands use flowers';
-    if (it.isPadding) return 'Needed by top 3 — weakest contributor if you must pass';
-    return it.inNext3 ? 'Only supports your next 3 hands' : 'Not needed in top 3 or next 3 hands';
-  };
-
-  if (candidates.length >= MIN_TILES) {
-    const picks = candidates.slice(0, MAX_TILES);
-    return {
-      tiles: picks.map(c => formatTileLabel(c.tile)).filter(Boolean),
-      reasons: picks.map(c => reasonFor({ tile: c.tile, inNext3: c.inNext3, isPadding: false })),
-      tier: 1,
-    };
-  }
-
-  if (candidates.length > 0) {
-    // Pad up to MIN_TILES with the weakest top3-supporting tiles so Charleston
-    // users always see 3 options. Flowers are demoted to the bottom of the pad list too.
-    const candidateIds = new Set(candidates.map(c => c.id));
-    const weighted3 = buildWeightedScores();
-    const padding = Object.entries(weighted3)
-      .filter(([id]) => !candidateIds.has(id))
-      .sort((a, b) => {
-        const af = isFlower(a[1].tile), bf = isFlower(b[1].tile);
-        if (af !== bf) return af ? 1 : -1;
-        return a[1].score - b[1].score;
-      })
-      .slice(0, MIN_TILES - candidates.length)
-      .map(([, { tile }]) => ({ tile, isPadding: true }));
-
-    const merged = [
-      ...candidates.map(c => ({ tile: c.tile, isPadding: false, inNext3: c.inNext3 })),
-      ...padding,
-    ];
-    return {
-      tiles: merged.map(it => formatTileLabel(it.tile)).filter(Boolean),
-      reasons: merged.map(reasonFor),
-      tier: 1,
-    };
-  }
-
-  // Tier 3 (fallback): every tile supports top3 — recommend weakest by weighted score.
-  // Flowers still demoted here (same Charleston concern applies).
-  const weighted3 = buildWeightedScores();
-  const weakest = Object.entries(weighted3)
-    .sort((a, b) => {
-      const af = isFlower(a[1].tile), bf = isFlower(b[1].tile);
-      if (af !== bf) return af ? 1 : -1;
-      return a[1].score - b[1].score;
-    })
-    .slice(0, MAX_TILES);
-  if (weakest.length > 0) {
-    return {
-      tiles: weakest.map(([, { tile }]) => formatTileLabel(tile)).filter(Boolean),
-      reasons: weakest.map(([, { tile }]) => isFlower(tile)
-        ? 'Not recommended to pass during Charleston — many hands use flowers'
-        : 'Weakest contributor to your top 3 hands'),
-      tier: 3,
-    };
-  }
-
-  // Tier 4: nothing to recommend.
-  return { tiles: [], reasons: [], tier: 4 };
 }
 // ============================================================
 // OUTPUT RENDERING
@@ -2662,7 +2719,7 @@ function formatMissingItem(m, hand, suitMap) {
   return `${label}${holdStr} <span class="tag ${tagCls}">${howStr}</span>`;
 }
 
-function renderResults(hand, top3, pivots, allScores, is14) {
+function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot) {
 
   // East banner
   document.getElementById('eastBanner').innerHTML = is14
@@ -2979,35 +3036,61 @@ function renderResults(hand, top3, pivots, allScores, is14) {
   }
 
   // ── DISCARD RECOMMENDATIONS ───────────────────────────────
-  const discardResult = getDiscardRecommendations([], top3, pivots, next5, hand);
-  const discardTiles = discardResult.tiles;
+  // Use frozen rackSnapshot for all discard logic
+  const _discardRack = rackSnapshot || window._currentRackSnapshot || {};
+  const discardResult = getDiscardRecommendations(_discardRack, top3, pivots, next5, hand);
+  const discardTiles = discardResult.tiles || [];
   const discardReasons = discardResult.reasons || [];
   const discardTier = discardResult.tier;
+  const discardWarnings = discardResult.warnings || [];
 
-  const headerNote = discardTier === 3
-    ? '<div class="discard-note">Every tile supports at least one of your top 3 hands — these are the weakest contributors if you must discard.</div>'
-    : '';
-
-  const discardInner = discardTiles.length > 0
-    ? headerNote + discardTiles.map((d,i)=>`
-        <div class="discard-row">
-          <span class="discard-tile">${d}</span>
-          <span class="discard-reason">${discardReasons[i]||'Low priority tile'}</span>
-        </div>`).join('')
-    : `<div class="discard-fallback">There are no obvious tiles for discard at this point — all tiles are used in your top 3 hands. See how the game unfolds to decide your best tile for discard.${hand.jokers>0?' Hold your joker(s).':''}</div>`;
+  let discardInner = '';
+  if (discardTiles.length > 0) {
+    // Tier explanation header
+    if (discardResult.explanation) {
+      discardInner += '<div class="discard-note">' + discardResult.explanation + '</div>';
+    }
+    // Tile rows
+    discardInner += '<div class="discard-heading">Tiles to consider</div>';
+    discardInner += discardTiles.map((d,i) => {
+      return '<div class="discard-row">' +
+        '<span class="discard-tile">' + d + '</span>' +
+        '<span class="discard-reason">' + (discardReasons[i]||'') + '</span>' +
+        '</div>';
+    }).join('');
+    // Pair and wind warnings
+    for (const w of discardWarnings) {
+      if (w.type === 'pair') {
+        discardInner += '<div class="discard-warning">' +
+          '<strong>' + w.tile + '</strong> — you hold ' + w.count + '. ' + w.text +
+          '</div>';
+      } else if (w.type === 'wind') {
+        discardInner += '<div class="discard-warning">' + w.text + '</div>';
+      }
+    }
+    // Charleston reminder
+    if (discardResult.charlestonReminder) {
+      discardInner += '<div class="discard-charleston-note">' + discardResult.charlestonReminder + '</div>';
+    }
+  } else {
+    discardInner = '<div class="discard-fallback">' +
+      (discardResult.explanation || 'No clear tiles to discard.') +
+      (discardResult.subtext ? '<br><span class="discard-subtext">' + discardResult.subtext + '</span>' : '') +
+      (hand.jokers > 0 ? ' Hold your joker(s).' : '') +
+      '</div>';
+  }
 
   const discardCardEl = document.createElement('div');
-  discardCardEl.innerHTML = `
-    <div class="section-head">Discard Recommendations</div>
-    <button class="show-more-btn" id="discardToggleBtn" onclick="
-      const c=document.getElementById('discardContent');
-      const showing=c.style.display!=='none';
-      c.style.display=showing?'none':'block';
-      this.textContent=showing?'Show Discard Recommendations':'Hide';
-    ">Show Discard Recommendations</button>
-    <div id="discardContent" style="display:none">
-      <div class="discard-card">${discardInner}</div>
-    </div>`;
+  discardCardEl.innerHTML = '<div class="section-head">Discard Recommendations</div>' +
+    '<button class="show-more-btn" id="discardToggleBtn" onclick="' +
+      "const c=document.getElementById('discardContent');" +
+      "const showing=c.style.display!=='none';" +
+      "c.style.display=showing?'none':'block';" +
+      "this.textContent=showing?'Show Discard Recommendations':'Hide';" +
+    '">Show Discard Recommendations</button>' +
+    '<div id="discardContent" style="display:none">' +
+      '<div class="discard-card">' + discardInner + '</div>' +
+    '</div>';
   document.getElementById('discardCard').innerHTML = '';
   document.getElementById('discardCard').appendChild(discardCardEl);
 
@@ -3098,7 +3181,7 @@ function renderResults(hand, top3, pivots, allScores, is14) {
 
   // ── Stash discard recs for the Charleston memory banner ───
   window._lastDiscards = (discardTiles && discardTiles.length)
-    ? { tiles: discardTiles.slice(), reasons: (discardReasons || []).slice() }
+    ? { tiles: discardTiles.slice(), reasons: discardReasons.slice() }
     : null;
 
   // ── Report button (Google Form feedback) ──────────────────
@@ -3743,8 +3826,12 @@ function analyze() {
   const total = getTotalCount();
   if (total<13||total>14) return;
 
-  // Clear the Charleston memory banner — new analysis supersedes prior discards
+  // ── CLEAR ALL PRIOR DISCARD STATE ──────────────────────────
+  window._lastDiscards = null;
+  window._currentRackSnapshot = null;
   hideCharlestonMemoryBanner();
+  const _dcEl = document.getElementById('discardCard');
+  if (_dcEl) _dcEl.innerHTML = '';
 
   document.getElementById('selectScreen').classList.remove('active');
   document.getElementById('resultsScreen').classList.add('active');
@@ -3754,6 +3841,16 @@ function analyze() {
   document.getElementById('resultsContent').style.display='none';
 
   setTimeout(()=>{
+    // ── FROZEN RACK SNAPSHOT ─────────────────────────────────
+    // One normalized copy of the current rack used for ALL downstream logic:
+    // candidate generation, scoring, final validation, and rendering.
+    const rackSnapshot = {};
+    for (const [id, count] of Object.entries(selectedTiles)) {
+      if (count > 0) rackSnapshot[id] = count;
+    }
+    Object.freeze(rackSnapshot);
+    window._currentRackSnapshot = rackSnapshot;
+
     const hand  = analyzeHand();
     const is14  = total===14;
 
@@ -3773,7 +3870,7 @@ function analyze() {
       .slice(0,3);
 
     try {
-      renderResults(hand, top3, pivots, allScores, is14);
+      renderResults(hand, top3, pivots, allScores, is14, rackSnapshot);
     } catch(e) {
       document.getElementById('loadingMsg').textContent = 'Error: ' + e.message;
       document.getElementById('loadingMsg').style.display = 'block';
