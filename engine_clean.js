@@ -587,7 +587,7 @@ const HAND_LIBRARY = [
      {label:'Kong of 2s (Suit B)',tileType:'NUMBER',number:2,suit:'B',groupType:'kong',count:4},
      {label:'Kong of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'kong',count:4},
    ]},
-  {id:'2026_L2',pointValue:25,exposedPlay:true,section:'2026',cardRef:makeCardRef('2026',2),
+  {id:'2026_L2a',pointValue:25,exposedPlay:true,section:'2026',cardRef:makeCardRef('2026',2),
    label:'2026+DDD (Suit A) + Kong-2+DDD (Suit B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
    groups:[
      {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
@@ -596,6 +596,17 @@ const HAND_LIBRARY = [
      {label:'Single 6 (Suit A)',tileType:'NUMBER',number:6,suit:'A',groupType:'single',count:1},
      {label:'Pung of Matching Dragon (Suit A)',tileType:'DRAGON',dragonRequirement:'matching',suit:'A',groupType:'pung',count:3},
      {label:'Kong of 2s (Suit B)',tileType:'NUMBER',number:2,suit:'B',groupType:'kong',count:4},
+     {label:'Pung of Matching Dragon (Suit B)',tileType:'DRAGON',dragonRequirement:'matching',suit:'B',groupType:'pung',count:3},
+   ]},
+  {id:'2026_L2b',pointValue:25,exposedPlay:true,section:'2026',cardRef:makeCardRef('2026',2),
+   label:'2026+DDD (Suit A) + Kong-6+DDD (Suit B)',concealed:false,suitsRequired:2,flexibility:'suit_assignment',
+   groups:[
+     {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
+     {label:'White Dragon',tileType:'DRAGON',dragon:'WHITE',groupType:'single',count:1},
+     {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
+     {label:'Single 6 (Suit A)',tileType:'NUMBER',number:6,suit:'A',groupType:'single',count:1},
+     {label:'Pung of Matching Dragon (Suit A)',tileType:'DRAGON',dragonRequirement:'matching',suit:'A',groupType:'pung',count:3},
+     {label:'Kong of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'kong',count:4},
      {label:'Pung of Matching Dragon (Suit B)',tileType:'DRAGON',dragonRequirement:'matching',suit:'B',groupType:'pung',count:3},
    ]},
   {id:'2026_L3',pointValue:25,exposedPlay:true,section:'2026',cardRef:makeCardRef('2026',3),
@@ -614,7 +625,7 @@ const HAND_LIBRARY = [
    groups:[
      {label:'Pair of 2s (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'pair',count:2},
      {label:'Pair of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'pair',count:2},
-     {label:'Pung of 2s (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'pung',count:3},
+     {label:'Pung of 2s (Suit B)',tileType:'NUMBER',number:2,suit:'B',groupType:'pung',count:3},
      {label:'Pung of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'pung',count:3},
      {label:'North Wind',tileType:'WIND',wind:'NORTH',groupType:'single',count:1},
      {label:'East Wind',tileType:'WIND',wind:'EAST',groupType:'single',count:1},
@@ -759,7 +770,7 @@ const HAND_LIBRARY = [
      {label:'Pung of South',tileType:'WIND',wind:'SOUTH',groupType:'pung',count:3},
    ]},
   {id:'WD_L2',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',2),
-   label:'4 Consec Singles + Green Dragon Pung + Red Dragon Pung + White Dragon Pung',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
+   label:'4 Consec Singles + Green Dragon Pung + Red Dragon Pung + White Dragon Kong',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
    groups:[
      {label:'Single N',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'single',count:1},
      {label:'Single N+1',tileType:'NUMBER',numberFlex:'consec4_pos2',suit:'A',groupType:'single',count:1},
@@ -767,7 +778,7 @@ const HAND_LIBRARY = [
      {label:'Single N+3',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'A',groupType:'single',count:1},
      {label:'Pung of Green Dragons',tileType:'DRAGON',dragon:'GREEN',groupType:'pung',count:3},
      {label:'Pung of Red Dragons',tileType:'DRAGON',dragon:'RED',groupType:'pung',count:3},
-     {label:'Pung of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'pung',count:3},
+     {label:'Kong of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'kong',count:4},
    ]},
   {id:'WD_L3',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',3),
    label:'Pung-N + Odd Kong (A) + Odd Kong (B) + Pung-S',concealed:false,suitsRequired:2,flexibility:'any_odd_number',
@@ -794,34 +805,70 @@ const HAND_LIBRARY = [
      {label:'Kong of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'kong',count:4},
    ]},
   {id:'WD_L6',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',6),
-   label:'N + EE + WWW + SSSS + 4 Consec Numbers (1 suit)',concealed:false,suitsRequired:1,flexibility:'any_consecutive',runLength:4,
+   label:'1 + N + 2 + EE + 3 + WWW + 4 + SSSS (1 suit, numbers fixed)',concealed:false,suitsRequired:1,
    groups:[
-     {label:'Single N',tileType:'NUMBER',numberFlex:'consec4_pos1',suit:'A',groupType:'single',count:1},
+     {label:'Single 1',tileType:'NUMBER',number:1,suit:'A',groupType:'single',count:1},
      {label:'Single North',tileType:'WIND',wind:'NORTH',groupType:'single',count:1},
-     {label:'Single N+1',tileType:'NUMBER',numberFlex:'consec4_pos2',suit:'A',groupType:'single',count:1},
+     {label:'Single 2',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
      {label:'Pair of East',tileType:'WIND',wind:'EAST',groupType:'pair',count:2},
-     {label:'Single N+2',tileType:'NUMBER',numberFlex:'consec4_pos3',suit:'A',groupType:'single',count:1},
+     {label:'Single 3',tileType:'NUMBER',number:3,suit:'A',groupType:'single',count:1},
      {label:'Pung of West',tileType:'WIND',wind:'WEST',groupType:'pung',count:3},
-     {label:'Single N+3',tileType:'NUMBER',numberFlex:'consec4_pos4',suit:'A',groupType:'single',count:1},
+     {label:'Single 4',tileType:'NUMBER',number:4,suit:'A',groupType:'single',count:1},
      {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
    ]},
-  {id:'WD_L7a',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
-   label:'FF + NNNN + SSSS + Dragon Pair + Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
+  {id:'WD_L7a_gr',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
+   label:'FF + NNNN + SSSS + Green Dragon Pair + Red Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
      {label:'Kong of North',tileType:'WIND',wind:'NORTH',groupType:'kong',count:4},
      {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
-     {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
-     {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
+     {label:'Pair of Green Dragons',tileType:'DRAGON',dragon:'GREEN',groupType:'pair',count:2},
+     {label:'Pair of Red Dragons',tileType:'DRAGON',dragon:'RED',groupType:'pair',count:2},
    ]},
-  {id:'WD_L7b',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
-   label:'FF + EEEE + WWWW + Dragon Pair + Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
+  {id:'WD_L7a_gw',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
+   label:'FF + NNNN + SSSS + Green Dragon Pair + White Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
+   groups:[
+     {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
+     {label:'Kong of North',tileType:'WIND',wind:'NORTH',groupType:'kong',count:4},
+     {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
+     {label:'Pair of Green Dragons',tileType:'DRAGON',dragon:'GREEN',groupType:'pair',count:2},
+     {label:'Pair of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'pair',count:2},
+   ]},
+  {id:'WD_L7a_rw',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
+   label:'FF + NNNN + SSSS + Red Dragon Pair + White Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
+   groups:[
+     {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
+     {label:'Kong of North',tileType:'WIND',wind:'NORTH',groupType:'kong',count:4},
+     {label:'Kong of South',tileType:'WIND',wind:'SOUTH',groupType:'kong',count:4},
+     {label:'Pair of Red Dragons',tileType:'DRAGON',dragon:'RED',groupType:'pair',count:2},
+     {label:'Pair of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'pair',count:2},
+   ]},
+  {id:'WD_L7b_gr',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
+   label:'FF + EEEE + WWWW + Green Dragon Pair + Red Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
      {label:'Kong of East',tileType:'WIND',wind:'EAST',groupType:'kong',count:4},
      {label:'Kong of West',tileType:'WIND',wind:'WEST',groupType:'kong',count:4},
-     {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
-     {label:'Pair of Any Dragon',tileType:'DRAGON',dragonRequirement:'any',groupType:'pair',count:2},
+     {label:'Pair of Green Dragons',tileType:'DRAGON',dragon:'GREEN',groupType:'pair',count:2},
+     {label:'Pair of Red Dragons',tileType:'DRAGON',dragon:'RED',groupType:'pair',count:2},
+   ]},
+  {id:'WD_L7b_gw',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
+   label:'FF + EEEE + WWWW + Green Dragon Pair + White Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
+   groups:[
+     {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
+     {label:'Kong of East',tileType:'WIND',wind:'EAST',groupType:'kong',count:4},
+     {label:'Kong of West',tileType:'WIND',wind:'WEST',groupType:'kong',count:4},
+     {label:'Pair of Green Dragons',tileType:'DRAGON',dragon:'GREEN',groupType:'pair',count:2},
+     {label:'Pair of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'pair',count:2},
+   ]},
+  {id:'WD_L7b_rw',pointValue:25,exposedPlay:true,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',7,''),
+   label:'FF + EEEE + WWWW + Red Dragon Pair + White Dragon Pair',concealed:false,suitsRequired:0,flexibility:'none',
+   groups:[
+     {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
+     {label:'Kong of East',tileType:'WIND',wind:'EAST',groupType:'kong',count:4},
+     {label:'Kong of West',tileType:'WIND',wind:'WEST',groupType:'kong',count:4},
+     {label:'Pair of Red Dragons',tileType:'DRAGON',dragon:'RED',groupType:'pair',count:2},
+     {label:'Pair of White Dragons',tileType:'DRAGON',dragon:'WHITE',groupType:'pair',count:2},
    ]},
   {id:'WD_L8',pointValue:30,exposedPlay:false,section:'winds_dragons',cardRef:makeCardRef('winds_dragons',8),
    label:'NN + EEE + 2026 Block + WWW + SS (Concealed)',concealed:true,suitsRequired:1,flexibility:'suit_assignment',
@@ -1152,7 +1199,7 @@ const HAND_LIBRARY = [
      {label:'Pair of 7s (Suit B)',tileType:'NUMBER',number:7,suit:'B',groupType:'pair',count:2},
    ]},
   {id:'13579_L8a',pointValue:35,exposedPlay:false,section:'13579',cardRef:makeCardRef('13579',8,''),
-   label:'FF + Pair-1+Pair-3+Pair-5 (A) + Pung-1 (B) + Pung-1 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
+   label:'FF + Pair-1+Pair-3+Pair-5 (A) + Pung-1 (B) + Pung-1 (C)',concealed:true,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
      {label:'Pair of 1s (Suit A)',tileType:'NUMBER',number:1,suit:'A',groupType:'pair',count:2},
@@ -1162,7 +1209,7 @@ const HAND_LIBRARY = [
      {label:'Pung of 1s (Suit C)',tileType:'NUMBER',number:1,suit:'C',groupType:'pung',count:3},
    ]},
   {id:'13579_L8b',pointValue:35,exposedPlay:false,section:'13579',cardRef:makeCardRef('13579',8,''),
-   label:'FF + Pair-5+Pair-7+Pair-9 (A) + Pung-5 (B) + Pung-5 (C)',concealed:false,suitsRequired:3,flexibility:'suit_assignment',
+   label:'FF + Pair-5+Pair-7+Pair-9 (A) + Pung-5 (B) + Pung-5 (C)',concealed:true,suitsRequired:3,flexibility:'suit_assignment',
    groups:[
      {label:'2 Flowers',tileType:'FLOWER',groupType:'pair',count:2},
      {label:'Pair of 5s (Suit A)',tileType:'NUMBER',number:5,suit:'A',groupType:'pair',count:2},
@@ -1227,16 +1274,12 @@ const HAND_LIBRARY = [
    groups:[
      {label:'Single 2 (Suit A)',tileType:'NUMBER',number:2,suit:'A',groupType:'single',count:1},
      {label:'Single 4 (Suit A)',tileType:'NUMBER',number:4,suit:'A',groupType:'single',count:1},
-     {label:'Single 6 (Suit A)',tileType:'NUMBER',number:6,suit:'A',groupType:'single',count:1},
-     {label:'Single 6 (Suit A)',tileType:'NUMBER',number:6,suit:'A',groupType:'single',count:1},
-     {label:'Single 8 (Suit A)',tileType:'NUMBER',number:8,suit:'A',groupType:'single',count:1},
-     {label:'Single 8 (Suit A)',tileType:'NUMBER',number:8,suit:'A',groupType:'single',count:1},
+     {label:'Pair of 6s (Suit A)',tileType:'NUMBER',number:6,suit:'A',groupType:'pair',count:2},
+     {label:'Pair of 8s (Suit A)',tileType:'NUMBER',number:8,suit:'A',groupType:'pair',count:2},
      {label:'Single 2 (Suit B)',tileType:'NUMBER',number:2,suit:'B',groupType:'single',count:1},
      {label:'Single 4 (Suit B)',tileType:'NUMBER',number:4,suit:'B',groupType:'single',count:1},
-     {label:'Single 6 (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'single',count:1},
-     {label:'Single 6 (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'single',count:1},
-     {label:'Single 8 (Suit B)',tileType:'NUMBER',number:8,suit:'B',groupType:'single',count:1},
-     {label:'Single 8 (Suit B)',tileType:'NUMBER',number:8,suit:'B',groupType:'single',count:1},
+     {label:'Pair of 6s (Suit B)',tileType:'NUMBER',number:6,suit:'B',groupType:'pair',count:2},
+     {label:'Pair of 8s (Suit B)',tileType:'NUMBER',number:8,suit:'B',groupType:'pair',count:2},
      {label:'Pair of 8s (Suit C)',tileType:'NUMBER',number:8,suit:'C',groupType:'pair',count:2},
    ]},
   {id:'SP_L3',pointValue:50,exposedPlay:false,section:'singles_and_pairs',cardRef:makeCardRef('singles_and_pairs',3),
@@ -1302,29 +1345,42 @@ const HAND_LIBRARY = [
 // ============================================================
 
 function resolveHand(handDef, flexType, values) {
-  return {
-    ...handDef,
-    groups: handDef.groups.map(g => {
-      if (!g.numberFlex) return g;
-      const m = {
-        'like':values[0],
-        'even':values[0],'even_kong':values[0],
-        'odd':values[0],'odd_kong':values[0],
-        'odd_float':values[0],'odd_float_kong':values[0],
-        'consec2_pos1':values[0],'consec2_pos2':values[1],
-        'consec3_pos1':values[0],'consec3_pos2':values[1],'consec3_pos3':values[2],
-        'consec4_pos1':values[0],'consec4_pos2':values[1],'consec4_pos3':values[2],'consec4_pos4':values[3],
-        'consec5_outer1':values[0],'consec5_inner1':values[1],'consec5_inner2':values[2],
-        'consec5_inner3':values[3],'consec5_outer2':values[4],
-        'consec7_pos1':values[0],'consec7_pos2':values[1],'consec7_pos3':values[2],
-        'consec7_pos4':values[3],'consec7_pos5':values[4],'consec7_pos6':values[5],'consec7_pos7':values[6],
-        '369_pair':values[0],'369_kong':values[0],'369_single1':values[1],'369_single2':values[2],
-        'tworank_pos1':values[0],'tworank_pos2':values[1],
-      };
-      const v = m[g.numberFlex];
-      return v != null ? {...g, number:v} : g;
-    })
-  };
+  let groups = handDef.groups.map(g => {
+    if (!g.numberFlex) return g;
+    const m = {
+      'like':values[0],
+      'even':values[0],'even_kong':values[0],
+      'odd':values[0],'odd_kong':values[0],
+      'odd_float':values[0],'odd_float_kong':values[0],
+      'consec2_pos1':values[0],'consec2_pos2':values[1],
+      'consec3_pos1':values[0],'consec3_pos2':values[1],'consec3_pos3':values[2],
+      'consec4_pos1':values[0],'consec4_pos2':values[1],'consec4_pos3':values[2],'consec4_pos4':values[3],
+      'consec5_outer1':values[0],'consec5_inner1':values[1],'consec5_inner2':values[2],
+      'consec5_inner3':values[3],'consec5_outer2':values[4],
+      'consec7_pos1':values[0],'consec7_pos2':values[1],'consec7_pos3':values[2],
+      'consec7_pos4':values[3],'consec7_pos5':values[4],'consec7_pos6':values[5],'consec7_pos7':values[6],
+      '369_pair':values[0],'369_kong':values[0],'369_single1':values[1],'369_single2':values[2],
+      'tworank_pos1':values[0],'tworank_pos2':values[1],
+    };
+    const v = m[g.numberFlex];
+    return v != null ? {...g, number:v} : g;
+  });
+
+  // For floating_pair_odd: the pair replaces the single of the same number.
+  // Remove one matching single so the hand totals 14, not 15.
+  if (flexType === 'floatpair') {
+    const floatNum = values[0];
+    let removed = false;
+    groups = groups.filter(g => {
+      if (!removed && g.groupType === 'single' && g.number === floatNum && !g.numberFlex) {
+        removed = true;
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return { ...handDef, groups };
 }
 
 function suitComboHasConflict(handDef, suitMap) {
