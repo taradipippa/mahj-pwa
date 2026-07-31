@@ -3009,7 +3009,12 @@ function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot, next3P
     ).length;
 
     const canUseJokers = !(rec.handDef.concealed && rec.handDef.section === 'singles_and_pairs');
-    const jokerContribution = (canUseJokers && claimableGroupCount > 0) ? hand.jokers : 0;
+    // Jokers can only fill claimable groups (pungs/kongs/quints), not singles or pairs.
+    // Cap contribution by the number of tiles still needed in claimable groups.
+    const claimableMissing = rec.details.missing
+      .filter(m => !m.isPairSingle)
+      .reduce((sum, m) => sum + m.need, 0);
+    const jokerContribution = (canUseJokers && claimableGroupCount > 0) ? Math.min(hand.jokers, claimableMissing) : 0;
     const adjustedMatched = Math.min(rec.matched + jokerContribution, rec.total);
 
     const rankLabel = ['#1','#2','#3'][i];
@@ -3085,7 +3090,10 @@ function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot, next3P
         const totalTiles = rec.handDef.groups.reduce((s,g)=>s+(g.groupType==='quint'?5:g.groupType==='kong'?4:g.groupType==='pung'?3:g.groupType==='pair'?2:1),0);
         const n3CanUseJokers = !rec.handDef.concealed || rec.handDef.section !== 'singles_and_pairs';
         const n3ClaimableGroups = rec.handDef.groups.filter(g=>g.groupType!=='single'&&g.groupType!=='pair').length;
-        const n3JokerContrib = (n3CanUseJokers && n3ClaimableGroups > 0) ? hand.jokers : 0;
+        const n3ClaimableMissing = rec.details.missing
+          .filter(m => !m.isPairSingle)
+          .reduce((sum, m) => sum + m.need, 0);
+        const n3JokerContrib = (n3CanUseJokers && n3ClaimableGroups > 0) ? Math.min(hand.jokers, n3ClaimableMissing) : 0;
         const n3AdjustedMatched = Math.min(rec.matched + n3JokerContrib, totalTiles);
         const card = document.createElement('div');
         card.className = 'n5-card';
