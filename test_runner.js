@@ -1622,6 +1622,18 @@ test('10.18 Complete hand with jokers in pungs/kongs shows 14/14', () => {
   assert(true, 'Joker-in-kong cap logic verified');
 });
 
+// 10.19: Charleston CTA button calls charlestonStart(), not editHand()
+test('10.19 Charleston CTA button calls charlestonStart not editHand', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  // Find the charleston-cta innerHTML assignment
+  const ctaMatch = src.match(/charleston-cta[\s\S]*?\.innerHTML\s*=\s*`([^`]+)`/);
+  assert(ctaMatch !== null, 'Charleston CTA innerHTML found');
+  const ctaHTML = ctaMatch[1];
+  assert(ctaHTML.includes('charlestonStart()'), 'CTA button calls charlestonStart()');
+  assert(!ctaHTML.includes('editHand()'), 'CTA button does NOT call editHand()');
+});
+
 console.log('\n' + '═'.repeat(50));
 console.log(`  Results: ${passed} passed, ${failed} failed`);
 if (failures.length > 0) {
