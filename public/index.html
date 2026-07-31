@@ -68,9 +68,24 @@ body{padding-top:env(safe-area-inset-top)}
 .chip-x{font-size:10px;opacity:.6;margin:1px}
 .results-hand-strip{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 8px;background:var(--bone2);border-bottom:1px solid #d4c89a;margin-bottom:14px;}
 .results-disclaimer{font-size:12px;color:var(--ink3);padding:8px 14px 10px;border-bottom:1px solid var(--bone2);margin-bottom:14px;line-height:1.5;font-style:italic;}
-.report-btn-wrap{padding:10px 14px 20px;text-align:center;}
-.report-btn{font-size:13px;color:var(--gold);text-decoration:underline;cursor:pointer;}
-.report-btn:active{opacity:.7;}
+.feedback-card{
+  margin:16px 14px 24px;padding:16px 18px;
+  background:#EDEAF4;border-radius:10px;text-align:center;
+}
+.feedback-card-heading{
+  font-size:14px;font-weight:700;color:#1F2A36;margin-bottom:4px;
+}
+.feedback-card-sub{
+  font-size:13px;color:#4B5563;margin-bottom:14px;
+}
+.feedback-card-btn{
+  display:block;width:100%;padding:11px 0;border-radius:8px;
+  background:#fff;border:1.5px solid #C5C9D0;
+  font-size:13px;font-weight:600;color:#1F2A36;
+  text-decoration:none;text-align:center;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.feedback-card-btn:active{background:#F4F5F7;}
 .charleston-memory{background:#FBF6E9;border:1px solid #d4c89a;border-radius:8px;padding:10px 12px;margin:0 12px 12px;display:none;}
 .charleston-memory.active{display:block;}
 .charleston-memory-label{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
@@ -332,18 +347,6 @@ body{padding-top:env(safe-area-inset-top)}
 .charleston-count-label{
   font-size:13px;font-weight:500;color:#1F2A36;margin-bottom:10px;
 }
-.charleston-count-btns{
-  display:flex;gap:8px;margin-bottom:20px;
-}
-.btn-pass-count{
-  flex:1;padding:12px 8px;border-radius:8px;
-  border:1.5px solid #DDE0E5;background:#fff;
-  font-size:15px;font-weight:600;color:#1F2A36;cursor:pointer;
-  transition:all .15s;
-}
-.btn-pass-count.selected{
-  border-color:#B89A5B;background:#F9F4EB;color:#8B6914;
-}
 
 /* Tile picker for received tiles */
 .charleston-picker-label{
@@ -485,22 +488,11 @@ body{padding-top:env(safe-area-inset-top)}
     <div style="display:flex;gap:8px">
       <button class="btn-edit" onclick="editHand()">Edit</button>
       <button class="btn-reset" onclick="resetApp()">Reset</button>
-      <button class="btn-edit" id="charlestonHeaderBtn" onclick="charlestonStart()" style="display:none;">Charleston</button>
     </div>
   </div>
 
   <div class="results-body">
     <div id="eastBanner"></div>
-    <div id="charlestonBanner" class="charleston-banner" style="display:none;margin:12px 16px 0;">
-      <div class="charleston-banner-text">
-        Walk through the Charleston?
-        <span>Get tile pass suggestions for each round</span>
-      </div>
-      <div class="charleston-banner-btns">
-        <button class="btn-charleston-yes" onclick="charlestonStart()">Yes</button>
-        <button class="btn-charleston-skip" onclick="document.getElementById('charlestonBanner').style.display='none'">Skip</button>
-      </div>
-    </div>
     <div id="loadingMsg">Analyzing...</div>
     <div id="resultsContent" style="display:none">
       <div id="sectionFocus"></div>
@@ -515,20 +507,6 @@ body{padding-top:env(safe-area-inset-top)}
 </div>
 
 <!-- ═══════════════════════════════════════════════ -->
-<!-- CHARLESTON PANEL                                -->
-<!-- ═══════════════════════════════════════════════ -->
-<div id="charlestonPanel" class="charleston-panel hidden">
-  <div class="charleston-header">
-    <div>
-      <div class="charleston-header-title" id="charlestonHeaderTitle">Charleston</div>
-      <div class="charleston-header-sub" id="charlestonHeaderSub">Pass 1 of 3</div>
-    </div>
-    <button class="btn-charleston-close" onclick="charlestonClose()">✕ Exit</button>
-  </div>
-  <div class="charleston-body" id="charlestonBody">
-    <!-- Populated by JS -->
-  </div>
-</div>
 
 <script>
 // ============================================================
@@ -537,7 +515,7 @@ body{padding-top:env(safe-area-inset-top)}
 // ============================================================
 
 // Charleston state — initialized here so it's available before any function runs
-window.charleston = { passNum:1, round:1, passCount:3, courtesy:false, receivedTiles:{}, receivedCount:0, nextFn:null, passIds:[] };
+
 
 const SUITS = ['BAM','CRK','DOT'];
 const MATCHING_DRAGON = { BAM:'GREEN', CRK:'RED', DOT:'WHITE' };
@@ -3266,7 +3244,7 @@ function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot, next3P
   if (_oldCh) _oldCh.remove();
   const _chCta = document.createElement('div');
   _chCta.className = 'charleston-cta';
-  _chCta.innerHTML = `<button onclick="charlestonStart()" style="width:100%;margin:8px 0 16px;padding:14px;border-radius:8px;background:#B89A5B;border:none;color:#1F2A36;cursor:pointer;text-align:center;"><span style="display:block;font-size:14px;font-weight:700;letter-spacing:.04em;">Do the Charleston (Optional)</span><span style="display:block;font-size:11px;font-weight:500;margin-top:4px;opacity:.75;">Get tile pass suggestions based on your hand analysis</span></button>`;
+  _chCta.innerHTML = `<button onclick="startCharleston()" style="width:100%;margin:8px 0 16px;padding:14px;border-radius:8px;background:#B89A5B;border:none;color:#1F2A36;cursor:pointer;text-align:center;"><span style="display:block;font-size:14px;font-weight:700;letter-spacing:.04em;">Do the Charleston (Optional)</span><span style="display:block;font-size:11px;font-weight:500;margin-top:4px;opacity:.75;">Get tile pass suggestions based on your hand analysis</span></button>`;
   const _strip = document.querySelector('.results-hand-strip');
   if (_strip) _strip.insertAdjacentElement('afterend', _chCta);
 
@@ -3275,10 +3253,10 @@ function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot, next3P
     ? { tiles: discardTiles.slice(), reasons: discardReasons.slice() }
     : null;
 
-  // ── Report button (Google Form feedback) ──────────────────
+  // ── Feedback card (Google Form) ─────────────────────────────
   const _glance = document.getElementById('glanceCard');
   if (_glance) {
-    const _oldReport = document.querySelector('.report-btn-wrap');
+    const _oldReport = document.querySelector('.feedback-card');
     if (_oldReport) _oldReport.remove();
     const _top3Names = top3.map(r => r.handDef.cardRef).join(', ');
     const _next3Names = (next5||[]).map(r => r.handDef.cardRef).join(', ');
@@ -3296,630 +3274,65 @@ function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot, next3P
     }).filter(Boolean).join(' | ');
     const _handData = 'TILES: '+_tileStr+' | TOP 3: '+_top3Names+' | NEXT 3: '+(_next3Names||'None')+' | DISCARDS: '+_discardStr+' | PIVOTS: '+(_pivotNames||'None');
     const _formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSex10meHSA6Cic3LK5S_JhHVuRYNhUSI4NdhB4XUtQGtwpRyw/viewform?usp=pp_url&entry.524763729='+encodeURIComponent(_handData)+'&entry.1303947514=';
-    const _wrap = document.createElement('div');
-    _wrap.className = 'report-btn-wrap';
-    const _link = document.createElement('a');
-    _link.href = _formUrl;
-    _link.target = '_blank';
-    _link.rel = 'noopener';
-    _link.className = 'report-btn';
-    _link.textContent = 'Report an issue or give feedback';
-    _wrap.appendChild(_link);
-    _glance.after(_wrap);
+    const _card = document.createElement('div');
+    _card.className = 'feedback-card';
+    _card.innerHTML = `
+      <div class="feedback-card-heading">Notice an issue or have feedback?</div>
+      <div class="feedback-card-sub">Help us improve Mahjong IQ.</div>
+      <a href="${_formUrl}" target="_blank" rel="noopener" class="feedback-card-btn">Report an Issue or Share Feedback</a>
+    `;
+    _glance.after(_card);
   }
 }
 
 
 // ============================================================
-// CHARLESTON ENGINE
+// CHARLESTON — simplified guidance + edit flow
 // ============================================================
 
-window.charleston = {
-  passNum: 1,
-  round: 1,
-  passCount: 3,
-  courtesy: false,
-  receivedTiles: {},
-  receivedCount: 0,
-};
+function startCharleston() {
+  // Build Charleston guidance from the already-stashed discard recommendations
+  const last = window._lastDiscards;
+  const tileCount = last && last.tiles ? last.tiles.length : 0;
 
-function charlestonStart() {
-  try {
-    charleston.passNum = 1;
-    charleston.round = 1;
-    charleston.courtesy = false;
-    const panel = document.getElementById('charlestonPanel');
-    if (!panel) return;
-    panel.classList.remove('hidden');
-    charlestonShowStandardPass();
-  } catch(err) {
-    console.error('Charleston error:', err);
-  }
-}
-
-function charlestonClose() {
-  document.getElementById('charlestonPanel').classList.add('hidden');
-}
-
-// Get N weakest physical tile IDs from current selectedTiles using shared tier logic.
-// Uses the same classifyRackTiles() and tier priorities as getDiscardRecommendations().
-// Returns up to n tile IDs; may return fewer than n rather than padding with protected tiles.
-function charlestonGetWeakest(n) {
-  // Snapshot current rack
-  const rackSnapshot = {};
-  for (const [id, count] of Object.entries(selectedTiles)) {
-    if (count > 0) rackSnapshot[id] = count;
+  // Dynamic message when fewer than 3 tiles recommended
+  let countNote = '';
+  if (tileCount === 0) {
+    countNote = '<div style="font-size:13px;color:#6B7280;margin:6px 0 10px;font-style:italic;">Mahjong IQ found no clear pass choices. Use the general guidance below to select your tiles.</div>';
+  } else if (tileCount === 1) {
+    countNote = '<div style="font-size:13px;color:#6B7280;margin:6px 0 10px;font-style:italic;">Mahjong IQ found one clear pass choice. Use the general guidance below to select your remaining tiles.</div>';
+  } else if (tileCount === 2) {
+    countNote = '<div style="font-size:13px;color:#6B7280;margin:6px 0 10px;font-style:italic;">Mahjong IQ found two clear pass choices. Use the general guidance below to select your remaining tile.</div>';
   }
 
-  // Analyze and build hand lists matching analyze() pattern
-  const hand = analyzeHand();
-  const allScores = HAND_LIBRARY.map(h => findBestScore(h, hand)).filter(Boolean)
-    .sort((a,b) => b.finalScore - a.finalScore);
-  const top3 = allScores.slice(0, 3);
-  const next3 = allScores.slice(3, 6);
-  const top6Ids = new Set(allScores.slice(0, 6).map(h => h.handDef.id));
-  const pivots = allScores.slice(6)
-    .filter(h => !top6Ids.has(h.handDef.id))
-    .filter(h => h.matched >= 5)
-    .sort((a,b) => b.finalScore - a.finalScore)
-    .slice(0, 3);
-
-  // Classify using shared function
-  const { tier1, tier2, tier3, flowerCandidates } = classifyRackTiles(rackSnapshot, top3, next3, pivots);
-
-  // Build ordered candidate pool using same tier priorities as main discard:
-  // Tier 1 first, supplement with Tier 2; Tier 3 only when 1+2 both empty; flowers last
-  let candidatePool = [];
-  if (tier1.length > 0 || tier2.length > 0) {
-    candidatePool = [...tier1, ...tier2];
-  } else if (tier3.length > 0) {
-    candidatePool = [...tier3];
-  } else if (flowerCandidates.length > 0) {
-    candidatePool = [...flowerCandidates];
+  // Specific tile recommendations
+  let specificHTML = '';
+  if (tileCount > 0) {
+    specificHTML = '<div style="font-size:13px;font-weight:700;color:#1F2A36;margin:10px 0 6px;">Suggested tiles to pass</div>';
+    specificHTML += last.tiles.map((t, i) => {
+      const reason = (last.reasons && last.reasons[i]) ? last.reasons[i] : '';
+      return '<div style="font-size:13px;color:#1F2A36;padding:4px 0;">' + t + (reason ? ' <span style="color:#6B7280;font-style:italic;">— ' + reason + '</span>' : '') + '</div>';
+    }).join('');
   }
 
-  if (candidatePool.length === 0) return [];
+  // General guidance
+  const generalHTML = '<div style="font-size:13px;font-weight:700;color:#1F2A36;margin:14px 0 6px;">General Charleston guidance</div>' +
+    '<div style="font-size:13px;color:#6B7280;line-height:1.5;">Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.</div>';
 
-  // Expand type-level candidates to physical tile IDs.
-  // First pass: one copy per type (prefer variety).
-  // Second pass: additional copies only when needed to reach n.
-  const result = [];
-  for (const c of candidatePool) {
-    if (result.length >= n) break;
-    result.push(c.id);
-  }
-  if (result.length < n) {
-    for (const c of candidatePool) {
-      if (result.length >= n) break;
-      const usedCount = result.filter(id => id === c.id).length;
-      for (let i = usedCount; i < c.count && result.length < n; i++) {
-        result.push(c.id);
-      }
-    }
+  // Build the full guidance box
+  const guidanceBox = document.getElementById('charlestonMemoryBanner');
+  const chips = document.getElementById('charlestonMemoryChips');
+  if (guidanceBox && chips) {
+    const heading = '<div style="font-size:14px;font-weight:700;color:#1F2A36;margin-bottom:4px;">Charleston Guidance</div>';
+    chips.innerHTML = heading + countNote + specificHTML + generalHTML;
+    guidanceBox.classList.add('active');
   }
 
-  return result;
+  // Open the existing rack-editing screen with rack preserved
+  editHand();
 }
 
-function getTileLabel(id) {
-  const tile = ALL_TILES[id];
-  if (!tile) return id;
-  if (tile.type === 'NUMBER') return `${tile.number}-${tile.suit[0]}${tile.suit.slice(1).toLowerCase()}`;
-  if (tile.type === 'WIND') return `${tile.wind[0]}${tile.wind.slice(1).toLowerCase()} Wind`;
-  if (tile.type === 'DRAGON') {
-    if (tile.dragon === 'WHITE') return 'White Dragon';
-    if (tile.dragon === 'GREEN') return 'Green Dragon';
-    if (tile.dragon === 'RED')   return 'Red Dragon';
-  }
-  if (tile.type === 'FLOWER') return 'Flower';
-  if (tile.type === 'JOKER')  return 'Joker';
-  return id;
-}
 
-function charlestonChipHTML(id, cls, label, clickable, context) {
-  const attr = clickable ? `onclick="charlestonPickerTap('${id}','${context}')" style="cursor:pointer"` : 'style="cursor:default"';
-  return `<div class="tile-chip ${cls}" ${attr}>${label}</div>`;
-}
-
-function getChipCls(id) {
-  const tile = ALL_TILES[id];
-  if (!tile) return 'neutral';
-  if (tile.type === 'NUMBER') return tile.suit.toLowerCase();
-  if (tile.type === 'WIND' || tile.type === 'DRAGON' || tile.type === 'FLOWER') return tile.type.toLowerCase();
-  if (tile.type === 'JOKER') return 'joker';
-  return 'neutral';
-}
-
-function getChipLabel(id) {
-  const tile = ALL_TILES[id];
-  if (!tile) return id;
-  if (tile.type === 'NUMBER') {
-    const s = tile.suit === 'BAM' ? 'B' : tile.suit === 'CRK' ? 'C' : 'D';
-    return `${tile.number}${s}`;
-  }
-  if (tile.type === 'WIND') return tile.wind[0];
-  if (tile.type === 'DRAGON') return tile.dragon === 'WHITE' ? 'Soap' : tile.dragon[0] + 'D';
-  if (tile.type === 'FLOWER') return 'F';
-  if (tile.type === 'JOKER') return '★';
-  return id;
-}
-
-function charlestonShowPass() {
-  const panel = document.getElementById('charlestonPanel');
-  panel.classList.remove('hidden');
-
-  const isPass3Type = (charleston.passNum === 3 || charleston.passNum === 6);
-  const passLabel = charleston.passNum <= 3
-    ? `Round 1 — Pass ${charleston.passNum} of 3`
-    : `Round 2 — Pass ${charleston.passNum - 3} of 3`;
-
-  document.getElementById('charlestonHeaderTitle').textContent = 'Charleston';
-  document.getElementById('charlestonHeaderSub').textContent = passLabel;
-
-  if (isPass3Type) {
-    charlestonShowPass3Picker();
-  } else {
-    charlestonShowStandardPass();
-  }
-}
-
-function charlestonTopHandsHTML() {
-  try {
-    const hand = analyzeHand();
-    const allScores = HAND_LIBRARY.map(h => findBestScore(h, hand)).filter(Boolean)
-      .sort((a,b) => b.finalScore - a.finalScore);
-    const top3 = allScores.slice(0, 3);
-    if (!top3.length) return '';
-    let rows = '';
-    top3.forEach((rec, i) => {
-      const pct = Math.round((rec.matched / rec.total) * 100);
-      const pattern = renderHandDisplay(rec.handDef.id, rec);
-      rows += `<div style="padding:10px 0;border-bottom:1px solid #ECEEF1;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-          <div>
-            <span style="font-size:13px;font-weight:700;color:#B89A5B;margin-right:8px;">${i+1}</span>
-            <span style="font-size:13px;font-weight:600;color:#1F2A36;">${rec.handDef.cardRef || rec.handDef.id}</span>
-            <span style="font-size:11px;color:#9BA4AF;margin-left:6px;">${rec.matched}/${rec.total} tiles</span>
-          </div>
-          <span style="font-size:14px;font-weight:700;color:#1F2A36;">${pct}%</span>
-        </div>
-        <div style="font-family:'Courier New',monospace;font-size:12px;color:#6B7280;letter-spacing:.3px;">${pattern}</div>
-      </div>`;
-    });
-    return `
-      <details style="margin-bottom:16px;" open>
-        <summary style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9BA4AF;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          Your Top Hands <span style="font-size:12px;color:#B89A5B;">▾</span>
-        </summary>
-        <div style="background:#fff;border-radius:8px;border:1px solid #DDE0E5;padding:0 14px;">
-          ${rows}
-        </div>
-      </details>`;
-  } catch(e) { return ''; }
-}
-
-function charlestonRenderPassTiles() {
-  const el = document.getElementById('charlestonHandChips');
-  if (!el) return;
-  let html = '';
-  for (const [id, count] of Object.entries(selectedTiles)) {
-    if (!count) continue;
-    const cls = getChipCls(id);
-    const label = getChipLabel(id);
-    const passingCount = charleston.passIds.filter(x => x === id).length;
-    for (let i = 0; i < count; i++) {
-      const isPassing = i < passingCount;
-      const style = isPassing ? 'outline:2.5px solid #B89A5B;outline-offset:2px;opacity:0.5;' : '';
-      html += `<div class="tile-chip ${cls}" onclick="charlestonTogglePassTile('${id}')" style="cursor:pointer;${style}">${label}${isPassing ? ' ✓' : ''}</div>`;
-    }
-  }
-  el.innerHTML = html;
-  charlestonUpdatePassConfirm();
-}
-
-function charlestonTogglePassTile(id) {
-  const idx = charleston.passIds.lastIndexOf(id);
-  if (idx !== -1) {
-    // Deselect last instance
-    charleston.passIds.splice(idx, 1);
-  } else {
-    // Add if under limit
-    if (charleston.passIds.length < charleston.passCount) {
-      charleston.passIds.push(id);
-    }
-  }
-  charlestonRenderPassTiles();
-}
-
-function charlestonUpdatePassConfirm() {
-  const btn = document.getElementById('charlestonConfirmBtn');
-  if (!btn) return;
-  const passReady = charleston.passIds.length === charleston.passCount;
-  const recvReady = charleston.receivedCount === charleston.passCount;
-  btn.classList.toggle('ready', passReady && recvReady);
-}
-
-function charlestonShowStandardPass() {
-  charleston.passCount = 3;
-  charleston.receivedTiles = {};
-  charleston.receivedCount = 0;
-  // Pre-select suggested weakest tiles
-  let weakIds = [];
-  try { weakIds = charlestonGetWeakest(3); } catch(e) { console.error('weakest err',e); }
-  charleston.passIds = [...weakIds];
-
-  const passNum = charleston.passNum;
-  const passName = passNum === 1 ? 'First Pass' : passNum === 2 ? 'Second Pass' : passNum === 4 ? 'First Pass' : 'Second Pass';
-
-  document.getElementById('charlestonBody').innerHTML = `
-    ${charlestonTopHandsHTML()}
-    <div class="charleston-pass-label">Pass ${passNum <= 3 ? passNum : passNum - 3} of 3</div>
-    <div class="charleston-pass-title">${passName}</div>
-    <div class="charleston-pass-desc">Tap tiles to select what you're passing. Suggested tiles are pre-highlighted — tap to deselect.</div>
-
-    <div class="charleston-hand-label">Your hand — tap to select/deselect (need 3)</div>
-    <div class="charleston-hand-chips" id="charlestonHandChips"></div>
-
-    <div class="charleston-suggest-note">General Charleston guidance: Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.</div>
-
-    <div class="charleston-picker-label">What 3 tiles did you receive?</div>
-    <div class="charleston-picker-note">Tap tiles below to enter what came back to you</div>
-    <div class="charleston-picker-selected" id="charlestonPickerSelected">
-      <span class="placeholder">Tap tiles below...</span>
-    </div>
-
-    ${charlestonTilePickerHTML('standard')}
-
-    <button class="btn-charleston-confirm" id="charlestonConfirmBtn" onclick="charlestonConfirmPass()">
-      Confirm — Update My Hand
-    </button>
-    <button class="btn-charleston-secondary" onclick="charlestonClose()">Exit Charleston</button>
-  `;
-
-  charlestonRenderPassTiles();
-}
-
-function charlestonShowPass3Picker() {
-  charleston.passCount = 3; // default
-  let weakIds = [];
-  try { weakIds = charlestonGetWeakest(3); } catch(e) { console.error('weakest err',e); }
-
-  let handHTML = '';
-  for (const [id, count] of Object.entries(selectedTiles)) {
-    if (!count) continue;
-    const cls = getChipCls(id);
-    const label = getChipLabel(id);
-    const isWeak = weakIds.includes(id);
-    for (let i = 0; i < count; i++) {
-      handHTML += `<div class="tile-chip ${cls}" style="cursor:default;${isWeak?'outline:2px solid #B89A5B;outline-offset:2px;':''}">${label}</div>`;
-    }
-  }
-
-  let suggestHTML = '';
-  weakIds.forEach(id => {
-    suggestHTML += `<div class="tile-chip ${getChipCls(id)}" style="cursor:default;">${getChipLabel(id)}</div>`;
-  });
-
-  const passNum = charleston.passNum;
-  document.getElementById('charlestonBody').innerHTML = `
-    ${charlestonTopHandsHTML()}
-    <div class="charleston-pass-label">Pass ${passNum <= 3 ? passNum : passNum - 3} of 3</div>
-    <div class="charleston-pass-title">Optional Across Pass</div>
-    <div class="charleston-pass-desc">You can pass 1, 2, or 3 tiles across. Choose how many.</div>
-
-    <div class="charleston-hand-label">Your current hand</div>
-    <div class="charleston-hand-chips">${handHTML}</div>
-
-    <div class="charleston-suggest-label">Suggested pass</div>
-    <div class="charleston-suggest-chips">${suggestHTML}</div>
-    <div class="charleston-suggest-note">Gold outline = suggested to pass.</div>
-    <div class="charleston-suggest-note">General Charleston guidance: Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.</div>
-
-    <div class="charleston-count-label">How many tiles are you passing?</div>
-    <div class="charleston-count-btns">
-      <button class="btn-pass-count selected" id="passCount1" onclick="charlestonSetCount(1)">1</button>
-      <button class="btn-pass-count" id="passCount2" onclick="charlestonSetCount(2)">2</button>
-      <button class="btn-pass-count selected" id="passCount3" onclick="charlestonSetCount(3)">3</button>
-    </div>
-
-    <div class="charleston-picker-label">What tiles did you receive?</div>
-    <div class="charleston-picker-note">Tap tiles below to enter what came back to you</div>
-    <div class="charleston-picker-selected" id="charlestonPickerSelected">
-      <span class="placeholder">Tap tiles below...</span>
-    </div>
-
-    ${charlestonTilePickerHTML('pass3')}
-
-    <button class="btn-charleston-confirm" id="charlestonConfirmBtn" onclick="charlestonConfirmPass()">
-      Confirm — Update My Hand
-    </button>
-    <button class="btn-charleston-secondary" onclick="charlestonClose()">Exit Charleston</button>
-  `;
-
-  // default to 3 selected
-  charlestonSetCount(3);
-  charleston.receivedTiles = {};
-  charleston.receivedCount = 0;
-  charlestonUpdateConfirm(3);
-}
-
-function charlestonSetCount(n) {
-  charleston.passCount = n;
-  [1,2,3].forEach(i => {
-    const btn = document.getElementById(`passCount${i}`);
-    if (btn) btn.classList.toggle('selected', i === n);
-  });
-  charlestonUpdateConfirm(n);
-}
-
-function charlestonTilePickerHTML(context) {
-  let html = '<div style="margin-bottom:8px;">';
-  const suits = [
-    { key: 'BAM', label: 'Bam', cls: 'bam' },
-    { key: 'CRK', label: 'Crack', cls: 'crk' },
-    { key: 'DOT', label: 'Dot', cls: 'dot' },
-  ];
-  suits.forEach(({ key, label, cls }) => {
-    html += `<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9BA4AF;margin:10px 0 6px;">${label}</div>`;
-    html += '<div style="display:flex;flex-wrap:wrap;gap:5px;">';
-    for (let n = 1; n <= 9; n++) {
-      const id = `${key}_${n}`;
-      html += `<div class="tile-chip ${cls}" onclick="charlestonPickerTap('${id}','${context}')" style="cursor:pointer;">${n}${key[0]}</div>`;
-    }
-    html += '</div>';
-  });
-  // Winds
-  html += `<div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9BA4AF;margin:10px 0 6px;">Winds & Dragons</div>`;
-  html += '<div style="display:flex;flex-wrap:wrap;gap:5px;">';
-  ['NORTH','EAST','WEST','SOUTH'].forEach(w => {
-    html += `<div class="tile-chip wind" onclick="charlestonPickerTap('${w}','${context}')" style="cursor:pointer;">${w[0]}</div>`;
-  });
-  ['GREEN','RED','WHITE'].forEach(d => {
-    const lbl = d === 'WHITE' ? 'Soap' : d[0] + 'D';
-    html += `<div class="tile-chip dragon" onclick="charlestonPickerTap('${d}','${context}')" style="cursor:pointer;">${lbl}</div>`;
-  });
-  html += `<div class="tile-chip flower" onclick="charlestonPickerTap('FLOWER','${context}')" style="cursor:pointer;">F</div>`;
-  html += `<div class="tile-chip joker" onclick="charlestonPickerTap('JOKER','${context}')" style="cursor:pointer;">★</div>`;
-  html += '</div></div>';
-  return html;
-}
-
-function charlestonPickerTap(id, context) {
-  const needed = charleston.passCount;
-  if (charleston.receivedCount >= needed) return;
-  charleston.receivedTiles[id] = (charleston.receivedTiles[id] || 0) + 1;
-  charleston.receivedCount++;
-  // Update selected display
-  const sel = document.getElementById('charlestonPickerSelected');
-  if (sel) {
-    const ph = sel.querySelector('.placeholder');
-    if (ph) ph.remove();
-    const chip = document.createElement('div');
-    chip.className = `tile-chip ${getChipCls(id)}`;
-    chip.style.cursor = 'pointer';
-    chip.dataset.id = id;
-    chip.textContent = getChipLabel(id);
-    chip.onclick = () => charlestonPickerRemove(chip, id);
-    sel.appendChild(chip);
-  }
-  charlestonUpdateConfirm(needed);
-  charlestonUpdatePassConfirm();
-}
-
-function charlestonPickerRemove(chip, id) {
-  if (charleston.receivedTiles[id]) {
-    charleston.receivedTiles[id]--;
-    if (charleston.receivedTiles[id] <= 0) delete charleston.receivedTiles[id];
-  }
-  charleston.receivedCount--;
-  chip.remove();
-  const sel = document.getElementById('charlestonPickerSelected');
-  if (sel && sel.children.length === 0) {
-    sel.innerHTML = '<span class="placeholder">Tap tiles below...</span>';
-  }
-  charlestonUpdateConfirm(charleston.passCount);
-  charlestonUpdatePassConfirm();
-}
-
-function charlestonUpdateConfirm(needed) {
-  const btn = document.getElementById('charlestonConfirmBtn');
-  if (!btn) return;
-  const ready = charleston.receivedCount === needed;
-  btn.classList.toggle('ready', ready);
-}
-
-function charlestonConfirmPass() {
-  // Remove the tiles the player chose to pass
-  charleston.passIds.forEach(id => {
-    if (selectedTiles[id] > 0) selectedTiles[id]--;
-    if (selectedTiles[id] <= 0) delete selectedTiles[id];
-  });
-  // Add received tiles to hand
-  Object.entries(charleston.receivedTiles).forEach(([id, count]) => {
-    selectedTiles[id] = (selectedTiles[id] || 0) + count;
-  });
-
-  charleston.passNum++;
-
-  // Show mid-round results then decide what's next
-  if (charleston.passNum === 4) {
-    charlestonShowMidResults(() => {
-      charlestonShowPrompt(
-        'Start a second Charleston?',
-        'You can do 3 more passes or stop here.',
-        () => { charlestonShowPass(); },
-        () => { charlestonShowCourtesy(); }
-      );
-    }, 'Round 1 Complete');
-  } else if (charleston.passNum === 7) {
-    charlestonShowMidResults(() => { charlestonShowCourtesy(); }, 'Round 2 Complete');
-  } else {
-    charlestonShowMidResults(() => { charlestonShowPass(); }, `After Pass ${charleston.passNum - 1}`);
-  }
-}
-
-function charlestonShowMidResults(nextFn, title) {
-  try {
-  charleston.nextFn = nextFn;
-  // Quick analysis of current hand
-  const hand = analyzeHand();
-  const allScores = HAND_LIBRARY.map(h => findBestScore(h, hand)).filter(Boolean)
-    .sort((a,b) => b.finalScore - a.finalScore);
-  const top3 = allScores.slice(0, 3);
-
-  // Build current hand chips
-  let handHTML = '';
-  for (const [id, count] of Object.entries(selectedTiles)) {
-    if (!count) continue;
-    for (let i = 0; i < count; i++) {
-      handHTML += `<div class="tile-chip ${getChipCls(id)}" style="cursor:default;">${getChipLabel(id)}</div>`;
-    }
-  }
-
-  // Build top 3 hand cards
-  let handsHTML = '';
-  top3.forEach((rec, i) => {
-    const pct = Math.round((rec.matched / rec.total) * 100);
-    const section = rec.handDef.section.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-    const pattern = renderHandDisplay(rec.handDef.id, rec);
-    handsHTML += `
-      <div style="padding:12px 0;border-bottom:1px solid #ECEEF1;">
-        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">
-          <div style="font-size:20px;font-weight:700;color:#B89A5B;width:24px;flex-shrink:0;">${i+1}</div>
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:600;color:#1F2A36;">${rec.handDef.cardRef || rec.handDef.id}</div>
-            <div style="font-size:11px;color:#9BA4AF;">${section} · ${rec.matched}/${rec.total} tiles</div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:18px;font-weight:700;color:#1F2A36;">${pct}%</div>
-            <div style="font-size:11px;color:#9BA4AF;">match</div>
-          </div>
-        </div>
-        <div style="font-family:'Courier New',monospace;font-size:12px;color:#6B7280;letter-spacing:.3px;padding-left:36px;">${pattern}</div>
-      </div>`;
-  });
-
-  document.getElementById('charlestonHeaderSub').textContent = title;
-  document.getElementById('charlestonBody').innerHTML = `
-    <div class="charleston-pass-label">Your Updated Hand</div>
-    <div class="charleston-hand-chips" style="margin-bottom:20px;">${handHTML}</div>
-
-    <div class="charleston-pass-label">Your Top 3 Hands Now</div>
-    <div style="background:#fff;border-radius:10px;border:1px solid #DDE0E5;padding:0 16px;margin-bottom:20px;">
-      ${handsHTML}
-    </div>
-
-    <button class="btn-charleston-confirm ready" onclick="charleston.nextFn && charleston.nextFn()">
-      Continue →
-    </button>
-    <button class="btn-charleston-secondary" onclick="charlestonClose()">Exit Charleston</button>
-  `;
-  } catch(err) {
-    document.getElementById('charlestonBody').innerHTML = `
-      <div style="padding:20px;color:red;font-size:13px;">Error: ${err.message}</div>
-      <button class="btn-charleston-confirm ready" onclick="charleston.nextFn && charleston.nextFn()">Continue anyway →</button>
-    `;
-    console.error('charlestonShowMidResults error:', err);
-  }
-}
-
-function charlestonShowPrompt(title, desc, onYes, onNo) {
-  document.getElementById('charlestonBody').innerHTML = `
-    <div class="charleston-prompt">
-      <h3>${title}</h3>
-      <p>${desc}</p>
-      <div class="charleston-prompt-btns">
-        <button class="btn-prompt-yes" id="promptYes">Yes →</button>
-        <button class="btn-prompt-no" id="promptNo">No, stop here</button>
-      </div>
-    </div>
-  `;
-  document.getElementById('promptYes').onclick = onYes;
-  document.getElementById('promptNo').onclick = onNo;
-}
-
-function charlestonShowCourtesy() {
-  charleston.courtesy = true;
-  charleston.passCount = 0;
-  charleston.receivedTiles = {};
-  charleston.receivedCount = 0;
-
-  document.getElementById('charlestonHeaderSub').textContent = 'Courtesy Pass';
-
-  let handHTML = '';
-  for (const [id, count] of Object.entries(selectedTiles)) {
-    if (!count) continue;
-    for (let i = 0; i < count; i++) {
-      handHTML += `<div class="tile-chip ${getChipCls(id)}" style="cursor:default;">${getChipLabel(id)}</div>`;
-    }
-  }
-
-  document.getElementById('charlestonBody').innerHTML = `
-    <div class="charleston-pass-label">Optional</div>
-    <div class="charleston-pass-title">Courtesy Pass</div>
-    <div class="charleston-pass-desc">You may pass 0, 1, 2, or 3 tiles. This is optional and mutual.</div>
-
-    <div class="charleston-hand-label">Your current hand</div>
-    <div class="charleston-hand-chips">${handHTML}</div>
-
-    <div class="charleston-suggest-note">General Charleston guidance: Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.</div>
-
-    <div class="charleston-count-label">How many tiles are you passing?</div>
-    <div class="charleston-count-btns">
-      <button class="btn-pass-count selected" id="passCount0" onclick="charlestonSetCourtesyCount(0)">0</button>
-      <button class="btn-pass-count" id="passCount1" onclick="charlestonSetCourtesyCount(1)">1</button>
-      <button class="btn-pass-count" id="passCount2" onclick="charlestonSetCourtesyCount(2)">2</button>
-      <button class="btn-pass-count" id="passCount3" onclick="charlestonSetCourtesyCount(3)">3</button>
-    </div>
-
-    <div id="courtesyReceiverSection"></div>
-
-    <button class="btn-charleston-confirm ready" id="charlestonConfirmBtn" onclick="charlestonConfirmCourtesy()">
-      Done — Analyze Final Hand
-    </button>
-    <button class="btn-charleston-secondary" onclick="charlestonClose()">Exit without analyzing</button>
-  `;
-}
-
-function charlestonSetCourtesyCount(n) {
-  charleston.passCount = n;
-  charleston.receivedTiles = {};
-  charleston.receivedCount = 0;
-  [0,1,2,3].forEach(i => {
-    const btn = document.getElementById(`passCount${i}`);
-    if (btn) btn.classList.toggle('selected', i === n);
-  });
-  const section = document.getElementById('courtesyReceiverSection');
-  if (n === 0) {
-    section.innerHTML = '';
-  } else {
-    section.innerHTML = `
-      <div class="charleston-picker-label">What tiles did you receive?</div>
-      <div class="charleston-picker-selected" id="charlestonPickerSelected">
-        <span class="placeholder">Tap tiles below...</span>
-      </div>
-      ${charlestonTilePickerHTML('courtesy')}
-    `;
-    charleston.passCount = n;
-  }
-}
-
-function charlestonConfirmCourtesy() {
-  if (charleston.passCount > 0) {
-    const weakIds = charlestonGetWeakest(charleston.passCount);
-    weakIds.slice(0, charleston.passCount).forEach(id => {
-      if (selectedTiles[id] > 0) selectedTiles[id]--;
-      if (selectedTiles[id] <= 0) delete selectedTiles[id];
-    });
-    Object.entries(charleston.receivedTiles).forEach(([id, count]) => {
-      selectedTiles[id] = (selectedTiles[id] || 0) + count;
-    });
-  }
-  charlestonClose();
-  // Re-analyze with final hand — bypass paywall since they already used a trial
-  const analyzeFunc = window._origAnalyze || window.analyze;
-  analyzeFunc();
-}
 
 // ============================================================
 // MAIN ANALYZE FUNCTION
@@ -3997,10 +3410,6 @@ function resetApp() {
   if (rc) rc.innerHTML = '<div id="sectionFocus"></div><div id="top3Container"></div><div id="next5Container"></div><div id="discardCard"></div><div id="pivotContainer"></div><div id="glanceCard"></div>';
   const eb = document.getElementById('eastBanner');
   if (eb) eb.innerHTML = '';
-  const cb = document.getElementById('charlestonBanner');
-  if (cb) cb.style.display = 'none';
-  const chBtn = document.getElementById('charlestonHeaderBtn');
-  if (chBtn) chBtn.style.display = 'none';
   const lm = document.getElementById('loadingMsg');
   if (lm) { lm.style.display = 'block'; lm.textContent = 'Analyzing...'; }
   document.getElementById('resultsScreen').classList.remove('active');
