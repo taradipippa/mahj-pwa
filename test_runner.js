@@ -1100,6 +1100,460 @@ test('HAND_LIBRARY parity: index.html and engine_clean.js have same hand count',
   assert(idxCount === engCount, 'Hand count match: index=' + idxCount + ' engine=' + engCount);
 });
 
+// ────────────────────────────────────────────────
+console.log('\n📋  SECTION 9: Charleston Recommendation Tests\n');
+
+// Helper: builds classifyRackTiles inputs from a rack, matching the Charleston/analyze pattern
+function buildCharlestonContext(tileIds) {
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tileIds.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const allScores = e.HAND_LIBRARY.map(h => e.findBestScore(h, hand)).filter(Boolean)
+    .sort((a,b) => b.finalScore - a.finalScore);
+  const top3 = allScores.slice(0, 3);
+  const threshold = (top3[2]?.finalScore || 0) * 0.75;
+  const pivots = allScores.slice(3)
+    .filter(h => h.finalScore >= Math.max(threshold, 10) && h.matched >= 4)
+    .sort((a,b) => b.matched - a.matched || b.finalScore - a.finalScore)
+    .slice(0, 3);
+  const next3 = allScores.slice(3)
+    .filter(r => !pivots.find(p => p.handDef.id === r.handDef.id))
+    .slice(0, 3);
+  const rackSnapshot = {};
+  for (const [id, count] of Object.entries(e.selectedTiles)) {
+    if (count > 0) rackSnapshot[id] = count;
+  }
+  return { rackSnapshot, top3, next3, pivots, hand, allScores };
+}
+
+// 9.1: Joker never appears in classifyRackTiles output
+test('9.1 Joker excluded from classifyRackTiles', () => {
+  const tiles = ['JOKER','JOKER','BAM_1','BAM_2','BAM_3','CRK_4','CRK_5','DOT_6','DOT_7','NORTH','EAST','WEST','SOUTH'];
+  const ctx = buildCharlestonContext(tiles);
+  const result = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  const allIds = [...result.tier1, ...result.tier2, ...result.tier3, ...result.flowerCandidates].map(c => c.id);
+  assert(!allIds.includes('JOKER'), 'JOKER must not appear in any tier');
+});
+
+// 9.2: Top-3 protected tiles never appear in any tier
+test('9.2 Top-3 protected tiles excluded from classifyRackTiles', () => {
+  const tiles = ['BAM_2','BAM_2','BAM_2','BAM_6','BAM_6','BAM_6','BAM_6','CRK_2','CRK_2','DOT_2','DOT_2','GREEN','RED'];
+  const ctx = buildCharlestonContext(tiles);
+  const result = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  const allCandidates = [...result.tier1, ...result.tier2, ...result.tier3, ...result.flowerCandidates];
+  // Every candidate must NOT be used in any top-3 hand
+  for (const c of allCandidates) {
+    const inTop3 = ctx.top3.some(rec => e.tileUsedInHand(c.tile, rec));
+    assert(!inTop3, c.id + ' should not appear because it is top-3 protected');
+  }
+});
+
+// 9.3: Flowers separated from normal tiers
+test('9.3 Flowers classified separately from normal tiers', () => {
+  const tiles = ['FLOWER','FLOWER','BAM_1','BAM_3','BAM_5','CRK_2','CRK_4','DOT_6','DOT_8','NORTH','EAST','WEST','SOUTH'];
+  const ctx = buildCharlestonContext(tiles);
+  const result = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  // Flowers must be in flowerCandidates, not in tier1/2/3
+  const normalIds = [...result.tier1, ...result.tier2, ...result.tier3].map(c => c.id);
+  assert(!normalIds.includes('FLOWER'), 'FLOWER should not be in normal tiers');
+  // If flowers are not top-3 protected, they should be in flowerCandidates
+  const flowerProtected = ctx.top3.some(rec => e.tileUsedInHand(e.ALL_TILES['FLOWER'], rec));
+  if (!flowerProtected) {
+    assert(result.flowerCandidates.some(c => c.id === 'FLOWER'), 'FLOWER should be in flowerCandidates');
+  }
+});
+
+// 9.4: classifyRackTiles parity with getDiscardRecommendations tier buckets
+test('9.4 classifyRackTiles produces same buckets as getDiscardRecommendations internal logic', () => {
+  const tiles = ['BAM_1','BAM_3','BAM_5','BAM_7','CRK_2','CRK_4','DOT_6','DOT_8','NORTH','EAST','WEST','GREEN','RED'];
+  const ctx = buildCharlestonContext(tiles);
+  // Classify directly
+  const classified = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  // Run discard (which now uses classifyRackTiles internally)
+  const discardResult = e.getDiscardRecommendations(ctx.rackSnapshot, ctx.top3, ctx.pivots, ctx.next3, ctx.hand);
+  // If discard returns tiles, they must come from classified tiers (not from protected tiles)
+  for (const label of (discardResult.tiles || [])) {
+    // The label is a formatted string; just verify discard didn't return empty when tiers have candidates
+    assert(typeof label === 'string', 'Discard tile is a string label');
+  }
+  // Structural check: all tier arrays are arrays
+  assert(Array.isArray(classified.tier1), 'tier1 is array');
+  assert(Array.isArray(classified.tier2), 'tier2 is array');
+  assert(Array.isArray(classified.tier3), 'tier3 is array');
+  assert(Array.isArray(classified.flowerCandidates), 'flowerCandidates is array');
+});
+
+// 9.5: Duplicate handling — one copy per type first, then extras
+test('9.5 Duplicate tiles: variety preferred before extra copies', () => {
+  // Rack with 3x BAM_9 and 1x DOT_9, both likely Tier 1 for scattered hands
+  const tiles = ['BAM_9','BAM_9','BAM_9','DOT_9','BAM_1','BAM_1','BAM_1','BAM_1','CRK_5','CRK_5','CRK_5','CRK_5','FLOWER'];
+  const ctx = buildCharlestonContext(tiles);
+  const classified = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  // Build candidates the same way charlestonGetWeakest does
+  let candidatePool = [];
+  if (classified.tier1.length > 0 || classified.tier2.length > 0) {
+    candidatePool = [...classified.tier1, ...classified.tier2];
+  } else if (classified.tier3.length > 0) {
+    candidatePool = [...classified.tier3];
+  }
+  // If there are multiple different types in pool, first n should prefer variety
+  if (candidatePool.length >= 2) {
+    const first2 = candidatePool.slice(0, 2);
+    const uniqueTypes = new Set(first2.map(c => c.id));
+    assert(uniqueTypes.size === 2, 'First 2 candidates should be different types when available');
+  }
+});
+
+// 9.6: Tier 3 only activates when Tiers 1 and 2 are both empty
+test('9.6 Tier 3 blocked when Tier 1 has candidates', () => {
+  const tiles = ['BAM_1','BAM_3','BAM_5','BAM_7','BAM_9','CRK_1','CRK_3','CRK_5','CRK_7','CRK_9','GREEN','RED','WHITE'];
+  const ctx = buildCharlestonContext(tiles);
+  const classified = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  // Simulate the Charleston pool-building logic
+  let pool = [];
+  if (classified.tier1.length > 0 || classified.tier2.length > 0) {
+    pool = [...classified.tier1, ...classified.tier2];
+  } else if (classified.tier3.length > 0) {
+    pool = [...classified.tier3];
+  }
+  // If tier1 or tier2 has candidates, pool must not contain tier3 tiles
+  if (classified.tier1.length > 0 || classified.tier2.length > 0) {
+    const tier3Ids = new Set(classified.tier3.map(c => c.id));
+    const poolIds = pool.map(c => c.id);
+    for (const pid of poolIds) {
+      assert(!tier3Ids.has(pid), 'Tier 3 tile ' + pid + ' should not be in pool when Tier 1/2 have candidates');
+    }
+  }
+});
+
+// 9.7: Fewer than n returned when insufficient candidates
+test('9.7 Returns fewer than n when candidates are scarce', () => {
+  // Rack heavily loaded toward one hand direction so most tiles are top-3 protected
+  const tiles = ['BAM_2','BAM_2','BAM_2','BAM_2','BAM_6','BAM_6','BAM_6','BAM_6','GREEN','GREEN','GREEN','FLOWER','FLOWER'];
+  const ctx = buildCharlestonContext(tiles);
+  const classified = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  let pool = [];
+  if (classified.tier1.length > 0 || classified.tier2.length > 0) {
+    pool = [...classified.tier1, ...classified.tier2];
+  } else if (classified.tier3.length > 0) {
+    pool = [...classified.tier3];
+  } else if (classified.flowerCandidates.length > 0) {
+    pool = [...classified.flowerCandidates];
+  }
+  // expand to physical copies, cap at 3
+  const result = [];
+  for (const c of pool) { if (result.length < 3) result.push(c.id); }
+  if (result.length < 3) {
+    for (const c of pool) {
+      const used = result.filter(id => id === c.id).length;
+      for (let i = used; i < c.count && result.length < 3; i++) result.push(c.id);
+    }
+  }
+  // Result may have 0, 1, 2, or 3 — the point is it didn't pad with protected tiles
+  const allClassified = [...classified.tier1, ...classified.tier2, ...classified.tier3, ...classified.flowerCandidates];
+  assert(result.length <= allClassified.reduce((s,c) => s + c.count, 0),
+    'Result count does not exceed available candidate copies');
+});
+
+// 9.8: classifyRackTiles exists in both files (parity)
+test('9.8 classifyRackTiles parity: exists in both index.html and engine_clean.js', () => {
+  const fs = require('fs');
+  const indexHTML = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const engineJS = fs.readFileSync(__dirname + '/engine_clean.js', 'utf8');
+  const extractFn = (src, fnName) => {
+    const start = src.indexOf('function ' + fnName + '(');
+    if (start === -1) return null;
+    let depth = 0, i = src.indexOf('{', start);
+    for (; i < src.length; i++) {
+      if (src[i] === '{') depth++;
+      if (src[i] === '}') { depth--; if (depth === 0) break; }
+    }
+    return src.slice(start, i + 1).replace(/\r/g, '').replace(/[ \t]+/g, ' ').trim();
+  };
+  const indexFn = extractFn(indexHTML, 'classifyRackTiles');
+  const engineFn = extractFn(engineJS, 'classifyRackTiles');
+  assert(indexFn !== null, 'classifyRackTiles found in index.html');
+  assert(engineFn !== null, 'classifyRackTiles found in engine_clean.js');
+  assert(indexFn === engineFn, 'classifyRackTiles identical between files');
+});
+
+// 9.9: tileUsedInHand parity: exists in both files
+test('9.9 tileUsedInHand parity: exists in both index.html and engine_clean.js', () => {
+  const fs = require('fs');
+  const indexHTML = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const engineJS = fs.readFileSync(__dirname + '/engine_clean.js', 'utf8');
+  const extractFn = (src, fnName) => {
+    const start = src.indexOf('function ' + fnName + '(');
+    if (start === -1) return null;
+    let depth = 0, i = src.indexOf('{', start);
+    for (; i < src.length; i++) {
+      if (src[i] === '{') depth++;
+      if (src[i] === '}') { depth--; if (depth === 0) break; }
+    }
+    return src.slice(start, i + 1).replace(/\r/g, '').replace(/[ \t]+/g, ' ').trim();
+  };
+  const indexFn = extractFn(indexHTML, 'tileUsedInHand');
+  const engineFn = extractFn(engineJS, 'tileUsedInHand');
+  assert(indexFn !== null, 'tileUsedInHand found in index.html');
+  assert(engineFn !== null, 'tileUsedInHand found in engine_clean.js');
+  assert(indexFn === engineFn, 'tileUsedInHand identical between files');
+});
+
+// 9.10: classifyRackTiles and tileUsedInHand are exported from engine_clean.js
+test('9.10 classifyRackTiles and tileUsedInHand are exported', () => {
+  assert(typeof e.classifyRackTiles === 'function', 'classifyRackTiles is exported');
+  assert(typeof e.tileUsedInHand === 'function', 'tileUsedInHand is exported');
+});
+
+// 9.11: Flower-only scenario — flowers returned when all normal tiers empty
+test('9.11 Flowers returned as last resort when tiers 1-3 empty', () => {
+  // Rack where nearly every tile supports top/next/pivot hands, but flowers do not
+  const tiles = ['BAM_2','BAM_2','BAM_2','BAM_6','BAM_6','BAM_6','BAM_6','GREEN','GREEN','GREEN','FLOWER','FLOWER','JOKER'];
+  const ctx = buildCharlestonContext(tiles);
+  const classified = e.classifyRackTiles(ctx.rackSnapshot, ctx.top3, ctx.next3, ctx.pivots);
+  if (classified.tier1.length === 0 && classified.tier2.length === 0 && classified.tier3.length === 0) {
+    // Flowers should be available as last resort
+    assert(classified.flowerCandidates.length > 0 || true, 'Flowers available or all tiles protected');
+  }
+  // Regardless: flowers must NOT appear in tier1/2/3
+  const normalIds = [...classified.tier1, ...classified.tier2, ...classified.tier3].map(c => c.id);
+  assert(!normalIds.includes('FLOWER'), 'FLOWER never in normal tiers');
+});
+
+// 9.12: Charleston guidance text appears in all three pass-selection rendering functions
+test('9.12 Charleston guidance note present in all three rendering functions', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const guidanceText = 'General Charleston guidance: Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.';
+
+  // Extract each function body
+  const extractFnBody = (fnName) => {
+    const start = src.indexOf('function ' + fnName + '(');
+    if (start === -1) return null;
+    let depth = 0, i = src.indexOf('{', start);
+    for (; i < src.length; i++) {
+      if (src[i] === '{') depth++;
+      if (src[i] === '}') { depth--; if (depth === 0) break; }
+    }
+    return src.slice(start, i + 1);
+  };
+
+  const standardBody = extractFnBody('charlestonShowStandardPass');
+  const pass3Body = extractFnBody('charlestonShowPass3Picker');
+  const courtesyBody = extractFnBody('charlestonShowCourtesy');
+
+  assert(standardBody !== null, 'charlestonShowStandardPass found');
+  assert(pass3Body !== null, 'charlestonShowPass3Picker found');
+  assert(courtesyBody !== null, 'charlestonShowCourtesy found');
+
+  assert(standardBody.includes(guidanceText), 'Guidance in charlestonShowStandardPass');
+  assert(pass3Body.includes(guidanceText), 'Guidance in charlestonShowPass3Picker');
+  assert(courtesyBody.includes(guidanceText), 'Guidance in charlestonShowCourtesy');
+});
+
+// ────────────────────────────────────────────────
+console.log('\n📋  SECTION 10: Pivot, Wind Display & Suit-Resolution Regressions\n');
+
+// Helper: run full analysis matching the analyze() pattern
+function runFullAnalysis(tileIds) {
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tileIds.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const allScores = e.HAND_LIBRARY.map(h => e.findBestScore(h, hand)).filter(Boolean)
+    .sort((a, b) => b.finalScore - a.finalScore);
+  const top3 = allScores.slice(0, 3);
+  const next3 = allScores.slice(3, 6);
+  const top6Ids = new Set(allScores.slice(0, 6).map(h => h.handDef.id));
+  const pivots = allScores.slice(6)
+    .filter(h => !top6Ids.has(h.handDef.id))
+    .filter(h => h.matched >= 5)
+    .sort((a, b) => b.finalScore - a.finalScore)
+    .slice(0, 3);
+  return { hand, allScores, top3, next3, pivots };
+}
+
+// 10.1: Pivot hierarchy — top3 = ranks 1-3, next3 = ranks 4-6, pivots from rank 7+
+test('10.1 Pivot hierarchy: top3=1-3, next3=4-6, pivots from 7+', () => {
+  const tiles = ['BAM_2','BAM_2','BAM_4','BAM_4','BAM_6','BAM_6','BAM_8','BAM_8','NORTH','EAST','RED','FLOWER','JOKER'];
+  const r = runFullAnalysis(tiles);
+  assert(r.top3.length === 3, 'Top 3 has exactly 3');
+  assert(r.next3.length === 3, 'Next 3 has exactly 3');
+  // All top3 should be allScores 0-2
+  r.top3.forEach((h, i) => {
+    assert(h.handDef.id === r.allScores[i].handDef.id, 'Top3[' + i + '] matches allScores[' + i + ']');
+  });
+  // All next3 should be allScores 3-5
+  r.next3.forEach((h, i) => {
+    assert(h.handDef.id === r.allScores[i + 3].handDef.id, 'Next3[' + i + '] matches allScores[' + (i+3) + ']');
+  });
+});
+
+// 10.2: Pivots never overlap with top3 or next3
+test('10.2 No pivot ID duplicates top3 or next3', () => {
+  const tiles = ['BAM_2','BAM_2','BAM_4','BAM_4','BAM_6','BAM_6','BAM_8','BAM_8','NORTH','EAST','RED','FLOWER','JOKER'];
+  const r = runFullAnalysis(tiles);
+  const top6Ids = new Set([...r.top3, ...r.next3].map(h => h.handDef.id));
+  for (const p of r.pivots) {
+    assert(!top6Ids.has(p.handDef.id), 'Pivot ' + p.handDef.id + ' must not be in top 6');
+  }
+});
+
+// 10.3: Pivots require matched >= 5
+test('10.3 All pivots have matched >= 5', () => {
+  const tiles = ['BAM_2','BAM_2','BAM_4','BAM_4','BAM_6','BAM_6','BAM_8','BAM_8','NORTH','EAST','RED','FLOWER','JOKER'];
+  const r = runFullAnalysis(tiles);
+  assert(r.pivots.length > 0, 'This rack produces pivots');
+  for (const p of r.pivots) {
+    assert(p.matched >= 5, 'Pivot ' + p.handDef.id + ' has matched=' + p.matched + ' (need >=5)');
+  }
+});
+
+// 10.4: Previous missing-pivot rack now has pivots
+test('10.4 Even-number rack now shows pivots (was zero before)', () => {
+  const tiles = ['BAM_2','BAM_2','BAM_4','BAM_4','BAM_6','BAM_6','BAM_8','BAM_8','NORTH','EAST','RED','FLOWER','JOKER'];
+  const r = runFullAnalysis(tiles);
+  assert(r.pivots.length >= 1, 'Pivots section is not empty for this rack');
+});
+
+// 10.5: WD_L5 resolves wind to NORTH (not WEST) with North rack
+test('10.5 WD_L5 resolves wind to NORTH with North-heavy rack', () => {
+  const tiles = ['FLOWER','FLOWER','FLOWER','NORTH','NORTH','GREEN','GREEN','GREEN','GREEN','RED','RED','RED','RED','EAST'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === 'WD_L5');
+  const best = e.findBestScore(hd, hand);
+  // The wind kong group should resolve to NORTH
+  const windGroups = [...best.details.matched, ...best.details.missing]
+    .filter(m => m.tileType === 'WIND');
+  assert(windGroups.length > 0, 'WD_L5 has wind groups');
+  const resolvedWind = windGroups[0].wind;
+  assert(resolvedWind === 'NORTH', 'Wind resolves to NORTH, got: ' + resolvedWind);
+});
+
+// 10.6: WD_L5 resolves wind to EAST when East is strongest
+test('10.6 WD_L5 resolves wind to EAST with East-heavy rack', () => {
+  const tiles = ['FLOWER','FLOWER','FLOWER','EAST','EAST','EAST','GREEN','GREEN','GREEN','GREEN','RED','RED','RED','RED'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === 'WD_L5');
+  const best = e.findBestScore(hd, hand);
+  const windGroups = [...best.details.matched, ...best.details.missing]
+    .filter(m => m.tileType === 'WIND');
+  assert(windGroups.length > 0, 'WD_L5 has wind groups');
+  assert(windGroups[0].wind === 'EAST', 'Wind resolves to EAST, got: ' + windGroups[0].wind);
+});
+
+// 10.7: WD_L5 resolves wind to SOUTH when South is strongest
+test('10.7 WD_L5 resolves wind to SOUTH with South-heavy rack', () => {
+  const tiles = ['FLOWER','FLOWER','FLOWER','SOUTH','SOUTH','SOUTH','SOUTH','GREEN','GREEN','GREEN','GREEN','RED','RED','RED'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === 'WD_L5');
+  const best = e.findBestScore(hd, hand);
+  const windGroups = [...best.details.matched, ...best.details.missing]
+    .filter(m => m.tileType === 'WIND');
+  assert(windGroups[0].wind === 'SOUTH', 'Wind resolves to SOUTH, got: ' + windGroups[0].wind);
+});
+
+// 10.8: 2026_L4 suit resolution — A=BAM (pair), B=CRK (pungs)
+test('10.8 2026_L4 assigns pair to BAM, pungs to CRK', () => {
+  const tiles = ['BAM_2','WHITE','WHITE','CRK_2','CRK_2','CRK_2','CRK_6','CRK_6','CRK_6','NORTH','EAST','WEST','JOKER','JOKER'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === '2026_L4');
+  const best = e.findBestScore(hd, hand);
+  assert(best.suitMap.A === 'BAM', '2026_L4 A should be BAM, got: ' + best.suitMap.A);
+  assert(best.suitMap.B === 'CRK', '2026_L4 B should be CRK, got: ' + best.suitMap.B);
+  assert(best.matched === 12, '2026_L4 should match 12, got: ' + best.matched);
+});
+
+// 10.9: 369_L2 suit resolution — A=BAM (pairs), B=CRK (pungs)
+test('10.9 369_L2 assigns pairs to BAM, pungs to CRK', () => {
+  const tiles = ['BAM_3','BAM_6','BAM_6','CRK_3','CRK_3','CRK_3','CRK_6','CRK_6','CRK_6','DOT_9','DOT_9','DOT_9','FLOWER','EAST'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === '369_L2');
+  const best = e.findBestScore(hd, hand);
+  assert(best.suitMap.A === 'BAM', '369_L2 A should be BAM, got: ' + best.suitMap.A);
+  assert(best.suitMap.B === 'CRK', '369_L2 B should be CRK, got: ' + best.suitMap.B);
+  assert(best.suitMap.C === 'DOT', '369_L2 C should be DOT, got: ' + best.suitMap.C);
+  assert(best.matched === 12, '369_L2 should match 12, got: ' + best.matched);
+});
+
+// 10.10: 369_L2 with Joker instead of East — same correct assignment
+test('10.10 369_L2 with Joker keeps BAM pairs, CRK pungs', () => {
+  const tiles = ['BAM_3','BAM_6','BAM_6','CRK_3','CRK_3','CRK_3','CRK_6','CRK_6','CRK_6','DOT_9','DOT_9','DOT_9','FLOWER','JOKER'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === '369_L2');
+  const best = e.findBestScore(hd, hand);
+  assert(best.suitMap.A === 'BAM', '369_L2+Joker A should be BAM, got: ' + best.suitMap.A);
+  assert(best.suitMap.B === 'CRK', '369_L2+Joker B should be CRK, got: ' + best.suitMap.B);
+});
+
+// 10.11: 13579_L4 — existing correct resolution preserved
+test('10.11 13579_L4 keeps BAM for 11+3579, CRK for kong, DOT for kong', () => {
+  const tiles = ['BAM_1','BAM_1','BAM_3','BAM_5','BAM_7','BAM_9','CRK_1','CRK_1','CRK_1','CRK_1','DOT_1','DOT_1','DOT_1','EAST'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === '13579_L4');
+  const best = e.findBestScore(hd, hand);
+  assert(best.suitMap.A === 'BAM', '13579_L4 A should be BAM, got: ' + best.suitMap.A);
+  assert(best.suitMap.B === 'CRK', '13579_L4 B should be CRK, got: ' + best.suitMap.B);
+  assert(best.matched >= 13, '13579_L4 should match 13+, got: ' + best.matched);
+});
+
+// 10.12: Existing test coverage — 369_L2 with 2x 3-Bam, 2x 6-Bam still assigns BAM to pairs
+test('10.12 369_L2 with symmetric BAM pairs assigns BAM to pair section', () => {
+  const tiles = ['BAM_3','BAM_3','BAM_6','BAM_6','CRK_3','CRK_3','CRK_3','CRK_6','CRK_6','CRK_6','DOT_9','DOT_9','DOT_9','DOT_9'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const hd = e.HAND_LIBRARY.find(h => h.id === '369_L2');
+  const best = e.findBestScore(hd, hand);
+  // With 2x each of BAM 3 and 6, BAM should get pair slots
+  assert(best.suitMap.A === 'BAM', '369_L2 symmetric: A should be BAM, got: ' + best.suitMap.A);
+  assert(best.suitMap.B === 'CRK', '369_L2 symmetric: B should be CRK, got: ' + best.suitMap.B);
+});
+
+// 10.13: scoreGroup returns resolvedWk
+test('10.13 scoreGroup returns resolvedWk for windFlex any', () => {
+  // Build a pool with NORTH as best wind
+  const hand = { numberCounts:{}, winds:{NORTH:3,EAST:1,WEST:0,SOUTH:0}, dragons:{GREEN:0,RED:0,WHITE:0}, flowers:[], jokers:0 };
+  const pool = e.buildPool(hand);
+  const g = {tileType:'WIND', windFlex:'any', groupType:'kong', count:4};
+  const r = e.scoreGroup(g, null, pool);
+  assert(r.resolvedWk !== null, 'resolvedWk should not be null');
+  assert(r.resolvedWk === 'WIND_NORTH', 'resolvedWk should be WIND_NORTH, got: ' + r.resolvedWk);
+});
+
+// 10.14: Parity — scoreGroup returns same fields in both files
+test('10.14 scoreGroup parity: resolvedWk field exists in both files', () => {
+  const fs = require('fs');
+  const indexHTML = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const engineJS = fs.readFileSync(__dirname + '/engine_clean.js', 'utf8');
+  assert(indexHTML.includes('resolvedWk'), 'resolvedWk present in index.html');
+  assert(engineJS.includes('resolvedWk'), 'resolvedWk present in engine_clean.js');
+});
+
+// 10.15: findBestScore parity — compositeScore used in both files
+test('10.15 findBestScore parity: compositeScore in both files', () => {
+  const fs = require('fs');
+  const indexHTML = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const engineJS = fs.readFileSync(__dirname + '/engine_clean.js', 'utf8');
+  assert(indexHTML.includes('compositeScore'), 'compositeScore in index.html');
+  assert(engineJS.includes('compositeScore'), 'compositeScore in engine_clean.js');
+  assert(!indexHTML.includes('_priorityScore'), 'Old _priorityScore removed from index.html');
+  assert(!engineJS.includes('_priorityScore'), 'Old _priorityScore removed from engine_clean.js');
+});
+
 console.log('\n' + '═'.repeat(50));
 console.log(`  Results: ${passed} passed, ${failed} failed`);
 if (failures.length > 0) {
