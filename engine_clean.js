@@ -186,6 +186,7 @@ function scoreGroup(g, suit, pool) {
   }
 
   let resolvedDk = null;
+  let resolvedWk = null;
   const effective   = Math.min(holds, g.count);
   const stillNeeded = Math.max(0, g.count - effective);
 
@@ -203,6 +204,7 @@ function scoreGroup(g, suit, pool) {
     } else if (g.tileType==='WIND') {
       const wk = g.wind ? `WIND_${g.wind}` : findBestWindKey(pool);
       if (wk) pool[wk] = Math.max(0,(pool[wk]||0) - effective);
+      resolvedWk = wk;
     }
   }
 
@@ -250,7 +252,11 @@ function scoreGroup(g, suit, pool) {
   if (g.tileType==='DRAGON' && !resolvedDk) {
     resolvedDk = resolveDragonKey(g, suit, pool);
   }
-  return { effective, stillNeeded, penalty, canClaim, dragonNote, holds, groupIsClaimable: canClaim, resolvedDk };
+  // Same for winds: if windFlex='any' and holds=0, resolve now so display has the best wind
+  if (g.tileType==='WIND' && !g.wind && !resolvedWk) {
+    resolvedWk = findBestWindKey(pool);
+  }
+  return { effective, stillNeeded, penalty, canClaim, dragonNote, holds, groupIsClaimable: canClaim, resolvedDk, resolvedWk };
 }
 
 const hand_dragons_list = {GREEN:1,RED:1,WHITE:1};
@@ -313,7 +319,8 @@ function scoreHand(handDef, suitMap, hand) {
 
     if (r.effective >= g.count) {
       const resolvedDragonKey = g.tileType==='DRAGON' ? (g.dragon || (r.resolvedDk ? r.resolvedDk.replace('DRAGON_','') : null)) : null;
-      details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number, tileType:g.tileType, wind:g.wind||null, dragon:resolvedDragonKey});
+      const resolvedWindKey = g.tileType==='WIND' ? (g.wind || (r.resolvedWk ? r.resolvedWk.replace('WIND_','') : null)) : null;
+      details.matched.push({label:g.label, groupType:g.groupType, suit, number:g.number, tileType:g.tileType, wind:resolvedWindKey, dragon:resolvedDragonKey});
     } else {
       // ── Claiming state ──────────────────────────────────────────────
       let claimState = 'mustDraw';
@@ -375,10 +382,10 @@ function scoreHand(handDef, suitMap, hand) {
         suit,
         number:      g.number,
         tileType:    g.tileType,
-        wind:        g.wind||null,
+        wind:        g.tileType==='WIND' ? (g.wind || (r.resolvedWk ? r.resolvedWk.replace('WIND_','') : null)) : null,
         dragon:      g.tileType==='DRAGON' ? (g.dragon || (r.resolvedDk ? r.resolvedDk.replace('DRAGON_','') : null)) : null,
         tileHint:    g.tileType==='DRAGON' ? (g.dragon||'dragon')
-                   : g.tileType==='WIND'   ? (g.wind||'wind')
+                   : g.tileType==='WIND'   ? (g.wind || (r.resolvedWk ? r.resolvedWk.replace('WIND_','') : null) || 'wind')
                    : g.number ? String(g.number) : 'tile'
       });
     }
@@ -1419,11 +1426,12 @@ function findBestScore(handDef, hand) {
     const r = scoreHand(def, suitMap, hand);
     if (!r) return;
 
-    // Priority scoring: pairs and singles MUST be filled before considering
-    // callable group bonuses. A combo that fills your singles beats one that
-    // leaves them empty even if the callable groups score higher.
+    // Pair/single completion bonus: pairs and singles cannot use jokers,
+    // so completing them is strategically meaningful. This adds a small
+    // bonus to finalScore so it acts as a tiebreaker for close results,
+    // not an override that sacrifices several pung/kong matches.
     //
-    // Compute tiles toward pair/single positions (fully matched)
+    // Fully matched pair/single tiles
     const priorityTilesFull = r.details.matched
       .filter(m => m.groupType === 'pair' || m.groupType === 'single')
       .reduce((sum, m) => sum + (m.groupType === 'pair' ? 2 : 1), 0);
@@ -1431,20 +1439,21 @@ function findBestScore(handDef, hand) {
     const priorityTilesPartial = r.details.missing
       .filter(m => m.isPairSingle && m.holds > 0)
       .reduce((sum, m) => sum + m.holds, 0);
-    const priorityScore = priorityTilesFull * 10 + priorityTilesPartial;
+    // Small bonus: 1.5 per fully matched pair/single tile, 0.5 per partial hold
+    // This keeps priority meaningful for close scores but can't override
+    // a substantially stronger overall assignment
+    const priorityBonus = priorityTilesFull * 1.5 + priorityTilesPartial * 0.5;
+    const compositeScore = r.finalScore + priorityBonus;
 
-    // Only replace best if this combo fills MORE priority tiles,
-    // OR equal priority tiles with a higher final score
     const isBetter = !best
-      || priorityScore > (best._priorityScore || 0)
-      || (priorityScore === (best._priorityScore || 0) && r.finalScore > best.finalScore);
+      || compositeScore > (best._compositeScore || 0);
 
     if (isBetter) {
       // Save previous best as secondBest before replacing
       if (best && best.suitMap && JSON.stringify(best.suitMap) !== JSON.stringify(suitMap)) {
         best._secondBest = {matched: best.matched, suitMap: best.suitMap};
       }
-      best = {...r, handDef, _priorityScore: priorityScore, _secondBest: best?._secondBest||null};
+      best = {...r, handDef, _compositeScore: compositeScore, _secondBest: best?._secondBest||null};
     } else if (best && !best._secondBest && r.finalScore > 0 &&
                JSON.stringify(suitMap) !== JSON.stringify(best.suitMap)) {
       // Track second best different suit assignment
@@ -1634,6 +1643,80 @@ function getSectionFocus(hand, topSections, displayedHandSections) {
 }
 
 // ============================================================
+// SHARED TILE CLASSIFICATION (used by discard and Charleston)
+// ============================================================
+
+// Check if a physical tile is used in a scored hand's matched or missing details
+function tileUsedInHand(tile, rec) {
+  const matchesGroup = (m) => {
+    if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
+    if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
+        m.number===tile.number && m.suit===tile.suit) return true;
+    if (tile.type==='WIND' && m.tileType==='WIND') return m.wind === tile.wind;
+    if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
+      if (m.dragon && m.dragon===tile.dragon) return true;
+      const rawSuit = m.suit;
+      const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
+        ? rawSuit
+        : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
+      if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
+      if (recSuit==='CRK' && tile.dragon==='RED') return true;
+      if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
+      if (!recSuit && !m.dragon && m.holds > 0) return true;
+    }
+    return false;
+  };
+  return rec.details.matched.some(m => matchesGroup(m)) ||
+         rec.details.missing.some(m => matchesGroup(m));
+}
+
+// Classify rack tiles into tiers based on hand usage.
+// Returns { tier1, tier2, tier3, flowerCandidates } where each entry is { id, tile, count }.
+// - Jokers excluded, top-3 protected tiles excluded, flowers separated.
+// - Tier 1: not used in any hand (top3, next3, pivots)
+// - Tier 2: used only in pivot hands
+// - Tier 3: used in next-3 hands (regardless of pivot status)
+function classifyRackTiles(rackSnapshot, top3, next3, pivots) {
+  const top3Recs = (top3 || []).filter(Boolean);
+  const next3Recs = (next3 || []).filter(Boolean);
+  const pivotRecs = (pivots || []).filter(Boolean);
+
+  const tier1 = [];
+  const tier2 = [];
+  const tier3 = [];
+  const flowerCandidates = [];
+
+  for (const [id, count] of Object.entries(rackSnapshot)) {
+    if (!count || count <= 0) continue;
+    const tile = ALL_TILES[id];
+    if (!tile) continue;
+
+    if (tile.type === 'JOKER') continue;
+
+    const inTop3 = top3Recs.some(rec => tileUsedInHand(tile, rec));
+    if (inTop3) continue;
+
+    if (tile.type === 'FLOWER') {
+      flowerCandidates.push({ id: id, tile: tile, count: count });
+      continue;
+    }
+
+    const inNext3 = next3Recs.some(rec => tileUsedInHand(tile, rec));
+    const inPivot = pivotRecs.some(rec => tileUsedInHand(tile, rec));
+
+    if (inNext3) {
+      tier3.push({ id: id, tile: tile, count: count });
+    } else if (inPivot) {
+      tier2.push({ id: id, tile: tile, count: count });
+    } else {
+      tier1.push({ id: id, tile: tile, count: count });
+    }
+  }
+
+  return { tier1, tier2, tier3, flowerCandidates };
+}
+
+// ============================================================
 // DISCARD ANALYSIS
 // ============================================================
 
@@ -1660,73 +1743,10 @@ function getDiscardRecommendations(rackSnapshot, top3, pivots, next5, hand) {
     return '';
   };
 
-  // Check if a tile is used in a hand's matched or missing details
-  const tileUsedInHand = (tile, rec) => {
-    const matchesGroup = (m) => {
-      if (tile.type==='FLOWER' && m.tileType==='FLOWER') return true;
-      if (tile.type==='NUMBER' && m.tileType==='NUMBER' &&
-          m.number===tile.number && m.suit===tile.suit) return true;
-      if (tile.type==='WIND' && m.tileType==='WIND') return m.wind === tile.wind;
-      if (tile.type==='DRAGON' && m.tileType==='DRAGON') {
-        if (m.dragon && m.dragon===tile.dragon) return true;
-        const rawSuit = m.suit;
-        const recSuit = (rawSuit==='BAM'||rawSuit==='CRK'||rawSuit==='DOT')
-          ? rawSuit
-          : (rawSuit && rec.suitMap ? rec.suitMap[rawSuit] : null);
-        if (recSuit==='BAM' && tile.dragon==='GREEN') return true;
-        if (recSuit==='CRK' && tile.dragon==='RED') return true;
-        if (recSuit==='DOT' && tile.dragon==='WHITE') return true;
-        if (!recSuit && !m.dragon && m.holds > 0) return true;
-      }
-      return false;
-    };
-    return rec.details.matched.some(m => matchesGroup(m)) ||
-           rec.details.missing.some(m => matchesGroup(m));
-  };
-
-  // Build candidate list ONLY from rackSnapshot tile types
-  const rackEntries = Object.entries(rackSnapshot);
+  // Classify using shared function (note: getDiscardRecommendations receives pivots, next5
+  // but classifyRackTiles expects top3, next3, pivots order)
+  const { tier1, tier2, tier3, flowerCandidates } = classifyRackTiles(rackSnapshot, top3, next5, pivots);
   const top3Recs = top3.filter(Boolean);
-  const next3Recs = (next5 || []).filter(Boolean);
-  const pivotRecs = (pivots || []).filter(Boolean);
-
-  // Classify each held tile type
-  const tier1 = []; // not in any hand
-  const tier2 = []; // in pivots only
-  const tier3 = []; // in next-3 (regardless of pivot)
-  const flowerCandidates = []; // flowers handled separately
-
-  for (const [id, count] of rackEntries) {
-    if (!count || count <= 0) continue;
-    const tile = ALL_TILES[id];
-    if (!tile) continue;
-
-    // Hard exclusion: jokers never recommended
-    if (tile.type === 'JOKER') continue;
-
-    // Top-3 protection: if tile type is used in ANY top-3 hand, skip entirely
-    const inTop3 = top3Recs.some(rec => tileUsedInHand(tile, rec));
-    if (inTop3) continue;
-
-    // Flowers are pulled out of tier system
-    if (tile.type === 'FLOWER') {
-      flowerCandidates.push({ id: id, tile: tile, count: count });
-      continue;
-    }
-
-    // Check next-3 and pivot usage
-    const inNext3 = next3Recs.some(rec => tileUsedInHand(tile, rec));
-    const inPivot = pivotRecs.some(rec => tileUsedInHand(tile, rec));
-
-    // If in next-3 at all -> Tier 3 (most protective bucket)
-    if (inNext3) {
-      tier3.push({ id: id, tile: tile, count: count });
-    } else if (inPivot) {
-      tier2.push({ id: id, tile: tile, count: count });
-    } else {
-      tier1.push({ id: id, tile: tile, count: count });
-    }
-  }
 
   // Select candidates per the approved backfill rules
   let selected = [];
@@ -1887,5 +1907,6 @@ if (typeof module !== 'undefined') {
     analyzeHand, buildPool, scoreHand, scoreGroup,
     findBestScore, findBestNumKey, resolveDragonKey,
     resolveHand, getSuitCombos, getDiscardRecommendations,
+    tileUsedInHand, classifyRackTiles,
   };
 }
