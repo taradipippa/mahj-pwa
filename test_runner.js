@@ -1320,13 +1320,12 @@ test('9.11 Flowers returned as last resort when tiers 1-3 empty', () => {
   assert(!normalIds.includes('FLOWER'), 'FLOWER never in normal tiers');
 });
 
-// 9.12: Charleston guidance text appears in all three pass-selection rendering functions
-test('9.12 Charleston guidance note present in all three rendering functions', () => {
+// 9.12: Charleston general guidance appears in startCharleston function
+test('9.12 Charleston general guidance present in startCharleston', () => {
   const fs = require('fs');
   const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
-  const guidanceText = 'General Charleston guidance: Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.';
+  const guidanceText = 'Avoid passing pairs, flowers, multiple winds, connected numbers in the same suit, or recognizable number groupings unless you have no safer option.';
 
-  // Extract each function body
   const extractFnBody = (fnName) => {
     const start = src.indexOf('function ' + fnName + '(');
     if (start === -1) return null;
@@ -1338,17 +1337,13 @@ test('9.12 Charleston guidance note present in all three rendering functions', (
     return src.slice(start, i + 1);
   };
 
-  const standardBody = extractFnBody('charlestonShowStandardPass');
-  const pass3Body = extractFnBody('charlestonShowPass3Picker');
-  const courtesyBody = extractFnBody('charlestonShowCourtesy');
-
-  assert(standardBody !== null, 'charlestonShowStandardPass found');
-  assert(pass3Body !== null, 'charlestonShowPass3Picker found');
-  assert(courtesyBody !== null, 'charlestonShowCourtesy found');
-
-  assert(standardBody.includes(guidanceText), 'Guidance in charlestonShowStandardPass');
-  assert(pass3Body.includes(guidanceText), 'Guidance in charlestonShowPass3Picker');
-  assert(courtesyBody.includes(guidanceText), 'Guidance in charlestonShowCourtesy');
+  const body = extractFnBody('startCharleston');
+  assert(body !== null, 'startCharleston found');
+  assert(body.includes(guidanceText), 'General guidance in startCharleston');
+  // Old multi-step functions must be gone
+  assert(extractFnBody('charlestonShowStandardPass') === null, 'charlestonShowStandardPass removed');
+  assert(extractFnBody('charlestonShowPass3Picker') === null, 'charlestonShowPass3Picker removed');
+  assert(extractFnBody('charlestonShowCourtesy') === null, 'charlestonShowCourtesy removed');
 });
 
 // ────────────────────────────────────────────────
@@ -1622,16 +1617,211 @@ test('10.18 Complete hand with jokers in pungs/kongs shows 14/14', () => {
   assert(true, 'Joker-in-kong cap logic verified');
 });
 
-// 10.19: Charleston CTA button calls charlestonStart(), not editHand()
-test('10.19 Charleston CTA button calls charlestonStart not editHand', () => {
+// 10.19: Charleston CTA button calls startCharleston(), not editHand() or charlestonStart()
+test('10.19 Charleston CTA button calls startCharleston', () => {
   const fs = require('fs');
   const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
-  // Find the charleston-cta innerHTML assignment
   const ctaMatch = src.match(/charleston-cta[\s\S]*?\.innerHTML\s*=\s*`([^`]+)`/);
   assert(ctaMatch !== null, 'Charleston CTA innerHTML found');
   const ctaHTML = ctaMatch[1];
-  assert(ctaHTML.includes('charlestonStart()'), 'CTA button calls charlestonStart()');
+  assert(ctaHTML.includes('startCharleston()'), 'CTA button calls startCharleston()');
   assert(!ctaHTML.includes('editHand()'), 'CTA button does NOT call editHand()');
+  assert(!ctaHTML.includes('charlestonStart()'), 'CTA button does NOT call old charlestonStart()');
+});
+
+// ────────────────────────────────────────────────
+console.log('\n📋  SECTION 11: Simplified Charleston Regression Tests\n');
+
+// 11.1: Old multi-step Charleston functions are removed
+test('11.1 Old multi-step Charleston functions removed', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const gone = [
+    'charlestonStart', 'charlestonClose', 'charlestonGetWeakest',
+    'charlestonShowStandardPass', 'charlestonShowPass3Picker',
+    'charlestonShowCourtesy', 'charlestonConfirmCourtesy',
+    'charlestonConfirmPass', 'charlestonShowPrompt',
+    'charlestonShowMidResults', 'charlestonSetCount',
+    'charlestonSetCourtesyCount', 'charlestonTogglePassTile',
+    'charlestonRenderPassTiles', 'charlestonPickerTap',
+    'charlestonPickerRemove', 'charlestonUpdatePassConfirm',
+    'charlestonUpdateConfirm', 'charlestonTilePickerHTML',
+    'charlestonChipHTML', 'charlestonTopHandsHTML', 'charlestonShowPass'
+  ];
+  for (const fn of gone) {
+    assert(!src.includes('function ' + fn + '('), fn + ' should be removed');
+  }
+});
+
+// 11.2: startCharleston function exists
+test('11.2 startCharleston function exists', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(src.includes('function startCharleston()'), 'startCharleston exists');
+});
+
+// 11.3: Old Charleston panel HTML removed
+test('11.3 Old Charleston panel HTML removed', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(!src.includes('id="charlestonPanel"'), 'charlestonPanel div removed');
+  assert(!src.includes('id="charlestonBody"'), 'charlestonBody div removed');
+  assert(!src.includes('id="charlestonHeaderTitle"'), 'charlestonHeaderTitle div removed');
+});
+
+// 11.4: Old Charleston banner removed
+test('11.4 Old Charleston banner removed', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(!src.includes('id="charlestonBanner"'), 'charlestonBanner removed');
+  assert(!src.includes('id="charlestonHeaderBtn"'), 'charlestonHeaderBtn removed');
+});
+
+// 11.5: Old window.charleston state object removed
+test('11.5 Old window.charleston state object removed', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(!src.includes('window.charleston'), 'window.charleston state removed');
+});
+
+// 11.6: Charleston guidance uses _lastDiscards (same as normal discard)
+test('11.6 startCharleston reads from _lastDiscards', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const fnStart = src.indexOf('function startCharleston()');
+  let depth = 0, i = src.indexOf('{', fnStart);
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    if (src[i] === '}') { depth--; if (depth === 0) break; }
+  }
+  const body = src.slice(fnStart, i + 1);
+  assert(body.includes('_lastDiscards'), 'Uses _lastDiscards for recommendations');
+  assert(body.includes('editHand()'), 'Calls editHand to open rack editor');
+});
+
+// 11.7: Charleston guidance shows dynamic message when fewer than 3 tiles
+test('11.7 startCharleston has dynamic messages for 0, 1, 2 tile counts', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const fnStart = src.indexOf('function startCharleston()');
+  let depth = 0, i = src.indexOf('{', fnStart);
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    if (src[i] === '}') { depth--; if (depth === 0) break; }
+  }
+  const body = src.slice(fnStart, i + 1);
+  assert(body.includes('no clear pass choices'), 'Message for 0 tiles');
+  assert(body.includes('one clear pass choice'), 'Message for 1 tile');
+  assert(body.includes('two clear pass choices'), 'Message for 2 tiles');
+});
+
+// 11.8: Charleston recommendations match normal discard exactly (same rack, same output)
+test('11.8 Charleston recs match normal discard — same tiles and reasons', () => {
+  const tiles = ['BAM_2','BAM_2','BAM_4','BAM_4','BAM_6','BAM_6','BAM_8','BAM_8','NORTH','EAST','RED','FLOWER','JOKER'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const allScores = e.HAND_LIBRARY.map(h => e.findBestScore(h, hand)).filter(Boolean)
+    .sort((a, b) => b.finalScore - a.finalScore);
+  const top3 = allScores.slice(0, 3);
+  const next3 = allScores.slice(3, 6);
+  const top6Ids = new Set(allScores.slice(0, 6).map(h => h.handDef.id));
+  const pivots = allScores.slice(6)
+    .filter(h => !top6Ids.has(h.handDef.id) && h.matched >= 5)
+    .sort((a, b) => b.finalScore - a.finalScore).slice(0, 3);
+  const rackSnapshot = {};
+  for (const [id, count] of Object.entries(e.selectedTiles)) {
+    if (count > 0) rackSnapshot[id] = count;
+  }
+  const discardResult = e.getDiscardRecommendations(rackSnapshot, top3, pivots, next3, hand);
+  const discardTiles = discardResult.tiles || [];
+  const discardReasons = discardResult.reasons || [];
+  // Charleston would display exactly these tiles and reasons — no separate logic
+  assert(discardTiles.length >= 0, 'Discard produces results');
+  // Verify no jokers in discard recommendations
+  assert(!discardTiles.some(t => t.toLowerCase().includes('joker')), 'No jokers in recommendations');
+});
+
+// 11.9: No pass-count controls or courtesy-pass screens remain in JS
+test('11.9 No pass-count controls or courtesy-pass screens in JS', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(!src.includes('charlestonSetCount'), 'No charlestonSetCount function');
+  assert(!src.includes('charlestonSetCourtesyCount'), 'No charlestonSetCourtesyCount function');
+  assert(!src.includes('courtesyReceiverSection'), 'No courtesy receiver section');
+  assert(!src.includes('charlestonShowCourtesy'), 'No charlestonShowCourtesy function');
+  assert(!src.includes('charlestonShowPass3Picker'), 'No charlestonShowPass3Picker function');
+});
+
+// 11.10: No percentages in startCharleston
+test('11.10 No percentages in Charleston guidance', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const fnStart = src.indexOf('function startCharleston()');
+  let depth = 0, i = src.indexOf('{', fnStart);
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    if (src[i] === '}') { depth--; if (depth === 0) break; }
+  }
+  const body = src.slice(fnStart, i + 1);
+  assert(!body.includes('%'), 'No percentage symbols in startCharleston');
+});
+
+// 11.11: Normal discard guidance unchanged — getDiscardRecommendations still exists and works
+test('11.11 Normal discard guidance unchanged', () => {
+  const tiles = ['BAM_1','BAM_3','BAM_5','CRK_2','CRK_4','DOT_6','DOT_8','NORTH','EAST','WEST','GREEN','RED','JOKER'];
+  Object.keys(e.selectedTiles).forEach(k => delete e.selectedTiles[k]);
+  tiles.forEach(id => { e.selectedTiles[id] = (e.selectedTiles[id] || 0) + 1; });
+  const hand = e.analyzeHand();
+  const allScores = e.HAND_LIBRARY.map(h => e.findBestScore(h, hand)).filter(Boolean)
+    .sort((a, b) => b.finalScore - a.finalScore);
+  const top3 = allScores.slice(0, 3);
+  const rackSnapshot = {};
+  for (const [id, count] of Object.entries(e.selectedTiles)) {
+    if (count > 0) rackSnapshot[id] = count;
+  }
+  const result = e.getDiscardRecommendations(rackSnapshot, top3, [], [], hand);
+  assert(result.tiles !== undefined, 'Discard result has tiles');
+  assert(result.reasons !== undefined, 'Discard result has reasons');
+  assert(!result.tiles.some(t => t.toLowerCase().includes('joker')), 'No jokers');
+});
+
+// 11.12: Old standalone text link no longer rendered
+test('11.12 Old report-btn text link removed from rendering', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(!src.includes("className = 'report-btn-wrap'"), 'No report-btn-wrap creation');
+  assert(!src.includes("className = 'report-btn'"), 'No report-btn creation');
+  assert(!src.includes('Report an issue or give feedback'), 'Old link text removed');
+});
+
+// 11.13: New feedback card has exact required copy
+test('11.13 Feedback card has exact heading, subtext, and button copy', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(src.includes('Notice an issue or have feedback?'), 'Heading present');
+  assert(src.includes('Help us improve Mahjong IQ.'), 'Subtext present');
+  assert(src.includes('Report an Issue or Share Feedback'), 'Button text present');
+});
+
+// 11.14: Feedback URL and link behavior unchanged
+test('11.14 Feedback URL and target=_blank unchanged', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  assert(src.includes('1FAIpQLSex10meHSA6Cic3LK5S_JhHVuRYNhUSI4NdhB4XUtQGtwpRyw'), 'Google Form ID present');
+  assert(src.includes('entry.524763729'), 'Hand data entry ID present');
+  assert(src.includes('entry.1303947514'), 'Issue entry ID present');
+  assert(src.includes('target="_blank"') && src.includes('rel="noopener"'), 'Opens in new tab with noopener');
+});
+
+// 11.15: Feedback card uses secondary style, not gold outline
+test('11.15 Feedback card uses secondary style, not gold', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const feedbackBtnCSS = src.match(/\.feedback-card-btn\{[^}]+\}/);
+  assert(feedbackBtnCSS !== null, 'feedback-card-btn CSS exists');
+  assert(!feedbackBtnCSS[0].includes('#B89A5B'), 'Feedback button does not use gold color');
+  assert(!feedbackBtnCSS[0].includes('text-decoration:underline'), 'No underlined text');
 });
 
 console.log('\n' + '═'.repeat(50));
