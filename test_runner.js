@@ -1776,6 +1776,106 @@ test('11.11 Feedback card unchanged', () => {
   assert(src.includes('Report an Issue or Share Feedback'), 'Feedback button text present');
 });
 
+// ══════════════════════════════════════════════════════════════
+console.log('\n📋  SECTION 12: Version Check Redesign\n');
+// ══════════════════════════════════════════════════════════════
+
+// Helper: extract a function body from index.html source by name
+function extractFnFromSrc(src, fnName) {
+  const start = src.indexOf('function ' + fnName + '(');
+  if (start === -1) return null;
+  let depth = 0, i = src.indexOf('{', start);
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    if (src[i] === '}') { depth--; if (depth === 0) break; }
+  }
+  return src.slice(start, i + 1);
+}
+
+// 12.1: APP_VERSION exists and is set to 48
+test('12.1 APP_VERSION constant exists and equals 48', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const match = src.match(/const\s+APP_VERSION\s*=\s*(\d+)\s*;/);
+  assert(match !== null, 'APP_VERSION constant found');
+  assert(match[1] === '48', 'APP_VERSION is 48, got: ' + (match ? match[1] : 'null'));
+});
+
+// 12.2: checkVersion compares fetched remote version against APP_VERSION
+test('12.2 checkVersion compares against APP_VERSION', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const body = extractFnFromSrc(src, 'checkVersion');
+  assert(body !== null, 'checkVersion function found');
+  assert(body.includes('APP_VERSION'), 'checkVersion references APP_VERSION');
+  assert(body.includes('remote !== APP_VERSION'), 'checkVersion compares remote !== APP_VERSION');
+});
+
+// 12.3: checkVersion does not use localStorage or mahj_app_version
+test('12.3 checkVersion has no localStorage dependency', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const body = extractFnFromSrc(src, 'checkVersion');
+  assert(body !== null, 'checkVersion function found');
+  assert(!body.includes('localStorage'), 'checkVersion does not use localStorage');
+  assert(!body.includes('mahj_app_version'), 'checkVersion does not use mahj_app_version key');
+  assert(!body.includes('STORED_KEY'), 'checkVersion does not use STORED_KEY');
+});
+
+// 12.4: Version fetch bypasses cache
+test('12.4 Version fetch uses cache bypass', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const body = extractFnFromSrc(src, 'checkVersion');
+  assert(body !== null, 'checkVersion function found');
+  assert(body.includes("cache: 'no-store'"), 'Fetch uses cache: no-store');
+  assert(body.includes('Date.now()'), 'Fetch URL includes cache-busting timestamp');
+});
+
+// 12.5: Mismatch displays overlay as flex
+test('12.5 Version mismatch shows overlay with display flex', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const body = extractFnFromSrc(src, 'checkVersion');
+  assert(body !== null, 'checkVersion function found');
+  assert(body.includes("display = 'flex'"), 'Overlay shown with display flex');
+});
+
+// 12.6: Matching version does not display overlay
+test('12.6 Matching version does not trigger overlay', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const body = extractFnFromSrc(src, 'checkVersion');
+  assert(body !== null, 'checkVersion function found');
+  // The overlay is only shown inside the mismatch condition — no else branch shows it
+  const displayCalls = (body.match(/display\s*=\s*'flex'/g) || []).length;
+  assert(displayCalls === 1, 'Overlay display set exactly once (only on mismatch), found: ' + displayCalls);
+  assert(body.includes('remote !== APP_VERSION'), 'Display gated on remote !== APP_VERSION');
+});
+
+// 12.7: Failed fetch does not block the app
+test('12.7 Fetch failure does not block app', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  const body = extractFnFromSrc(src, 'checkVersion');
+  assert(body !== null, 'checkVersion function found');
+  assert(body.includes('.catch('), 'checkVersion has a catch handler');
+  // Catch block should NOT show the overlay
+  const catchStart = body.indexOf('.catch(');
+  const catchBlock = body.slice(catchStart);
+  assert(!catchBlock.includes("display = 'flex'"), 'Catch block does not show overlay');
+});
+
+// 12.8: Update Now reloads the application
+test('12.8 Update Now button reloads the page', () => {
+  const fs = require('fs');
+  const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
+  // Find the update-btn inside updateBanner
+  const btnMatch = src.match(/id="updateBanner"[\s\S]*?class="update-btn"[^>]*onclick="([^"]+)"/);
+  assert(btnMatch !== null, 'Update button found inside updateBanner');
+  assert(btnMatch[1].includes('window.location.reload()'), 'Update Now calls window.location.reload()');
+});
+
 console.log('\n' + '═'.repeat(50));
 console.log(`  Results: ${passed} passed, ${failed} failed`);
 if (failures.length > 0) {
