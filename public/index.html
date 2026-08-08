@@ -518,6 +518,8 @@ body{padding-top:env(safe-area-inset-top)}
 // Complete logic: tile model, scoring engine, output renderer
 // ============================================================
 
+const APP_VERSION = 48;
+
 // Charleston state — initialized here so it's available before any function runs
 
 
@@ -3455,28 +3457,21 @@ updateUI();
     });
   }
 
-  // ── Version check — works reliably on iPhone ──
-  // Fetches /version.txt from Vercel on every app open AND every time
-  // the app returns to the foreground (e.g. user switches back from another app).
+  // ── Version check — compares embedded APP_VERSION against deployed version.txt ──
+  // Runs on every app open and every time the app returns to the foreground.
+  // If the running code is older than what's deployed, shows a full-screen hard block.
+  // If offline or fetch fails, lets the user continue with the cached app.
   function checkVersion() {
-    const STORED_KEY = 'mahj_app_version';
     fetch('/version.txt?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.text())
-      .then(remoteVersion => {
-        remoteVersion = remoteVersion.trim();
-        const localVersion = localStorage.getItem(STORED_KEY);
-        if (!localVersion) {
-          // First time — just store it, no banner
-          localStorage.setItem(STORED_KEY, remoteVersion);
-        } else if (localVersion !== remoteVersion) {
-          // Version changed — show banner
-          document.getElementById('updateBanner').style.display = 'block';
-          // Store new version so reloading clears the banner
-          localStorage.setItem(STORED_KEY, remoteVersion);
+      .then(raw => {
+        const remote = parseInt(raw.trim(), 10);
+        if (!isNaN(remote) && remote !== APP_VERSION) {
+          document.getElementById('updateBanner').style.display = 'flex';
         }
       })
       .catch(() => {
-        // Offline or fetch failed — silently do nothing
+        // Offline or fetch failed — let user continue with cached app
       });
   }
 
