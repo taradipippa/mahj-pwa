@@ -3329,7 +3329,7 @@ function startCharleston() {
   }
 
   // Open the existing rack-editing screen with rack preserved
-  editHand();
+  editHand(true);
 }
 
 
@@ -3420,28 +3420,15 @@ function resetApp() {
   updateUI();
 }
 
-function editHand() {
+function editHand(showCharleston = false) {
   document.getElementById('resultsScreen').classList.remove('active');
   document.getElementById('selectScreen').classList.add('active');
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
-  showCharlestonMemoryBanner();
-}
 
-function showCharlestonMemoryBanner() {
-  const banner = document.getElementById('charlestonMemoryBanner');
-  const chips  = document.getElementById('charlestonMemoryChips');
-  if (!banner || !chips) return;
-  const last = window._lastDiscards;
-  if (!last || !last.tiles || !last.tiles.length) {
-    banner.classList.remove('active');
-    return;
+  if (!showCharleston) {
+    hideCharlestonMemoryBanner();
   }
-  chips.innerHTML = last.tiles.map((t,i) => {
-    const reason = (last.reasons && last.reasons[i]) ? last.reasons[i] : '';
-    return `<div class="charleston-memory-chip">${t}${reason ? `<span class="charleston-memory-reason">${reason}</span>` : ''}</div>`;
-  }).join('');
-  banner.classList.add('active');
 }
 
 function hideCharlestonMemoryBanner() {
