@@ -1792,13 +1792,13 @@ function extractFnFromSrc(src, fnName) {
   return src.slice(start, i + 1);
 }
 
-// 12.1: APP_VERSION exists and is set to 48
-test('12.1 APP_VERSION constant exists and equals 48', () => {
+// 12.1: APP_VERSION exists and is set to 49
+test('12.1 APP_VERSION constant exists and equals 49', () => {
   const fs = require('fs');
   const src = fs.readFileSync(__dirname + '/index.html', 'utf8');
   const match = src.match(/const\s+APP_VERSION\s*=\s*(\d+)\s*;/);
   assert(match !== null, 'APP_VERSION constant found');
-  assert(match[1] === '48', 'APP_VERSION is 48, got: ' + (match ? match[1] : 'null'));
+  assert(match[1] === '49', 'APP_VERSION is 49, got: ' + (match ? match[1] : 'null'));
 });
 
 // 12.2: checkVersion compares fetched remote version against APP_VERSION
