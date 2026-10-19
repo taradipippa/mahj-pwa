@@ -214,7 +214,7 @@ body{padding-top:env(safe-area-inset-top)}
 .discard-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px}
 .discard-row{display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.1)}
 .discard-row:last-child{border-bottom:none}
-.discard-tile{font-size:14px;font-weight:600;color:#fff}
+.discard-tile{font-size:14px;font-weight:600;color:#fff;white-space:nowrap;flex-shrink:0;margin-right:10px}
 .discard-reason{font-size:12px;color:rgba(255,255,255,.55)}
 .discard-fallback{font-size:14px;color:rgba(255,255,255,.8);line-height:1.5}
 .discard-note{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:8px;font-style:italic}
@@ -518,7 +518,7 @@ body{padding-top:env(safe-area-inset-top)}
 // Complete logic: tile model, scoring engine, output renderer
 // ============================================================
 
-const APP_VERSION = 48;
+const APP_VERSION = 49;
 
 // Charleston state — initialized here so it's available before any function runs
 
@@ -3117,11 +3117,7 @@ function renderResults(hand, top3, pivots, allScores, is14, rackSnapshot, next3P
 
   let discardInner = '';
   if (discardTiles.length > 0) {
-    // Tier explanation header
-    if (discardResult.explanation) {
-      discardInner += '<div class="discard-note">' + discardResult.explanation + '</div>';
-    }
-    // Tile rows
+    // Tile rows (tier explanation already appears as each tile's reason)
     discardInner += '<div class="discard-heading">Tiles to consider</div>';
     discardInner += discardTiles.map((d,i) => {
       return '<div class="discard-row">' +
